@@ -58,7 +58,6 @@ ClassifierSet ParseClassifierName(const string& line,
 	return classifiers;
 }
 
-
 vector<int> RunSimulatorClassificationTrial(Simulator& s, const string& name,
 		PacketClassifier& classifier, vector<map<string, string>>& data) {
 	map<string, string> d = { { "Classifier", name } };
@@ -81,8 +80,8 @@ pair<vector<string>, vector<map<string, string>>> RunSimulatorOnlyClassification
 	vector<map<string, string>> data;
 
 	for (auto& pair : classifiers) {
-		RunSimulatorClassificationTrial(s, pair.first.c_str(),
-				*pair.second, data);
+		RunSimulatorClassificationTrial(s, pair.first.c_str(), *pair.second,
+				data);
 	}
 
 	if (outfile != "") {
@@ -122,8 +121,8 @@ pair<vector<string>, vector<map<string, string>>> RunSimulatorUpdates(
 	const auto req = s.SetupComputation(0, 500000, 500000);
 
 	for (const auto& pair : classifiers) {
-		RunSimulatorUpdateTrial(s, pair.first.c_str(),
-				*pair.second, req, data, repetitions);
+		RunSimulatorUpdateTrial(s, pair.first.c_str(), *pair.second, req, data,
+				repetitions);
 	}
 	if (outfile != "") {
 		OutputWriter::WriteCsvFile(outfile, header, data);
@@ -172,16 +171,15 @@ bool Validation(const unordered_map<string, PacketClassifier*> classifiers,
 void RunValidation(const unordered_map<string, string>& args,
 		const vector<Packet>& packets, const vector<Rule>& rules,
 		ClassifierSet classifiers) {
-	printf("Validation Simulation, Building...\n");
+	std::cerr << "[INFO] Validation Simulation, Building..." << std::endl;
 	for (auto& pair : classifiers) {
-		printf("\t%s\n", pair.first.c_str());
+		std::cerr << "[INFO] building" << pair.first << std::endl;
 		pair.second->ConstructClassifier(rules);
 	}
 
-	printf("Testing\n");
 	int threshold = GetIntOrElse(args, "Validate.Threshold", 10);
 	if (Validation(classifiers, rules, packets, threshold)) {
-		printf("All classifiers are in accord\n");
+		std::cerr << "[INFO] All classifiers are in accord" << std::endl;
 	}
 
 	for (auto& pair : classifiers) {
@@ -242,7 +240,7 @@ int main(int argc, char* argv[]) {
 		exit(EINVAL);
 	}
 
-	printf("Done\n");
+	std::cerr << "[INFO] Done" << std::endl;
 	return 0;
 }
 

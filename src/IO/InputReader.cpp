@@ -330,11 +330,10 @@ vector<Rule> InputReader::ReadFilterFile(const string&  filename) {
 	ifstream in(filename);
 	if (!in.is_open())
 	{
-		printf("Couldnt open filter set file \n");
-		printf("%s\n", filename.c_str());
+		std::cerr << "[ERROR] Couldnt open filter set file \"" << filename << "\"" << std::endl;
 		exit(1);
 	} else {
-		printf("Reading filter file %s\n", filename.c_str());
+		std::cerr << "[INFO] Reading filter file \"" << filename << "\"" << std::endl;
 	}
 	//cout << filename << " ";
 	string content;
