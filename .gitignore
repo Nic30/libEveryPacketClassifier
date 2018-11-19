@@ -2,8 +2,11 @@
 *.o
 *.d
 Debug/packetClassificators
+*.pyc
 
 # eclise project
 .cproject
 .project
 .settings/
+.pydevproject
+/Debug/
