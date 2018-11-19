@@ -190,7 +190,7 @@ void RunValidation(const unordered_map<string, string>& args,
 int main(int argc, char* argv[]) {
 	unordered_map<string, string> args = ParseArgs(argc, argv);
 
-	string filterFile = GetOrElse(args, "f", "fw1_seed_1.rules");
+	string filterFile = GetOrElse(args, "f", "../tests/rulesets/acl1_100");
 	string packetFile = GetOrElse(args, "p", "Auto");
 	string outputFile = GetOrElse(args, "o", "");
 
