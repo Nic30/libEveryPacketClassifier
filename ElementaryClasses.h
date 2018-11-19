@@ -1,5 +1,5 @@
-#ifndef  ELEM_H
-#define  ELEM_H
+#pragma once
+
 #include <vector>
 #include <queue>
 #include <list>
@@ -11,122 +11,161 @@
 #include <memory>
 #include <chrono> 
 #include <array>
-#define FieldSA 0
-#define FieldDA 1
-#define FieldSP 2
-#define FieldDP 3
-#define FieldProto 4
+#include <sstream>
 
-#define LowDim 0
-#define HighDim 1
+enum Dimensions {
+	FieldSA = 0, FieldDA = 1, FieldSP = 2, FieldDP = 3, FieldProto = 4,
+};
 
-#define POINT_SIZE_BITS 32
+using Point1d = uint32_t;
 
-typedef uint32_t Point;
-typedef std::vector<Point> Packet;
+template<size_t dimension_cnt>
+class PointNd: public std::array<Point1d, dimension_cnt> {
+};
 
-struct Rule
-{
-	//Rule(){};
-	Rule(int dim = 5) : dim(dim), range(dim, { { 0, 0 } }), prefix_length(dim, 0){ markedDelete = 0; }
- 
+using Packet = std::vector<Point1d>;
+
+class Range1d {
+public:
+	Point1d low;
+	Point1d high;
+
+	Range1d(): low(0), high(0) {}
+	Range1d(Point1d low, Point1d high) :
+			low(low), high(high) {
+	}
+
+	inline bool ContainsPoint(Point1d x) {
+		return low <= x && x <= high;
+	}
+	bool operator <(const Range1d& other) const {
+		if (low != other.low) {
+			return low < other.low;
+		} else
+			return high < other.high;
+	}
+	bool operator ==(const Range1d& rhs) const {
+		return low == rhs.low && high == rhs.high;
+	}
+
+	friend std::ostream & operator<<(std::ostream & str, const Range1d & r) {
+		str << "[" << r.low << "-" << r.high << "]";
+		return str;
+	}
+
+	operator std::string() const {
+		std::stringstream ss;
+		ss << *this;
+		return ss.str();
+	}
+};
+
+/**
+ * Filter rule
+ *
+ * @ivar dim number of dimensions in rule
+ * @ivar priority priority of rule in ruleset
+ *
+ * @ivar id id number used by PartitoinSort
+ * @ivar tag tag number used by PartitionSort
+ * @ivar markedDelete flag which signalize that this rule was deleted, used by PartitionSort
+ *
+ * @ivar range ranges for each dimension
+ * @ivar prefix_length length of prefix of range for all dimensions
+ * */
+struct Rule {
+	Rule(int dim = 5) :
+			dim(dim), priority(-1), id(-1), tag(-1), range(dim, { 0, 0 }),
+			prefix_length(dim, 0) {
+		markedDelete = 0;
+	}
+
 	int dim;
-	int	priority;
+	int priority;
 
+	/// PartitionSort specifics [TODO] mv to PartitionSort implementation
 	int id;
 	int tag;
-	bool markedDelete = 0;
+	bool markedDelete = false;
 
+	std::vector<Range1d> range;
 	std::vector<unsigned> prefix_length;
-
-	std::vector<std::array<Point,2>> range;
 
 	bool inline MatchesPacket(const Packet& p) const {
 		for (int i = 0; i < dim; i++) {
-			if (p[i] < range[i][LowDim] || p[i] > range[i][HighDim]) return false;
+			if (p[i] < range[i].low || p[i] > range[i].high)
+				return false;
 		}
 		return true;
 	}
 
-	void Print() const {
-		for (int i = 0; i < dim; i++) {
-			printf("%u:%u ", range[i][LowDim], range[i][HighDim]);
+	friend std::ostream & operator<<(std::ostream & str, const Rule & r) {
+		for (const auto& _r: r.range) {
+			str << _r << '\t';
 		}
-		printf("\n");
+		return str;
+	}
+
+	operator std::string() const {
+		std::stringstream ss;
+		ss << *this;
+		return ss.str();
 	}
 };
 
-
-
-class Interval {
+class interval: public Range1d {
 public:
-	Interval() {}
-	virtual Point GetLowPoint() const = 0;
-	virtual Point GetHighPoint() const = 0;
-	virtual void Print() const=0;
-};
 
-class interval : public Interval {
-public: 
-	interval(unsigned int a, unsigned int b, int id) : a(a), b(b), id(id) {}
-	Point GetLowPoint() const { return a; }
-	Point GetHighPoint() const { return b; }
-	void Print()const {};
+	interval(): interval(0, 0, -1) {}
+	interval(Point1d low, Point1d high, int id) :
+			Range1d(low, high), id(id), weight(1) {
+	}
 
-	Point a, b;
-	bool operator < (const interval& rhs) const {
-		if (a != rhs.a) {
-			return a < rhs.a;
-		} else return b < rhs.b;
-	}
-	bool operator == (const interval& rhs) const {
-		return a == rhs.a && b == rhs.b;
-	}
 	int id;
 	int weight;
-
 };
+
 struct EndPoint {
-	EndPoint(double val, bool isRightEnd, int id) : val(val), isRightEnd(isRightEnd), id(id){}
-	bool operator < (const EndPoint & rhs) const {
+	EndPoint(double val, bool isRightEnd, int id) :
+			val(val), isRightEnd(isRightEnd), id(id) {
+	}
+	bool operator <(const EndPoint & rhs) const {
 		return val < rhs.val;
 	}
 	double val;
 	bool isRightEnd;
 	int id;
 };
+
 class Random {
 public:
 	// random number generator from Stroustrup: 
 	// http://www.stroustrup.com/C++11FAQ.html#std-random
 	// static: there is only one initialization (and therefore seed).
-	static int random_int(int low, int high)
-	{
+	static int random_int(int low, int high) {
 		//static std::mt19937  generator;
 		using Dist = std::uniform_int_distribution < int >;
-		static Dist uid{};
-		return uid(generator, Dist::param_type{ low, high });
+		static Dist uid { };
+		return uid(generator, Dist::param_type { low, high });
 	}
 
 	// random number generator from Stroustrup: 
 	// http://www.stroustrup.com/C++11FAQ.html#std-random
 	// static: there is only one initialization (and therefore seed).
-	static int random_unsigned_int()
-	{
+	static int random_unsigned_int() {
 		//static std::mt19937  generator;
 		using Dist = std::uniform_int_distribution < unsigned int >;
-		static Dist uid{};
-		return uid(generator, Dist::param_type{ 0, 4294967295 });
+		static Dist uid { };
+		return uid(generator, Dist::param_type { 0, 4294967295 });
 	}
-	static double random_real_btw_0_1()
-	{
+	static double random_real_btw_0_1() {
 		//static std::mt19937  generator;
 		using Dist = std::uniform_real_distribution < double >;
-		static Dist uid{};
-		return uid(generator, Dist::param_type{ 0,1 });
+		static Dist uid { };
+		return uid(generator, Dist::param_type { 0, 1 });
 	}
 
-	template <class T>
+	template<class T>
 	static std::vector<T> shuffle_vector(std::vector<T> vi) {
 		//static std::mt19937  generator;
 		std::shuffle(std::begin(vi), std::end(vi), generator);
@@ -136,42 +175,16 @@ private:
 	static std::mt19937 generator;
 };
 
-
-enum TestMode {
-	ModeClassification,
-	ModeUpdate,
-	ModeValidation
-};
-
-
-
-enum ClassifierTests {
-	TestNone = 0,
-	TestPartitionSort = 0x0001,
-	TestPriorityTuple = 0x0002,
-	TestHyperSplit = 0x0004,
-	TestHyperCuts = 0x0008,
-	TestAll = 0xFFFFFFFF
-};
-
 enum PSMode {
-	NoCompression,
-	PathCompression,
-	PriorityNode,
-	NoIntermediateTree
+	NoCompression, PathCompression, PriorityNode, NoIntermediateTree
 };
-
-
-inline ClassifierTests operator|(ClassifierTests a, ClassifierTests b) {
-	return static_cast<ClassifierTests>(static_cast<int>(a) | static_cast<int>(b));
-}
 
 inline void SortRules(std::vector<Rule>& rules) {
-	sort(rules.begin(), rules.end(), [](const Rule& rx, const Rule& ry) { return rx.priority >= ry.priority; });
+	sort(rules.begin(), rules.end(),
+			[](const Rule& rx, const Rule& ry) {return rx.priority >= ry.priority;});
 }
 
 inline void SortRules(std::vector<Rule*>& rules) {
-	sort(rules.begin(), rules.end(), [](const Rule* rx, const Rule* ry) { return rx->priority >= ry->priority; });
+	sort(rules.begin(), rules.end(),
+			[](const Rule* rx, const Rule* ry) {return rx->priority >= ry->priority;});
 }
-
-#endif
