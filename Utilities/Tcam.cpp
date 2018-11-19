@@ -13,10 +13,8 @@ namespace tcam {
 		return PrefixSizeHelper(low, high, boundLow, boundMid) + PrefixSizeHelper(low, high, boundMid + 1, boundHigh);
 	}
 
-	unsigned int SizeAsPrefixes(const array<unsigned int, 2>& range) {
-		unsigned int low = range[LowDim];
-		unsigned int high = range[HighDim];
-		return PrefixSizeHelper(low, high, 0, 0xFFFFFFFF);
+	unsigned int SizeAsPrefixes(const Range1d& range) {
+		return PrefixSizeHelper(range.low, range.high, 0, 0xFFFFFFFF);
 	}
 
 	unsigned int NumOfPrefixRules(const Rule& r) {
