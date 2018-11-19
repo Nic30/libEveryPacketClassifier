@@ -66,12 +66,11 @@ vector<vector<unsigned int>> InputReader::ReadPackets(const string& filename) {
 
 void InputReader::ReadIPRange(Range1d& IPrange,  unsigned int& prefix_length, const string& token)
 {
-	//cout << token << endl;
 	//split slash
 	vector<string> split_slash = split(token, '/');
 	vector<string> split_ip = split(split_slash[0], '.');
-	/*asindmemacces IPv4 prefixes*/
-	/*temporary variables to store IP range */
+	// asindmemacces IPv4 prefixes
+	// temporary variables to store IP range
 	unsigned int mask;
 	int masklit1;
 	unsigned int masklit2, masklit3;
@@ -335,7 +334,7 @@ vector<Rule> InputReader::ReadFilterFile(const string&  filename) {
 	} else {
 		std::cerr << "[INFO] Reading filter file \"" << filename << "\"" << std::endl;
 	}
-	//cout << filename << " ";
+
 	string content;
 	getline(in, content);
 	istringstream iss(content);
