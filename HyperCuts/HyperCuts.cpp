@@ -3,27 +3,23 @@
 using namespace std;
 using namespace TreeUtils;
 
-void PrintRange(const Range& r) {
-	printf("[%u - %u]", r.low, r.high);
-}
-
 void RemoveRedund(HyperCutsNode* node) {
 	RemoveRedund(node->classifier, node->bounds);
 }
 
 void RegionCompaction(HyperCutsNode* node) {
 	for (size_t d = 0; d < node->bounds.size(); d++) {
-		list<Point> f;
+		list<Point1d> f;
 		for (const Rule* r : node->classifier) {
-			if (r->range[d][LowDim] < node->bounds[d].low) {
+			if (r->range[d].low < node->bounds[d].low) {
 				f.push_back(node->bounds[d].low);
 			} else {
-				f.push_back(r->range[d][LowDim]);
+				f.push_back(r->range[d].low);
 			}
-			if (r->range[d][HighDim] > node->bounds[d].high) {
+			if (r->range[d].high > node->bounds[d].high) {
 				f.push_back(node->bounds[d].high);
 			} else {
-				f.push_back(r->range[d][HighDim]);
+				f.push_back(r->range[d].high);
 			}
 		}
 		f.sort();
@@ -32,7 +28,7 @@ void RegionCompaction(HyperCutsNode* node) {
 	}
 }
 
-Point ComputeSpan(Range bounds, int cuts) {
+Point1d ComputeSpan(Range1d bounds, int cuts) {
 	return (bounds.high - bounds.low) / cuts + 1;
 }
 
@@ -47,8 +43,8 @@ void CopyNode(HyperCutsNode* src, HyperCutsNode* dest) {
 void SetBoundary(HyperCutsNode* src, HyperCutsNode* dest, const vector<int>& offsets) {
 	for (size_t d = 0; d < src->bounds.size(); d++) {
 		// Normal case
-		Point interval = ComputeSpan(src->bounds[d], src->cuts[d]);
-		dest->bounds.push_back(Range());
+		Point1d interval = ComputeSpan(src->bounds[d], src->cuts[d]);
+		dest->bounds.push_back(Range1d());
 
 		dest->bounds[d].low = src->bounds[d].low + offsets[d] * interval;
 
@@ -65,9 +61,9 @@ void SetBoundary(HyperCutsNode* src, HyperCutsNode* dest, const vector<int>& off
 	}
 }
 
-bool IsPresent(const vector<Range>& bounds, const Rule* rule) {
+bool IsPresent(const vector<Range1d>& bounds, const Rule* rule) {
 	for (size_t d = 0; d < bounds.size(); d++) {
-		if (rule->range[d][HighDim] < bounds[d].low || rule->range[d][LowDim] > bounds[d].high) {
+		if (rule->range[d].high < bounds[d].low || rule->range[d].low > bounds[d].high) {
 			return false;
 		}
 	}
@@ -149,13 +145,13 @@ void HyperCutsHelper::CalcDimensionsToCut(HyperCutsNode* node, vector<bool>& sel
 	vector<int> uniqueElements;
 
 	for (size_t d = 0; d < node->bounds.size(); d++) {
-		list<Range> rangeList;
+		list<Range1d> rangeList;
 		for (Rule* rule : node->classifier) {
 			bool found = false;
-			Range check;
-			check.low = max(rule->range[d][LowDim], node->bounds[d].low);
-			check.high = min(rule->range[d][HighDim], node->bounds[d].high);
-			for (Range range : rangeList) {
+			Range1d check;
+			check.low = max(rule->range[d].low, node->bounds[d].low);
+			check.high = min(rule->range[d].high, node->bounds[d].high);
+			for (Range1d range : rangeList) {
 				if (check.low == range.low && check.high == range.high) {
 					found = true;
 					break;
@@ -280,11 +276,11 @@ list<HyperCutsNode*> HyperCutsHelper::CalcNumCuts1D(HyperCutsNode* root, size_t 
 
 list<HyperCutsNode*> HyperCutsHelper::CalcNumCuts2D(HyperCutsNode* root, size_t* dims) {
 	// row / col
-	Point spans[2];
+	//Point spans[2];
 	int nump[2];
 	for (int i = 0; i < 2; i++) {
 		nump[i] = 0;
-		spans[i] = root->bounds[dims[i]].high - root->bounds[dims[i]].low + 1;
+	//	spans[i] = root->bounds[dims[i]].high - root->bounds[dims[i]].low + 1;
 	}
 
 	int spmf = int(floor(root->classifier.size() * spfac));
@@ -549,8 +545,8 @@ int Classify(const HyperCutsNode* node, const Packet& packet) {
 			if (node->cuts[d] > 1) {
 				//printf("node->bounds = [%u, %u]\n", node->bounds[d].low, node->bounds[d].high);
 				//printf("node->cuts = %d\n", node->cuts[d]);
-				Point span = ComputeSpan(node->bounds[d], node->cuts[d]);
-				Point x = packet[d] - node->bounds[d].low;
+				Point1d span = ComputeSpan(node->bounds[d], node->cuts[d]);
+				Point1d x = packet[d] - node->bounds[d].low;
 				int i = x / span;
 				index *= node->cuts[d];
 				index += i;
@@ -582,8 +578,45 @@ int Classify(const HyperCutsNode* node, const Packet& packet) {
 	return priority;
 }
 
+size_t max_dept(HyperCutsNode * node) {
+	if (node->children.size()) {
+		size_t d = 0;
+		for (auto ch: node->children) {
+			size_t _d = max_dept(ch);
+			d = _d > d ? _d : d;
+		}
+		return d;
+	} else {
+		return node->depth;
+	}
+}
+
+size_t HyperCuts::NumTables() const {
+	return max_dept(root);
+}
+
+void _size_of_levels_of_tree(HyperCutsNode * node, std::vector<size_t> & res) {
+	res.at(node->depth)++;
+	for (auto ch: node->children) {
+		_size_of_levels_of_tree(ch, res);
+	}
+}
+
+std::vector<size_t> size_of_levels_of_tree(HyperCutsNode * node) {
+	size_t max_d = max_dept(node);
+	std::vector<size_t> res(max_d);
+	std::fill(res.begin(), res.end(), 0);
+	_size_of_levels_of_tree(node, res);
+	return res;
+}
+
+Memory HyperCuts::MemSizeBytes() const {
+	//size_t rule_ptr_size = std::ceil(std::log2(rules.size()));
+	return 0; // [TODO]
+}
+
 int HyperCuts::ClassifyAPacket(const Packet& packet) {
 	int p = Classify(root, packet);
-	//printf("Result - %d\n", p);
+	// printf("Result - %d\n", p);
 	return p;
 }

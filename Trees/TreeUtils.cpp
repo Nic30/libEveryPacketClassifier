@@ -6,14 +6,13 @@ using namespace std;
 
 namespace TreeUtils {
 
-	Range RangeInBoundary1D(Range r, Range boundary) {
-		uint32_t low, high;
-		low = max(r.low, boundary.low);
-		high = min(r.high, boundary.high);
-		return Range{ low, high };
+	Range1d RangeInBoundary1D(Range1d r, Range1d boundary) {
+		auto low = max(r.low, boundary.low);
+		auto high = min(r.high, boundary.high);
+		return Range1d(low, high);
 	}
 
-	bool CompareRanges(const Range& a, const Range& b) {
+	bool CompareRanges(const Range1d& a, const Range1d& b) {
 		if (a.low != b.low) {
 			return a.low < b.low;
 		} else {
@@ -21,7 +20,7 @@ namespace TreeUtils {
 		}
 	}
 
-	bool InsideOutCompare(const Range& a, const Range& b) {
+	bool InsideOutCompare(const Range1d& a, const Range1d& b) {
 		if (ContainsRange(a, b)) {
 			return false;
 		} else if (ContainsRange(b, a)) {
@@ -35,10 +34,10 @@ namespace TreeUtils {
 		return x.second > y.second;
 	}
 
-	bool AreEqual(const Rule& rule1, const Rule& rule2, const vector<Range>& boundary) {
+	bool AreEqual(const Rule& rule1, const Rule& rule2, const vector<Range1d>& boundary) {
 		for (size_t i = 0; i < boundary.size(); i++) {
-			Range r1 = RangeInBoundary1D(V2R(rule1.range[i]), boundary[i]);
-			Range r2 = RangeInBoundary1D(V2R(rule2.range[i]), boundary[i]);
+			Range1d r1 = RangeInBoundary1D(rule1.range[i], boundary[i]);
+			Range1d r2 = RangeInBoundary1D(rule2.range[i], boundary[i]);
 			if (r1.low > r2.low || r1.high < r2.high) {
 				return false;
 			}
@@ -75,7 +74,7 @@ namespace TreeUtils {
 		return true;
 	}
 
-	void RemoveRedund(list<Rule*> & rules, const vector<Range>& boundary) {
+	void RemoveRedund(list<Rule*> & rules, const vector<Range1d>& boundary) {
 		list<Rule*> rulelist;
 		for (Rule* rule : rules) {
 			bool found = false;
