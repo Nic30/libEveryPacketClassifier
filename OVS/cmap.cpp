@@ -1037,6 +1037,9 @@ struct cmap_node *new_node, uint32_t hash)
 	ok = cmap_replace__(impl, old_node, new_node, hash, h1)
 		|| cmap_replace__(impl, old_node, new_node, hash, h2);
 	//printf("ok? %d\n", ok);
+	if (!ok) {
+		throw std::runtime_error("cmap_replace failed");
+	}
 	//ovs_assert(ok);
 
 	if (!new_node) {
@@ -1191,7 +1194,7 @@ int cmap_largest_chain(const struct cmap* cmap)
 		for (int j = 0; j < CMAP_K; j++) {
 			int chain = 0;
 			cmap_node* n = &impl->buckets[i].nodes[j];
-			unsigned int key = 0;
+			//unsigned int key = 0;
 			while (n) {
 				chain++;
 				//if (key != 0 && key != n->key) {

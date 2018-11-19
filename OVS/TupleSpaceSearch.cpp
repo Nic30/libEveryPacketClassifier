@@ -1,10 +1,34 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2016, 2017 by S. Yingchareonthawornchai and J. Daly at Michigan State University
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 #include "TupleSpaceSearch.h"
+#include "../TupleMerge/SlottedTable.h"
 
 // Values for Bernstein Hash
 #define HashBasis 5381
 #define HashMult 33
 
-void Tuple::Insertion(const Rule& r) {
+void TupleTable::Insertion(const Rule& r) {
 
 	cmap_node * new_node = new cmap_node(r); /*key & rule*/
 	cmap_insert(&map_in_tuple, new_node, HashRule(r));
@@ -15,7 +39,7 @@ void Tuple::Insertion(const Rule& r) {
 	sort(rl.begin(), rl.end(), [](const Rule& rx, const Rule& ry) { return rx.priority >= ry.priority; });*/
 }
 
-void Tuple::Deletion(const Rule& r) {
+void TupleTable::Deletion(const Rule& r) {
 	//find node containing the rule
 	unsigned int hash_r = HashRule(r);
 	cmap_node * found_node = cmap_find(&map_in_tuple, hash_r);
@@ -32,12 +56,12 @@ void Tuple::Deletion(const Rule& r) {
 	rl.erase(std::remove_if(rl.begin(), rl.end(), [=](const Rule& ri) { return ri.priority == r.priority; }), rl.end());*/
 }
 
-int Tuple::WorstAccesses() const {
+int TupleTable::WorstAccesses() const {
 	// TODO
 	return 1;//cmap_largest_chain(&map_in_tuple);
 }
 
-int Tuple::FindMatchPacket(const Packet& p)  {
+int TupleTable::ClassifyAPacket(const Packet& p)  {
 	
 	cmap_node * found_node = cmap_find(&map_in_tuple, HashPacket(p));
 	int priority = -1;
@@ -60,31 +84,31 @@ int Tuple::FindMatchPacket(const Packet& p)  {
 	return -1;*/
 }
 
-bool inline Tuple::IsPacketMatchToRule(const Packet& p, const Rule& r) {
+bool inline TupleTable::IsPacketMatchToRule(const Packet& p, const Rule& r) {
 	for (int i = 0; i < r.dim; i++) {
-		if (p[i] < r.range[i][LowDim]) return false;
-		if (p[i] > r.range[i][HighDim]) return false;
+		if (p[i] < r.range[i].low) return false;
+		if (p[i] > r.range[i].high) return false;
 	}
 	return true;
 }
 
-uint32_t inline Tuple::HashRule(const Rule& r) const {
+uint32_t inline TupleTable::HashRule(const Rule& r) const {
 	uint32_t hash = 0;
 	for (size_t i = 0; i < dims.size(); i++) {
-		hash = hash_add(hash, r.range[dims[i]][LowDim]);
+		hash = hash_add(hash, r.range[dims[i]].low & TupleMergeUtils::Mask(tuple[dims[i]]));
 	}
 	return hash_finish(hash, 16);
 
 /*	uint32_t hash = HashBasis;
 	for (size_t d = 0; d < tuple.size(); d++) {
 		hash *= HashMult;
-		hash += r.range[d][LowDim] & ForgeUtils::Mask(tuple[d]);
+		hash += r.range[d].low & ForgeUtils::Mask(tuple[d]);
 	}
 	return hash;*/
 
 }
 
-uint32_t inline Tuple::HashPacket(const Packet& p) const {
+uint32_t inline TupleTable::HashPacket(const Packet& p) const {
 	uint32_t hash = 0;
 	uint32_t max_uint = 0xFFFFFFFF;
 
@@ -122,7 +146,7 @@ int TupleSpaceSearch::ClassifyAPacket(const Packet& packet) {
 	int priority = -1;
 	int query = 0;
 	for (auto& tuple : all_tuples) {
-		auto result = tuple.second.FindMatchPacket(packet);
+		auto result = tuple.second.ClassifyAPacket(packet);
 		priority = std::max(priority, result);
 		query++;
 	}
@@ -166,7 +190,7 @@ void TupleSpaceSearch::InsertRule(const Rule& rule) {
 		for (int d : dims) {
 			lengths.push_back(rule.prefix_length[d]);
 		}
-		all_tuples.insert(std::make_pair(KeyRulePrefix(rule), Tuple(dims, lengths, rule)));
+		all_tuples.insert(std::make_pair(KeyRulePrefix(rule), TupleTable(dims, lengths, rule)));
 	}
 	rules.push_back(rule);
 }
@@ -186,7 +210,7 @@ void PriorityTuple::Insertion(const Rule& r, bool& priority_change) {
 		priority_change = true;
 	}
 	priority_container.insert(r.priority);
-	Tuple::Insertion(r);
+	TupleTable::Insertion(r);
 }
 void  PriorityTuple::Deletion(const Rule& r, bool& priority_change) {
 
@@ -199,7 +223,7 @@ void  PriorityTuple::Deletion(const Rule& r, bool& priority_change) {
 		maxPriority = *priority_container.rbegin();
 		priority_change = true;
 	} else priority_change = false;
-	Tuple::Deletion(r);
+	TupleTable::Deletion(r);
 }
 
 
@@ -209,7 +233,7 @@ int PriorityTupleSpaceSearch::ClassifyAPacket(const Packet& packet) {
 	for (auto& tuple : priority_tuples_vector) {
 		//if (tuple->maxPriority < 0) printf("priority %d\n", tuple->maxPriority);
 		if (priority > tuple->maxPriority) break;
-		auto result = tuple->FindMatchPacket(packet);
+		auto result = tuple->ClassifyAPacket(packet);
 		q++;
 		priority = priority > result ? priority : result;
 	}
