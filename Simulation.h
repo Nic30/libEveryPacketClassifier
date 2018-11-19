@@ -1,5 +1,4 @@
-#ifndef  SIMULATION_H
-#define  SIMULATION_H
+#pragma once
 
 #include "ElementaryClasses.h"
 #include "Utilities/MapExtensions.h"
@@ -12,6 +11,7 @@ typedef uint32_t Memory;
 class PartitionPacketClassifier {
 public:
 	virtual int ComputeNumberOfBuckets(const std::vector<Rule>& rules) = 0;
+	virtual ~PartitionPacketClassifier() {}
 };
 
 class ClassifierTable {
@@ -26,6 +26,7 @@ public:
 
 	virtual Memory MemSizeBytes(Memory ruleSize) const = 0;
 	virtual std::vector<Rule> GetRules() const = 0;
+	virtual ~ClassifierTable() {}
 };
 
 class PacketClassifier {
@@ -41,6 +42,7 @@ public:
 
 	int TablesQueried() const {	return queryCount; }
 	int NumPacketsQueriedNTables(int n) const { return GetOrElse<int, int>(packetHistogram, n, 0); };
+	virtual ~PacketClassifier() {}
 
 protected:
 	void QueryUpdate(int query) { 
@@ -100,13 +102,14 @@ struct Request {
 struct Bookkeeper {
 	Bookkeeper(){}
 	Bookkeeper(const std::vector<Rule> rules) : rules(rules) {}
-	Rule GetOneRuleAndPop(int i) {
+	Rule GetOneRuleAndPop(size_t i) {
 		if (rules.size() == 0) {
 			printf("warning: Bookeeper has no rule");
 			return Rule();
 		}
 		Rule to_return = rules[i];
-		if (i != rules.size() - 1) rules[i] = std::move(rules[rules.size() - 1]);
+		if (i != rules.size() - 1)
+			rules[i] = std::move(rules[rules.size() - 1]);
 		rules.pop_back();
 		return to_return;
 	}
@@ -135,12 +138,10 @@ public:
 
 private:
 
-	std::vector<Request> GenerateRequests(int num_packet, int num_insert, int num_delete) const;
+	std::vector<Request> GenerateRequests(size_t num_packet, size_t num_insert, size_t num_delete) const;
 
 	std::vector<Rule> ruleset;
 	std::vector<Packet> packets;
 	Bookkeeper rules_in_use;
 	Bookkeeper available_pool;
 };
-
-#endif

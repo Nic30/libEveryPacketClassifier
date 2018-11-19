@@ -4,15 +4,15 @@
 
 std::mt19937 Random::generator(0);
 
-std::vector<Request> Simulator::GenerateRequests(int num_packet, int num_insert, int num_delete) const {
+std::vector<Request> Simulator::GenerateRequests(size_t num_packet, size_t num_insert, size_t num_delete) const {
 	if (num_packet > packets.size()) {
 		printf("Warning in Simulator::GenerateRequests : too much request for num_packet--setting num to available size\n");
 		num_packet = packets.size();
 	}
 	std::vector<Request> vr;
-	for (int i = 0; i < num_packet;i++) vr.push_back(Request(RequestType::ClassifyPacket));
-	for (int i = 0; i < num_insert; i++) vr.push_back(Request(RequestType::Insertion));
-	for (int i = 0; i < num_delete; i++) vr.push_back(Request(RequestType::Deletion));
+	for (size_t i = 0; i < num_packet;i++) vr.push_back(Request(RequestType::ClassifyPacket));
+	for (size_t i = 0; i < num_insert; i++) vr.push_back(Request(RequestType::Insertion));
+	for (size_t i = 0; i < num_delete; i++) vr.push_back(Request(RequestType::Deletion));
 	return Random::shuffle_vector(vr);
 }
 
@@ -73,7 +73,7 @@ std::vector<Request> Simulator::SetupComputation(int num_packet, int num_insert,
 
 	for (Request& n : sequence) {
 		Rule temp_rule;
-		int result = -1;
+		// int result = -1;
 		int index_delete = -1;
 		int index_insert = -1;
 		switch (n.request_type) {
@@ -194,7 +194,7 @@ std::vector<int> Simulator::PerformPacketClassification(PacketClassifier& classi
 		results.clear();
 		results.reserve(1000000);//reserve 1m slots for packets
 		
-		int packet_counter = 0;
+		size_t packet_counter = 0;
 		//invariant: at all time, DS.rules = rules_in_use.rules
 		std::chrono::duration<double> elapsed_seconds2(0);
 		for (Request n : sequence) {
