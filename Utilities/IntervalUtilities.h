@@ -6,8 +6,6 @@
 class WeightedInterval;
 struct LightWeightedInterval;
 class Utilities {
-	static const int LOW = 0;
-	static const int HIGH = 1;
 public:
 	static bool  IsIdentical(const Rule& r1, const Rule& r2);
 	static int GetMaxOverlap(const std::multiset<unsigned int>& lo, const std::multiset< unsigned int>& hi);
@@ -25,8 +23,6 @@ public:
 };
  
 struct LightWeightedInterval {
-	static const int LOW = 0;
-	static const int HIGH = 1;
 	LightWeightedInterval(unsigned int a, unsigned int b, int w) : a(a), b(b), w(w) {}
 	unsigned int a;
 	unsigned int b;
@@ -45,8 +41,6 @@ struct LightWeightedInterval {
 
 
 class WeightedInterval{
-	static const int LOW = 0;
-	static const int HIGH = 1;
 public:
 
 	WeightedInterval(const std::vector<Rule>& rules, unsigned int a, unsigned int b) : rules(rules) {
@@ -63,7 +57,7 @@ public:
 			std::cout << "ERROR: EMPTY RULE AND CONSTRUCT INTERVAL?" << std::endl;
 			exit(0);
 		}
-		ival = std::make_pair(rules[0].range[field][LOW], rules[0].range[field][HIGH]);
+		ival = std::make_pair(rules[0].range[field].low, rules[0].range[field].high);
 		SetWeightBySizePlusOne();
 	}
 	int CountPOM(int second_field) {
@@ -71,8 +65,8 @@ public:
 		std::multiset<unsigned int> Aend;
 		for (int i = 0; i < (int)rules.size();
 			 i++) {
-			Astart.insert(rules[i].range[second_field][LOW]);
-			Aend.insert(rules[i].range[second_field][HIGH]);
+			Astart.insert(rules[i].range[second_field].low);
+			Aend.insert(rules[i].range[second_field].high);
 		}
 		return Utilities::GetMaxOverlap(Astart, Aend);
 	}
