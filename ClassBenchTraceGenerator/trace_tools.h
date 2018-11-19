@@ -7,6 +7,8 @@
 //
 // Functions for generating synthetic trace of headers
 //
+#pragma once
+
 #include "../ElementaryClasses.h"
 
 std::vector<Packet> header_gen(int d, std::vector<Rule>& filters, float a, float b, int scale);
