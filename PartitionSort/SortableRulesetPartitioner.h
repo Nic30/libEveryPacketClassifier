@@ -43,7 +43,7 @@ private:
 
 		// initialize original index locations
 		std::vector<int> idx(v.size());
-		for (int i = 0; i != idx.size(); ++i) idx[i] = i;
+		for (size_t i = 0; i != idx.size(); ++i) idx[i] = i;
 
 		// sort indexes based on comparing values in v
 		sort(idx.begin(), idx.end(),
@@ -101,7 +101,7 @@ public:
 	void Print() const {
 		for (const Rule& r : rule_list) {
 			for (int f : field_order) {
-				printf("[%u, %u]", r.range[f][LowDim], r.range[f][HighDim]);
+				printf("[%u, %u]", r.range[f].low, r.range[f].high);
 			}
 			printf("->%u\n", r.priority);
 		}

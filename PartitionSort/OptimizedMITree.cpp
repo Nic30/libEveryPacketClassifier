@@ -17,11 +17,11 @@ std::vector<box> OptimizedMITree::RangeToBoxes(const std::vector<std::array<unsi
 	}
 
 	//PRINT BOXes
-	/*for (auto& b : vb) {
-	printf("[[%u %u]] ", b);
-	}
-	printf("\n");
-	return vb;
+	//for (auto& b : vb) {
+	//    printf("[[%u %u]] ", b);
+	//}
+	//printf("\n");
+	//return vb;
 
 }*/
 /*

@@ -38,7 +38,7 @@ public:
 		fieldOrder = { 0, 1, 2, 3 };
 		maxPriority = -1;
 	}
-	~OptimizedMITree() {
+	virtual ~OptimizedMITree() override {
  		  RBTreeDestroy(root);
 	}
 	void Insertion(const Rule& rule) {

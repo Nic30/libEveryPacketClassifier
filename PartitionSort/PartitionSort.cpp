@@ -1,34 +1,6 @@
 #include "PartitionSort.h"
 
 
-void PartitionSort::InsertRule(const Rule& one_rule) {
-
- 
-	for (auto mitree : mitrees)
-	{
-		bool prioritychange = false;
-		
-		bool success = mitree->TryInsertion(one_rule, prioritychange);
-		if (success) {
-			
-			if (prioritychange) {
-				InsertionSortMITrees();
-			}
-			mitree->ReconstructIfNumRulesLessThanOrEqualTo(10);
-			rules.push_back(std::make_pair(one_rule, mitree));
-			return;
-		}
-	}
-	bool priority_change = false;
-	 
-	auto tree_ptr = new OptimizedMITree(one_rule);
-	tree_ptr->TryInsertion(one_rule, priority_change);
-	rules.push_back(std::make_pair(one_rule, tree_ptr));
-	mitrees.push_back(tree_ptr);  
-	InsertionSortMITrees();
-}
-
-
 void PartitionSort::DeleteRule(size_t i){
 	if (i < 0 || i >= rules.size()) {
 		printf("Warning index delete rule out of bound: do nothing here\n");
@@ -58,3 +30,31 @@ void PartitionSort::DeleteRule(size_t i){
 
 
 }
+void PartitionSort::InsertRule(const Rule& one_rule) {
+
+
+	for (auto mitree : mitrees)
+	{
+		bool prioritychange = false;
+
+		bool success = mitree->TryInsertion(one_rule, prioritychange);
+		if (success) {
+
+			if (prioritychange) {
+				InsertionSortMITrees();
+			}
+			mitree->ReconstructIfNumRulesLessThanOrEqualTo(10);
+			rules.push_back(std::make_pair(one_rule, mitree));
+			return;
+		}
+	}
+	bool priority_change = false;
+
+	auto tree_ptr = new OptimizedMITree(one_rule);
+	tree_ptr->TryInsertion(one_rule, priority_change);
+	rules.push_back(std::make_pair(one_rule, tree_ptr));
+	mitrees.push_back(tree_ptr);
+	InsertionSortMITrees();
+}
+
+

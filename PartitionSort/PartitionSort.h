@@ -1,9 +1,10 @@
-#ifndef  PSORT_H
-#define  PSORT_H
+#pragma once
 
 #include "OptimizedMITree.h"
 #include "../Simulation.h"
 #include "SortableRulesetPartitioner.h"
+
+
 class PartitionSort : public PacketClassifier {
 
 public:
@@ -74,4 +75,3 @@ protected:
 	}
 
 };
-#endif
