@@ -64,7 +64,7 @@ vector<vector<unsigned int>> InputReader::ReadPackets(const string& filename) {
 	return packets;
 }
 
-void InputReader::ReadIPRange(std::array<unsigned int,2>& IPrange,  unsigned int& prefix_length, const string& token)
+void InputReader::ReadIPRange(Range1d& IPrange,  unsigned int& prefix_length, const string& token)
 {
 	//cout << token << endl;
 	//split slash
@@ -97,13 +97,13 @@ void InputReader::ReadIPRange(std::array<unsigned int,2>& IPrange,  unsigned int
 		ptrange[3 - masklit1] &= masklit3;
 	}
 	/*store start IP */
-	IPrange[FieldSA] = ptrange[0];
-	IPrange[FieldSA] <<= 8;
-	IPrange[FieldSA] += ptrange[1];
-	IPrange[FieldSA] <<= 8;
-	IPrange[FieldSA] += ptrange[2];
-	IPrange[FieldSA] <<= 8;
-	IPrange[FieldSA] += ptrange[3];
+	IPrange.low = ptrange[0];
+	IPrange.low <<= 8;
+	IPrange.low += ptrange[1];
+	IPrange.low <<= 8;
+	IPrange.low += ptrange[2];
+	IPrange.low <<= 8;
+	IPrange.low += ptrange[3];
 
 	//key += std::bitset<32>(IPrange[0] >> prefix_length).to_string().substr(32 - prefix_length);
 	/*count the end IP*/
@@ -116,30 +116,30 @@ void InputReader::ReadIPRange(std::array<unsigned int,2>& IPrange,  unsigned int
 		ptrange[3 - masklit1] |= masklit3;
 	}
 	/*store end IP*/
-	IPrange[FieldDA] = ptrange[0];
-	IPrange[FieldDA] <<= 8;
-	IPrange[FieldDA] += ptrange[1];
-	IPrange[FieldDA] <<= 8;
-	IPrange[FieldDA] += ptrange[2];
-	IPrange[FieldDA] <<= 8;
-	IPrange[FieldDA] += ptrange[3];
+	IPrange.high = ptrange[0];
+	IPrange.high <<= 8;
+	IPrange.high += ptrange[1];
+	IPrange.high <<= 8;
+	IPrange.high += ptrange[2];
+	IPrange.high <<= 8;
+	IPrange.high += ptrange[3];
 }
-void InputReader::ReadPort(std::array<unsigned int,2>& Portrange, const string& from, const string& to)
+void InputReader::ReadPort(Range1d& Portrange, const string& from, const string& to)
 {
-	Portrange[LOW] = atoui(from);
-	Portrange[HIGH] = atoui(to);
+	Portrange.low = atoui(from);
+	Portrange.high = atoui(to);
 }
 
-void InputReader::ReadProtocol(std::array<unsigned int,2>& Protocol, const string& last_token)
+void InputReader::ReadProtocol(Range1d& Protocol, const string& last_token)
 {
 	// Example : 0x06/0xFF
 	vector<string> split_slash = split(last_token, '/');
 
 	if (split_slash[1] != "0xFF") {
-		Protocol[LOW] = 0;
-		Protocol[HIGH] = 255;
+		Protocol.low = 0;
+		Protocol.high = 255;
 	} else {
-		Protocol[LOW] = Protocol[HIGH] = std::stoul(split_slash[0], nullptr, 16);
+		Protocol.low = Protocol.high = std::stoul(split_slash[0], nullptr, 16);
 	}
 }
 
@@ -244,7 +244,6 @@ bool IsPower2(unsigned int x) {
 
 bool IsPrefix(unsigned int low, unsigned int high) {
 	unsigned int diff = high - low;
-
 	return ((low & high) == low) && IsPower2(diff + 1);
 }
 
@@ -255,13 +254,13 @@ unsigned int PrefixLength(unsigned int low, unsigned int high) {
 	return 32 - lg;
 }
 
-void InputReader::ParseRange(std::array<unsigned int, 2>& range, const string& text) {
+void InputReader::ParseRange(Range1d& range, const string& text) {
 	vector<string> split_colon = split(text, ':');
 	// to obtain interval
-	range[LOW] = atoui(split_colon[LOW]);
-	range[HIGH] = atoui(split_colon[HIGH]);
-	if (range[LOW] > range[HIGH]) {
-		printf("Problematic range: %u-%u\n", range[LOW], range[HIGH]);
+	range.low = atoui(split_colon[0]);
+	range.high = atoui(split_colon[1]);
+	if (range.low > range.high) {
+		printf("Problematic range: %u-%u\n", range.low, range.high);
 	}
 }
 
@@ -283,10 +282,10 @@ vector<Rule> InputReader::ReadFilterFileMSU(const string&  filename)
 	int priority = 0;
 	getline(input_file, content);
 	vector<string> parts = split(content, ',');
-	vector<array<unsigned int, 2>> bounds(parts.size());
+	vector<Range1d> bounds(parts.size());
 	for (size_t i = 0; i < parts.size(); i++) {
 		ParseRange(bounds[i], parts[i]);
-		//printf("[%u:%u] %d\n", bounds[i][LOW], bounds[i][HIGH], PrefixLength(bounds[i][LOW], bounds[i][HIGH]));
+		//printf("[%u:%u] %d\n", bounds[i].low, bounds[i].high, PrefixLength(bounds[i].low, bounds[i].high));
 	}
 
 	while (getline(input_file, content)) {
@@ -297,13 +296,13 @@ vector<Rule> InputReader::ReadFilterFileMSU(const string&  filename)
 		for (size_t i = 0; i < split_comma.size() - 1; i++)
 		{
 			ParseRange(temp_rule.range[i], split_comma[i]);
-			if (IsPrefix(temp_rule.range[i][LOW], temp_rule.range[i][HIGH])) {
-				temp_rule.prefix_length[i] = PrefixLength(temp_rule.range[i][LOW], temp_rule.range[i][HIGH]);
+			if (IsPrefix(temp_rule.range[i].low, temp_rule.range[i].high)) {
+				temp_rule.prefix_length[i] = PrefixLength(temp_rule.range[i].low, temp_rule.range[i].high);
 			}
-			//if ((i == FieldSA || i == FieldDA) & !IsPrefix(temp_rule.range[i][LOW], temp_rule.range[i][HIGH])) {
+			//if ((i == FieldSA || i == FieldDA) & !IsPrefix(temp_rule.range[i].low, temp_rule.range[i].high)) {
 			//	printf("Field is not a prefix!\n");
 			//}
-			if (temp_rule.range[i][LOW] < bounds[i][LOW] || temp_rule.range[i][HIGH] > bounds[i][HIGH]) {
+			if (temp_rule.range[i].low < bounds[i].low || temp_rule.range[i].high > bounds[i].high) {
 				printf("rule out of bounds!\n");
 			}
 		}
@@ -327,7 +326,7 @@ vector<Rule> InputReader::ReadFilterFileMSU(const string&  filename)
 
 vector<Rule> InputReader::ReadFilterFile(const string&  filename) {
 
-
+	vector<Rule> res;
 	ifstream in(filename);
 	if (!in.is_open())
 	{
@@ -348,8 +347,7 @@ vector<Rule> InputReader::ReadFilterFile(const string&  filename) {
 		reps = (atoi(split_semi.back().c_str()) + 1) / 5;
 		dim = reps * 5;
 
-		return ReadFilterFileMSU(filename);
-
+		res= ReadFilterFileMSU(filename);
 	} else if (content[0] == '@') {
 		// CLassBench Format
 		/* COUNT COLUMN */
@@ -359,10 +357,12 @@ vector<Rule> InputReader::ReadFilterFile(const string&  filename) {
 		}
 		
 	    dim = reps * 5;
-		return ReadFilterFileClassBench(filename);
+	    res = ReadFilterFileClassBench(filename);
 	} else {
 		cout << "ERROR: unknown input format please use either MSU format or ClassBench format" << endl;
+		in.close();
 		exit(1);
 	}
 	in.close();
+	return res;
 }
