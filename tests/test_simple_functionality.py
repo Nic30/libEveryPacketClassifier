@@ -48,7 +48,7 @@ class SimpleFunctionalityTC(unittest.TestCase):
         
     def test_TupleMergeOnline(self):
         self.run_bin("TupleMergeOnline")
-        
+    
     def test_TupleMergeOffline(self):
         self.run_bin("TupleMergeOffline")
 
