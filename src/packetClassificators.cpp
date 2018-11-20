@@ -71,7 +71,7 @@ pair<vector<string>, vector<map<string, string>>> RunSimulatorOnlyClassification
 		const unordered_map<string, string>& args,
 		const vector<Packet>& packets, const vector<Rule>& rules,
 		ClassifierSet classifiers, const string& outfile) {
-	printf("Classification Simulation\n");
+	std::cerr << "[INFO] Classification Simulation" << std::endl;
 	Simulator s(rules, packets);
 
 	vector<string> header = { "Classifier", "ConstructionTime(ms)",
@@ -85,7 +85,7 @@ pair<vector<string>, vector<map<string, string>>> RunSimulatorOnlyClassification
 	}
 
 	if (outfile != "") {
-		OutputWriter::WriteCsvFile(outfile, header, data);
+		OutputWriter::WriteJsonFile(outfile, header, data);
 	}
 	return make_pair(header, data);
 }
@@ -112,7 +112,7 @@ pair<vector<string>, vector<map<string, string>>> RunSimulatorUpdates(
 		const unordered_map<string, string>& args,
 		const vector<Packet>& packets, const vector<Rule>& rules,
 		ClassifierSet classifiers, const string& outfile, int repetitions) {
-	printf("Update Simulation\n");
+	std::cerr << "[INFO] Update Simulation" << std::endl;
 
 	vector<string> header = { "Classifier", "UpdateTime(s)" };
 	vector<map<string, string>> data;

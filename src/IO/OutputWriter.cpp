@@ -64,3 +64,29 @@ bool OutputWriter::WriteCsvFile(const string& filename, const vector<string>& he
 	
 	return out.good();
 }
+
+
+bool OutputWriter::WriteJsonFile(const string& filename, const vector<string>& header, const vector<map<string, string>>& data) {
+	ofstream out(filename);
+	if (!out.good()) {
+		printf("Failed to open %s\n", filename.c_str());
+		return false;
+	}
+	out << "[" << std::endl;
+	for (auto& m : data) {
+		out << "{" << std::endl;
+		for (auto& f : header) {
+			out << "   \"" << f << "\": \"" << m.at(f) << "\"," << std::endl;
+		}
+		out << "}" << endl;
+	}
+	out << "]";
+	out.close();
+
+	if (!out.good()) {
+		printf("Problem writing\n");
+		return false;
+	}
+
+	return true;
+}

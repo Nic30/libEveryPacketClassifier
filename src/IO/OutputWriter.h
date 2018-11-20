@@ -6,10 +6,8 @@
 
 class OutputWriter {
 public:
-
-
-
 	static bool WriteCsvFile(const std::string& filename, const std::vector<std::string>& header, const std::vector<std::map<std::string, std::string>>& data);
+	static bool WriteJsonFile(const std::string& filename, const std::vector<std::string>& header, const std::vector<std::map<std::string, std::string>>& data);
 
 private:
 	static int Callback(void *NotUsed, int argc, char **argv, char **azColName);
