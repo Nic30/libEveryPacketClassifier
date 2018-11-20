@@ -72,15 +72,18 @@ bool OutputWriter::WriteJsonFile(const string& filename, const vector<string>& h
 		printf("Failed to open %s\n", filename.c_str());
 		return false;
 	}
-	out << "[" << std::endl;
 	for (auto& m : data) {
 		out << "{" << std::endl;
+		size_t i = 0;
 		for (auto& f : header) {
-			out << "   \"" << f << "\": \"" << m.at(f) << "\"," << std::endl;
+			out << "   \"" << f << "\": \"" << m.at(f) << "\"";
+			if (i < header.size() -1)
+				out << ",";
+			out << std::endl;
+			i++;
 		}
 		out << "}" << endl;
 	}
-	out << "]";
 	out.close();
 
 	if (!out.good()) {
