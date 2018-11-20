@@ -4,6 +4,9 @@
 Debug/packetClassificators
 *.pyc
 
+# generated files
+results
+
 # eclise project
 .cproject
 .project
