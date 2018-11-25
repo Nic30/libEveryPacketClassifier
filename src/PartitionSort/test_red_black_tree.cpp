@@ -1,7 +1,7 @@
-#include"OptimizedMITree.h"
+#include "OptimizedMITree.h"
 
-#include<stdio.h>
-#include<ctype.h> 
+#include <stdio.h>
+#include <ctype.h>
 
 int rb_selftest0() {
 	Rule r1(4);
