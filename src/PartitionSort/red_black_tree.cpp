@@ -15,8 +15,9 @@ int CompareBox(const Range1d& a, const Range1d& b) {
 
 	return 0;
 }
+
 int inline CompareQuery(const Range1d& a, const Packet& q, int level,
-		const std::vector<int>& fieldOrder) {
+		rb_red_blk_tree::FieldOrder_t fieldOrder) {
 	if (a.high < q[fieldOrder[level]]) {
 		return -1;
 	} else if (a.low > q[fieldOrder[level]]) {
@@ -27,65 +28,35 @@ int inline CompareQuery(const Range1d& a, const Packet& q, int level,
 }
 
 /***********************************************************************/
-/*  FUNCTION:  RBTreeCreate */
-/**/
 /*  INPUTS:  All the inputs are names of functions.  CompFunc takes to */
-/*  void pointers to keys and returns 1 if the first arguement is */
+/*  void pointers to keys and returns 1 if the first argument is */
 /*  "greater than" the second.   DestFunc takes a pointer to a key and */
 /*  destroys it in the appropriate manner when the node containing that */
-/*  key is deleted.  InfoDestFunc is similiar to DestFunc except it */
-/*  recieves a pointer to the info of a node and destroys it. */
-/*  PrintFunc recieves a pointer to the key of a node and prints it. */
-/*  PrintInfo recieves a pointer to the info of a node and prints it. */
+/*  key is deleted.  InfoDestFunc is similar to DestFunc except it */
+/*  receives a pointer to the info of a node and destroys it. */
+/*  PrintFunc receives a pointer to the key of a node and prints it. */
+/*  PrintInfo receives a pointer to the info of a node and prints it. */
 /*  If RBTreePrint is never called the print functions don't have to be */
 /*  defined and NullFunction can be used.  */
-/**/
-/*  OUTPUT:  This function returns a pointer to the newly created */
-/*  red-black tree. */
-/**/
-/*  Modifies Input: none */
 /***********************************************************************/
 
-rb_red_blk_tree* RBTreeCreate() {
-
-	rb_red_blk_tree* newTree;
+rb_red_blk_tree::rb_red_blk_tree() {
+	max_priority_local = -1;
 	rb_red_blk_node* temp;
-
-	newTree = new rb_red_blk_tree; //(rb_red_blk_tree*) SafeMalloc(sizeof(rb_red_blk_tree));
 	/*  see the comment in the rb_red_blk_tree structure in red_black_tree.h */
 	/*  for information on nil and root */
-	temp = newTree->nil = new rb_red_blk_node;
+	temp = this->nil = new rb_red_blk_node;
 	temp->parent = temp->left = temp->right = temp;
 	temp->red = 0;
 	temp->key = {1111, 1111};
-	temp = newTree->root = new rb_red_blk_node;
-	temp->parent = temp->left = temp->right = newTree->nil;
+	temp = this->root = new rb_red_blk_node;
+	temp->parent = temp->left = temp->right = this->nil;
 	temp->key = {2222, 2222};
 	temp->red = 0;
-
-	return (newTree);
 }
 
-/***********************************************************************/
-/*  FUNCTION:  LeftRotate */
-/**/
-/*  INPUTS:  This takes a tree so that it can access the appropriate */
-/*           root and nil pointers, and the node to rotate on. */
-/**/
-/*  OUTPUT:  None */
-/**/
-/*  Modifies Input: tree, x */
-/**/
-/*  EFFECTS:  Rotates as described in _Introduction_To_Algorithms by */
-/*            Cormen, Leiserson, Rivest (Chapter 14).  Basically this */
-/*            makes the parent of x be to the left of x, x the parent of */
-/*            its parent before the rotation and fixes other pointers */
-/*            accordingly. */
-/***********************************************************************/
-
-void LeftRotate(rb_red_blk_tree* tree, rb_red_blk_node* x) {
+void rb_red_blk_tree::LeftRotate(rb_red_blk_node* x) {
 	rb_red_blk_node* y;
-	rb_red_blk_node* nil = tree->nil;
 
 	/*  I originally wrote this function to use the sentinel for */
 	/*  nil to avoid checking for nil.  However this introduces a */
@@ -117,30 +88,12 @@ void LeftRotate(rb_red_blk_tree* tree, rb_red_blk_node* x) {
 	x->parent = y;
 
 #ifdef DEBUG_ASSERT
-	assert(!tree->nil->red && "nil not red in LeftRotate");
+	assert(!this->nil->red && "nil not red in LeftRotate");
 #endif
 }
 
-/***********************************************************************/
-/*  FUNCTION:  RighttRotate */
-/**/
-/*  INPUTS:  This takes a tree so that it can access the appropriate */
-/*           root and nil pointers, and the node to rotate on. */
-/**/
-/*  OUTPUT:  None */
-/**/
-/*  Modifies Input?: tree, y */
-/**/
-/*  EFFECTS:  Rotates as described in _Introduction_To_Algorithms by */
-/*            Cormen, Leiserson, Rivest (Chapter 14).  Basically this */
-/*            makes the parent of x be to the left of x, x the parent of */
-/*            its parent before the rotation and fixes other pointers */
-/*            accordingly. */
-/***********************************************************************/
-
-void RightRotate(rb_red_blk_tree* tree, rb_red_blk_node* y) {
+void rb_red_blk_tree::RightRotate(rb_red_blk_node* y) {
 	rb_red_blk_node* x;
-	rb_red_blk_node* nil = tree->nil;
 
 	/*  I originally wrote this function to use the sentinel for */
 	/*  nil to avoid checking for nil.  However this introduces a */
@@ -171,7 +124,7 @@ void RightRotate(rb_red_blk_tree* tree, rb_red_blk_node* y) {
 	y->parent = x;
 
 #ifdef DEBUG_ASSERT
-	assert(!tree->nil->red && "nil not red in RightRotate");
+	assert(!nil->red && "nil not red in RightRotate");
 #endif
 }
 bool inline IsIntersect(unsigned a1, unsigned b1, unsigned a2, unsigned b2) {
@@ -180,16 +133,13 @@ bool inline IsIntersect(unsigned a1, unsigned b1, unsigned a2, unsigned b2) {
 bool inline IsIdentical(unsigned a1, unsigned b1, unsigned a2, unsigned b2) {
 	return a1 == a2 && b1 == b2;
 }
-bool RBTreeCanInsert(rb_red_blk_tree* tree, const std::vector<Range1d>& z,
-		size_t level, const std::vector<int>& fieldOrder) {
 
-	if (tree == nullptr)
-		return true;
+bool rb_red_blk_tree::RBTreeCanInsert(const std::vector<Range1d>& z,
+		size_t level, FieldOrder_t fieldOrder) {
 
 	if (level == fieldOrder.size()) {
 		return true;
-	} else if (tree->count == 1) {
-		auto chain_boxes = tree->chain_boxes;
+	} else if (count == 1) {
 		for (size_t i = level; i < fieldOrder.size(); i++) {
 			if (IsIdentical(z[fieldOrder[i]].low, z[fieldOrder[i]].high,
 					chain_boxes[i - level].low, chain_boxes[i - level].high))
@@ -203,12 +153,10 @@ bool RBTreeCanInsert(rb_red_blk_tree* tree, const std::vector<Range1d>& z,
 		return true;
 	}
 
-	rb_red_blk_node* x;
 	//rb_red_blk_node* y;
-	rb_red_blk_node* nil = tree->nil;
 
 	//y = tree->root;
-	x = tree->root->left;
+	rb_red_blk_node* x = root->left;
 	while (x != nil) {
 		//y = x;
 		int compare_result = CompareBox(x->key, z[fieldOrder[level]]);
@@ -220,9 +168,10 @@ bool RBTreeCanInsert(rb_red_blk_tree* tree, const std::vector<Range1d>& z,
 			/*printf("TreeInsertHelp:: Exact Match!\n");
 			 return true;
 			 x = x->right;*/
-			return level == z.size() - 1 ?
-					true :
-					RBTreeCanInsert(x->rb_tree_next_level, z, level + 1,
+			if (level == z.size() - 1 || x->rb_tree_next_level == nullptr)
+				return true;
+			else
+				return x->rb_tree_next_level->RBTreeCanInsert(z, level + 1,
 							fieldOrder);
 		} else { /* x.key || z.key */
 			return false;
@@ -246,18 +195,17 @@ bool RBTreeCanInsert(rb_red_blk_tree* tree, const std::vector<Range1d>& z,
 /*            by the RBTreeInsert function and not by the user */
 /***********************************************************************/
 
-bool TreeInsertWithPathCompressionHelp(rb_red_blk_tree* tree,
+bool rb_red_blk_tree::TreeInsertWithPathCompressionHelp(
 		rb_red_blk_node* z, const std::vector<Range1d>& b, size_t level,
-		const std::vector<int>& fieldOrder, int priority,
+		FieldOrder_t fieldOrder, int priority,
 		rb_red_blk_node*& out_ptr) {
 	/*  This function should only be called by InsertRBTree (see above) */
 	rb_red_blk_node* x;
 	rb_red_blk_node* y;
-	rb_red_blk_node* nil = tree->nil;
 
 	z->left = z->right = nil;
-	y = tree->root;
-	x = tree->root->left;
+	y = root;
+	x = root->left;
 	while (x != nil) {
 		y = x;
 		int compare_result = CompareBox(x->key, z->key);
@@ -303,13 +251,13 @@ bool TreeInsertWithPathCompressionHelp(rb_red_blk_tree* tree,
 
 				 }
 				 else {*/
-				RBTreeInsertWithPathCompression(x->rb_tree_next_level, b,
+				x->rb_tree_next_level->RBTreeInsertWithPathCompression(b,
 						level + 1, fieldOrder, priority);
 				//}
 
 			} else {
 				if (x->rb_tree_next_level == nullptr)
-					x->rb_tree_next_level = RBTreeCreate();
+					x->rb_tree_next_level = new rb_red_blk_tree();
 				x->rb_tree_next_level->count++;
 				x->rb_tree_next_level->PushPriority(priority);
 				out_ptr = x;
@@ -321,7 +269,7 @@ bool TreeInsertWithPathCompressionHelp(rb_red_blk_tree* tree,
 		}
 	}
 	z->parent = y;
-	if ((y == tree->root) || (1 == CompareBox(y->key, z->key))) { /* y.key > z.key */
+	if ((y == root) || (1 == CompareBox(y->key, z->key))) { /* y.key > z.key */
 		y->left = z;
 	} else {
 		y->right = z;
@@ -329,15 +277,14 @@ bool TreeInsertWithPathCompressionHelp(rb_red_blk_tree* tree,
 	//found new one to insert to
 	//need to create a tree first then followed by insertion
 	//we use path-compression here since this tree contains a single rule
-	z->rb_tree_next_level = RBTreeCreate();
-	RBTreeInsertWithPathCompression(z->rb_tree_next_level, b, level + 1,
+	z->rb_tree_next_level = new rb_red_blk_tree();
+	z->rb_tree_next_level->RBTreeInsertWithPathCompression(b, level + 1,
 			fieldOrder, priority);
 
-	return false;
-
 #ifdef DEBUG_ASSERT
-	assert(!tree->nil->red && "nil not red in TreeInsertHelp");
+	assert(!nil->red && "nil not red in TreeInsertHelp");
 #endif
+	return false;
 }
 
 /*  Before calling Insert RBTree the node x should have its key set */
@@ -360,37 +307,36 @@ bool TreeInsertWithPathCompressionHelp(rb_red_blk_tree* tree,
 /*            info pointers and inserts it into the tree. */
 /***********************************************************************/
 
-rb_red_blk_node * RBTreeInsertWithPathCompression(rb_red_blk_tree* tree,
+rb_red_blk_tree::rb_red_blk_node * rb_red_blk_tree::RBTreeInsertWithPathCompression(
 		const std::vector<Range1d>& key, size_t level,
-		const std::vector<int>& fieldOrder, int priority) {
+		FieldOrder_t fieldOrder, int priority) {
 
 	rb_red_blk_node * y;
 	rb_red_blk_node * x;
 	rb_red_blk_node * newNode;
 
 	if (level == fieldOrder.size()) {
-
-		tree->count++;
-		tree->PushPriority(priority);
+		count++;
+		PushPriority(priority);
 		return nullptr;
 	}
 
-	if (tree->count == 0) {
+	if (count == 0) {
 		//no need to create a node yet; just compress the path
-		tree->count++;
-		tree->PushPriority(priority);
+		count++;
+		PushPriority(priority);
 		//level <= b.size() -1
 		for (size_t i = level; i < fieldOrder.size(); i++)
-			tree->chain_boxes.push_back(key[fieldOrder[i]]);
+			chain_boxes.push_back(key[fieldOrder[i]]);
 		return nullptr;
 	}
-	if (tree->count == 1) {
+	if (count == 1) {
 		//path compression
-		auto temp_chain_boxes = tree->chain_boxes;
-		int xpriority = tree->GetMaxPriority();
+		auto temp_chain_boxes = chain_boxes;
+		int xpriority = GetMaxPriority();
 
 		//  tree->pq = std::priority_queue<int>();
-		tree->count++;
+		count++;
 		//  tree->PushPriority(priority);
 
 		/* bool is_identical = 1;
@@ -406,7 +352,7 @@ rb_red_blk_node * RBTreeInsertWithPathCompression(rb_red_blk_tree* tree,
 		 return nullptr;
 		 }*/
 		//quick check if identical just reset count = 1;
-		tree->chain_boxes.clear();
+		chain_boxes.clear();
 
 		//unzipping the next level
 
@@ -418,19 +364,19 @@ rb_red_blk_node * RBTreeInsertWithPathCompression(rb_red_blk_tree* tree,
 						== key[fieldOrder[level + run]].high) {
 			//  printf("[%u %u] vs. [%u %u]\n", temp_chain_boxes[run][0], temp_chain_boxes[run][1], key[fieldOrder[level + run]][0], key[fieldOrder[level + run]][1]);
 
-			x = RBTreeInsert(tree, key, level + run++, fieldOrder, xpriority);
+			x = RBTreeInsert(key, level + run++, fieldOrder, xpriority);
 			if (level + run < fieldOrder.size()) {
 				while ((temp_chain_boxes[run].low
 						== key[fieldOrder[level + run]].low
 						&& temp_chain_boxes[run].high
 								== key[fieldOrder[level + run]].high)) {
 
-					x->rb_tree_next_level = RBTreeCreate();
+					x->rb_tree_next_level = new rb_red_blk_tree();
 
 					//  x->rb_tree_next_level->PushPriority(xpriority);
 					// x->rb_tree_next_level->PushPriority(priority);
 					x->rb_tree_next_level->count = 2;
-					x = RBTreeInsert(x->rb_tree_next_level, key, level + run,
+					x = x->rb_tree_next_level->RBTreeInsert(key, level + run,
 							fieldOrder, priority);
 
 					run++;
@@ -440,7 +386,7 @@ rb_red_blk_node * RBTreeInsertWithPathCompression(rb_red_blk_tree* tree,
 				}
 			}
 			if (level + run >= fieldOrder.size()) {
-				x->rb_tree_next_level = RBTreeCreate();
+				x->rb_tree_next_level = new rb_red_blk_tree();
 				x->rb_tree_next_level->count++;
 				x->rb_tree_next_level->PushPriority(priority);
 				x->rb_tree_next_level->count++;
@@ -471,7 +417,7 @@ rb_red_blk_node * RBTreeInsertWithPathCompression(rb_red_blk_tree* tree,
 					exit(0);
 				}
 				//split into z and x node
-				x->rb_tree_next_level = RBTreeCreate();
+				x->rb_tree_next_level = new rb_red_blk_tree();
 				//  x->rb_tree_next_level->PushPriority(priority);
 				// x->rb_tree_next_level->PushPriority(xpriority);
 				auto PrependChainbox =
@@ -481,20 +427,20 @@ rb_red_blk_node * RBTreeInsertWithPathCompression(rb_red_blk_tree* tree,
 							t.insert(end(t), begin(cb), end(cb));
 							return t;
 						};
-				auto z1 = RBTreeInsert(x->rb_tree_next_level,
+				auto z1 = x->rb_tree_next_level->RBTreeInsert(
 						PrependChainbox(temp_chain_boxes, level), level + run,
 						naturalFieldOrder, xpriority);
-				auto z2 = RBTreeInsert(x->rb_tree_next_level, key, level + run,
+				auto z2 = x->rb_tree_next_level->RBTreeInsert(key, level + run,
 						fieldOrder, priority);
 
 				x->rb_tree_next_level->count = 2;
 
-				z1->rb_tree_next_level = RBTreeCreate();
-				z2->rb_tree_next_level = RBTreeCreate();
-				RBTreeInsertWithPathCompression(z1->rb_tree_next_level,
+				z1->rb_tree_next_level = new rb_red_blk_tree();
+				z2->rb_tree_next_level = new rb_red_blk_tree();
+				z1->rb_tree_next_level->RBTreeInsertWithPathCompression(
 						PrependChainbox(temp_chain_boxes, level),
 						level + run + 1, naturalFieldOrder, xpriority);
-				RBTreeInsertWithPathCompression(z2->rb_tree_next_level, key,
+				z2->rb_tree_next_level->RBTreeInsertWithPathCompression(key,
 						level + run + 1, fieldOrder, priority);
 
 			}
@@ -508,27 +454,27 @@ rb_red_blk_node * RBTreeInsertWithPathCompression(rb_red_blk_tree* tree,
 						return t;
 					};
 
-			auto z1 = RBTreeInsert(tree,
+			auto z1 = RBTreeInsert(
 					PrependChainbox(temp_chain_boxes, level), level + run,
 					naturalFieldOrder, xpriority);
-			auto z2 = RBTreeInsert(tree, key, level + run, fieldOrder,
+			auto z2 = RBTreeInsert(key, level + run, fieldOrder,
 					priority);
-			tree->count = 2;
+			count = 2;
 
-			z1->rb_tree_next_level = RBTreeCreate();
-			z2->rb_tree_next_level = RBTreeCreate();
+			z1->rb_tree_next_level = new rb_red_blk_tree();
+			z2->rb_tree_next_level = new rb_red_blk_tree();
 
-			RBTreeInsertWithPathCompression(z1->rb_tree_next_level,
+			z1->rb_tree_next_level->RBTreeInsertWithPathCompression(
 					PrependChainbox(temp_chain_boxes, level), level + run + 1,
 					naturalFieldOrder, xpriority);
-			RBTreeInsertWithPathCompression(z2->rb_tree_next_level, key,
+			z2->rb_tree_next_level->RBTreeInsertWithPathCompression(key,
 					level + run + 1, fieldOrder, priority);
 
 		}
 		return nullptr;
 	}
 
-	tree->count++;
+	count++;
 	/* tree->PushPriority(priority);
 	 int maxpri = tree->GetMaxPriority();
 	 tree->priority_list.clear();
@@ -538,9 +484,8 @@ rb_red_blk_node * RBTreeInsertWithPathCompression(rb_red_blk_tree* tree,
 	x->key = key[fieldOrder[level]];
 	rb_red_blk_node * out_ptr;
 
-	if (TreeInsertWithPathCompressionHelp(tree, x, key, level, fieldOrder,
+	if (TreeInsertWithPathCompressionHelp(x, key, level, fieldOrder,
 			priority, out_ptr)) {
-
 		//insertion finds identical box.
 		//do nothing for now
 		return out_ptr;
@@ -559,11 +504,11 @@ rb_red_blk_node * RBTreeInsertWithPathCompression(rb_red_blk_tree* tree,
 			} else {
 				if (x == x->parent->right) {
 					x = x->parent;
-					LeftRotate(tree, x);
+					LeftRotate(x);
 				}
 				x->parent->red = 0;
 				x->parent->parent->red = 1;
-				RightRotate(tree, x->parent->parent);
+				RightRotate(x->parent->parent);
 			}
 		} else { /* case for x->parent == x->parent->parent->right */
 			y = x->parent->parent->left;
@@ -575,46 +520,28 @@ rb_red_blk_node * RBTreeInsertWithPathCompression(rb_red_blk_tree* tree,
 			} else {
 				if (x == x->parent->left) {
 					x = x->parent;
-					RightRotate(tree, x);
+					RightRotate(x);
 				}
 				x->parent->red = 0;
 				x->parent->parent->red = 1;
-				LeftRotate(tree, x->parent->parent);
+				LeftRotate(x->parent->parent);
 			}
 		}
 	}
-	tree->root->left->red = 0;
-	return (newNode);
+	root->left->red = 0;
 
 #ifdef DEBUG_ASSERT
-	assert(!tree->nil->red && "nil not red in RBTreeInsert");
-	assert(!tree->root->red && "root not red in RBTreeInsert");
+	assert(!nil->red && "nil not red in RBTreeInsert");
+	assert(!root->red && "root not red in RBTreeInsert");
 #endif
+
+	return (newNode);
 }
 
-/*  Before calling Insert RBTree the node x should have its key set */
 
-/***********************************************************************/
-/*  FUNCTION:  RBTreeInsert */
-/**/
-/*  INPUTS:  tree is the red-black tree to insert a node which has a key */
-/*           pointed to by key and info pointed to by info.  */
-/**/
-/*  OUTPUT:  This function returns a pointer to the newly inserted node */
-/*           which is guarunteed to be valid until this node is deleted. */
-/*           What this means is if another data structure stores this */
-/*           pointer then the tree does not need to be searched when this */
-/*           is to be deleted. */
-/**/
-/*  Modifies Input: tree */
-/**/
-/*  EFFECTS:  Creates a node node which contains the appropriate key and */
-/*            info pointers and inserts it into the tree. */
-/***********************************************************************/
-
-rb_red_blk_node * RBTreeInsert(rb_red_blk_tree* tree,
+rb_red_blk_tree::rb_red_blk_node * rb_red_blk_tree::RBTreeInsert(
 		const std::vector<Range1d>& key, size_t level,
-		const std::vector<int>& field_order, int priority) {
+		FieldOrder_t field_order, int priority) {
 
 	if (level == key.size())
 		return nullptr;
@@ -626,7 +553,7 @@ rb_red_blk_node * RBTreeInsert(rb_red_blk_tree* tree,
 	x = new rb_red_blk_node;
 	x->key = key[field_order[level]];
 	rb_red_blk_node * out_ptr;
-	if (TreeInsertHelp(tree, x, key, level, field_order, priority, out_ptr)) {
+	if (TreeInsertHelp(x, key, level, field_order, priority, out_ptr)) {
 		//insertion finds identical box.
 		//do nothing for now
 		return out_ptr;
@@ -645,11 +572,11 @@ rb_red_blk_node * RBTreeInsert(rb_red_blk_tree* tree,
 			} else {
 				if (x == x->parent->right) {
 					x = x->parent;
-					LeftRotate(tree, x);
+					LeftRotate(x);
 				}
 				x->parent->red = 0;
 				x->parent->parent->red = 1;
-				RightRotate(tree, x->parent->parent);
+				RightRotate(x->parent->parent);
 			}
 		} else { /* case for x->parent == x->parent->parent->right */
 			y = x->parent->parent->left;
@@ -661,36 +588,36 @@ rb_red_blk_node * RBTreeInsert(rb_red_blk_tree* tree,
 			} else {
 				if (x == x->parent->left) {
 					x = x->parent;
-					RightRotate(tree, x);
+					RightRotate(x);
 				}
 				x->parent->red = 0;
 				x->parent->parent->red = 1;
-				LeftRotate(tree, x->parent->parent);
+				LeftRotate(x->parent->parent);
 			}
 		}
 	}
-	tree->root->left->red = 0;
+	root->left->red = 0;
 	//printf("Done: [%u %u]\n", newNode->key);
-	return (newNode);
 
 #ifdef DEBUG_ASSERT
-	assert(!tree->nil->red && "nil not red in RBTreeInsert");
-	assert(!tree->root->red && "root not red in RBTreeInsert");
+	assert(!nil->red && "nil not red in RBTreeInsert");
+	assert(!root->red && "root not red in RBTreeInsert");
 #endif
+
+	return newNode;
 }
 
-bool TreeInsertHelp(rb_red_blk_tree* tree, rb_red_blk_node* z,
+bool rb_red_blk_tree::TreeInsertHelp(rb_red_blk_node* z,
 		const std::vector<Range1d>& b, size_t level,
-		const std::vector<int>& field_order, int priority,
+		FieldOrder_t field_order, int priority,
 		rb_red_blk_node*& out_ptr) {
 	/*  This function should only be called by InsertRBTree  */
 	rb_red_blk_node* x;
 	rb_red_blk_node* y;
-	rb_red_blk_node* nil = tree->nil;
 
 	z->left = z->right = nil;
-	y = tree->root;
-	x = tree->root->left;
+	y = root;
+	x = root->left;
 	while (x != nil) {
 		y = x;
 		int compare_result = CompareBox(x->key, z->key);
@@ -701,14 +628,14 @@ bool TreeInsertHelp(rb_red_blk_tree* tree, rb_red_blk_node* z,
 		} else if (compare_result == 0) { /* x.key = z.key */
 			printf("Warning compare_result == 0??\n");
 			if (level != b.size() - 1) {
-				RBTreeInsert(x->rb_tree_next_level, b, level + 1, field_order,
+				x->rb_tree_next_level->RBTreeInsert(b, level + 1, field_order,
 						priority);
 			} else {
 				//	x->node_max_priority = std::max(x->node_max_priority, priority);
 				//x->nodes_priority[x->num_node_priority++] = priority;
 				out_ptr = x;
 			}
-			free(z);
+			delete z;
 			return true;
 		} else { /* x.key || z.key */
 			printf("x:[%u %u], z:[%u %u]\n", x->key.low, x->key.high,
@@ -717,7 +644,7 @@ bool TreeInsertHelp(rb_red_blk_tree* tree, rb_red_blk_node* z,
 		}
 	}
 	z->parent = y;
-	if ((y == tree->root) || (1 == CompareBox(y->key, z->key))) { /* y.key > z.key */
+	if ((y == root) || (1 == CompareBox(y->key, z->key))) { /* y.key > z.key */
 		y->left = z;
 	} else {
 		y->right = z;
@@ -725,37 +652,20 @@ bool TreeInsertHelp(rb_red_blk_tree* tree, rb_red_blk_node* z,
 	//found new one to insert to but will not propagate
 	out_ptr = z;
 
+#ifdef DEBUG_ASSERT
+	assert(!nil->red && "nil not red in TreeInsertHelp");
+#endif
 	return false;
 
-#ifdef DEBUG_ASSERT
-	assert(!tree->nil->red && "nil not red in TreeInsertHelp");
-#endif
 }
 
-/***********************************************************************/
-/*  FUNCTION:  TreeSuccessor  */
-/**/
-/*    INPUTS:  tree is the tree in question, and x is the node we want the */
-/*             the successor of. */
-/**/
-/*    OUTPUT:  This function returns the successor of x or NULL if no */
-/*             successor exists. */
-/**/
-/*    Modifies Input: none */
-/**/
-/*    Note:  uses the algorithm in _Introduction_To_Algorithms_ */
-/***********************************************************************/
-
-rb_red_blk_node* TreeSuccessor(rb_red_blk_tree* tree, rb_red_blk_node* x) {
+rb_red_blk_tree::rb_red_blk_node* rb_red_blk_tree::TreeSuccessor(rb_red_blk_node* x) {
 	rb_red_blk_node* y;
-	rb_red_blk_node* nil = tree->nil;
-	rb_red_blk_node* root = tree->root;
-
 	if (nil != (y = x->right)) { /* assignment to y is intentional */
 		while (y->left != nil) { /* returns the minium of the right subtree of x */
 			y = y->left;
 		}
-		return (y);
+		return y;
 	} else {
 		y = x->parent;
 		while (x == y->right) { /* sentinel used instead of checking for nil */
@@ -763,35 +673,18 @@ rb_red_blk_node* TreeSuccessor(rb_red_blk_tree* tree, rb_red_blk_node* x) {
 			y = y->parent;
 		}
 		if (y == root)
-			return (nil);
-		return (y);
+			return nil;
+		return y;
 	}
 }
 
-/***********************************************************************/
-/*  FUNCTION:  Treepredecessor  */
-/**/
-/*    INPUTS:  tree is the tree in question, and x is the node we want the */
-/*             the predecessor of. */
-/**/
-/*    OUTPUT:  This function returns the predecessor of x or NULL if no */
-/*             predecessor exists. */
-/**/
-/*    Modifies Input: none */
-/**/
-/*    Note:  uses the algorithm in _Introduction_To_Algorithms_ */
-/***********************************************************************/
-
-rb_red_blk_node* TreePredecessor(rb_red_blk_tree* tree, rb_red_blk_node* x) {
+rb_red_blk_tree::rb_red_blk_node* rb_red_blk_tree::TreePredecessor(rb_red_blk_node* x) {
 	rb_red_blk_node* y;
-	rb_red_blk_node* nil = tree->nil;
-	rb_red_blk_node* root = tree->root;
-
 	if (nil != (y = x->left)) { /* assignment to y is intentional */
 		while (y->right != nil) { /* returns the maximum of the left subtree of x */
 			y = y->right;
 		}
-		return (y);
+		return y;
 	} else {
 		y = x->parent;
 		while (x == y->left) {
@@ -804,29 +697,14 @@ rb_red_blk_node* TreePredecessor(rb_red_blk_tree* tree, rb_red_blk_node* x) {
 	}
 }
 
-/***********************************************************************/
-/*  FUNCTION:  InorderTreePrint */
-/**/
-/*    INPUTS:  tree is the tree to print and x is the current inorder node */
-/**/
-/*    OUTPUT:  none  */
-/**/
-/*    EFFECTS:  This function recursively prints the nodes of the tree */
-/*              inorder using the PrintKey and PrintInfo functions. */
-/**/
-/*    Modifies Input: none */
-/**/
-/*    Note:    This function should only be called from RBTreePrint */
-/***********************************************************************/
-
-void InorderTreePrint(rb_red_blk_tree* tree, rb_red_blk_node* x) {
+void rb_red_blk_tree::InorderTreePrint(rb_red_blk_node* x) {
 	// rb_red_blk_node* nil=tree->nil;
 	// rb_red_blk_node* root=tree->root;
-	if (x != tree->nil) {
-		InorderTreePrint(tree, x->left);
+	if (x != nil) {
+		InorderTreePrint(x->left);
 		//printf("  key=");
-		printf("tree->count = %d\n", tree->count);
-		tree->PrintKey(x->key);
+		std::cout << "tree->count = " << count << std::endl;
+		std::cout << x->key << std::endl;
 		//  printf("  l->key=");
 		// if( x->left != nil) tree->PrintKey(x->left->key);
 		//  printf("  r->key=");
@@ -834,109 +712,50 @@ void InorderTreePrint(rb_red_blk_tree* tree, rb_red_blk_node* x) {
 		// printf("  p->key=");
 		// if( x->parent != root) /*printf("NULL"); else*/ tree->PrintKey(x->parent->key);
 		// printf("  red=%i\n",x->red);
-		InorderTreePrint(tree, x->right);
+		InorderTreePrint(x->right);
 	}
 }
 
-/***********************************************************************/
-/*  FUNCTION:  TreeDestHelper */
-/**/
-/*    INPUTS:  tree is the tree to destroy and x is the current node */
-/**/
-/*    OUTPUT:  none  */
-/**/
-/*    EFFECTS:  This function recursively destroys the nodes of the tree */
-/*              postorder using the DestroyKey and DestroyInfo functions. */
-/**/
-/*    Modifies Input: tree, x */
-/**/
-/*    Note:    This function should only be called by RBTreeDestroy */
-/***********************************************************************/
-
-void TreeDestHelper(rb_red_blk_tree* tree, rb_red_blk_node* x) {
-	rb_red_blk_node* nil = tree->nil;
+void rb_red_blk_tree::TreeDestHelper(rb_red_blk_node* x) {
 	if (x != nil) {
 		if (x->rb_tree_next_level != nullptr)
-			RBTreeDestroy(x->rb_tree_next_level);
-		TreeDestHelper(tree, x->left);
-		TreeDestHelper(tree, x->right);
+			delete x->rb_tree_next_level;
+		TreeDestHelper(x->left);
+		TreeDestHelper(x->right);
 		delete x;
 	}
 }
 
-/***********************************************************************/
-/*  FUNCTION:  RBTreeDestroy */
-/**/
-/*    INPUTS:  tree is the tree to destroy */
-/**/
-/*    OUTPUT:  none */
-/**/
-/*    EFFECT:  Destroys the key and frees memory */
-/**/
-/*    Modifies Input: tree */
-/**/
-/***********************************************************************/
 
-void RBTreeDestroy(rb_red_blk_tree* tree) {
-	TreeDestHelper(tree, tree->root->left);
-	delete (tree->root);
-	delete tree->nil;
-	delete tree;
+rb_red_blk_tree::~rb_red_blk_tree() {
+	TreeDestHelper(root->left);
+	delete root;
+	delete nil;
 }
 
-/***********************************************************************/
-/*  FUNCTION:  RBTreePrint */
-/**/
-/*    INPUTS:  tree is the tree to print */
-/**/
-/*    OUTPUT:  none */
-/**/
-/*    EFFECT:  This function recursively prints the nodes of the tree */
-/*             inorder using the PrintKey and PrintInfo functions. */
-/**/
-/*    Modifies Input: none */
-/**/
-/***********************************************************************/
-
-void RBTreePrint(rb_red_blk_tree* tree) {
-	InorderTreePrint(tree, tree->root->left);
+void rb_red_blk_tree::RBTreePrint() {
+	InorderTreePrint(root->left);
 }
 
-/***********************************************************************/
-/*  FUNCTION:  RBExactQuery */
-/**/
-/*    INPUTS:  tree is the tree to print and q is a pointer to the key */
-/*             we are searching for */
-/**/
-/*    OUTPUT:  returns the a node with key equal to q.  If there are */
-/*             multiple nodes with key equal to q this function returns */
-/*             the one highest in the tree */
-/**/
-/*    Modifies Input: none */
-/**/
-/***********************************************************************/
-
-int RBExactQuery(rb_red_blk_tree* tree, const Packet& q, size_t level,
-		const std::vector<int>& fieldOrder) {
-
+int rb_red_blk_tree::RBExactQuery(const Packet& q, size_t level,
+		FieldOrder_t fieldOrder) {
 	//printf("entering level %d - tree->GetMaxPriority =%d\n", level,tree->GetMaxPriority());
 
 	//check if singleton
 	if (level == fieldOrder.size()) {
-		return tree->GetMaxPriority();
-	} else if (tree->count == 1) {
+		return GetMaxPriority();
+	} else if (count == 1) {
 		//  auto chain_boxes = tree->chain_boxes;
 		for (size_t i = level; i < fieldOrder.size(); i++) {
-			if (q[fieldOrder[i]] < tree->chain_boxes[i - level].low)
+			if (q[fieldOrder[i]] < chain_boxes[i - level].low)
 				return -1;
-			if (q[fieldOrder[i]] > tree->chain_boxes[i - level].high)
+			if (q[fieldOrder[i]] > chain_boxes[i - level].high)
 				return -1;
 		}
-		return tree->GetMaxPriority();
+		return GetMaxPriority();
 	}
 
-	rb_red_blk_node* x = tree->root->left;
-	rb_red_blk_node* nil = tree->nil;
+	rb_red_blk_node* x = root->left;
 	int compVal;
 	if (x == nil)
 		return -1;
@@ -954,77 +773,69 @@ int RBExactQuery(rb_red_blk_tree* tree, const Packet& q, size_t level,
 	}
 
 	// printf("level = %d, priority = %d\n", level, x->mid_ptr.node_max_priority);
-	return RBExactQuery(x->rb_tree_next_level, q, level + 1, fieldOrder);
+	return x->rb_tree_next_level->RBExactQuery(q, level + 1, fieldOrder);
 }
 
-int RBExactQueryIterative(rb_red_blk_tree* tree, const Packet& q,
-		const std::vector<int>& fieldOrder) {
-
-	size_t level = 0;
-	int compVal;
-	while (true) {
-		//check if singleton 
-		if (level == fieldOrder.size()) {
-			return tree->GetMaxPriority();
-		} else if (tree->count == 1) {
-			//  auto chain_boxes = tree->chain_boxes; 
-			for (size_t i = level; i < fieldOrder.size(); i++) {
-				if (q[fieldOrder[i]] < tree->chain_boxes[i - level].low)
-					return -1;
-				if (q[fieldOrder[i]] > tree->chain_boxes[i - level].high)
-					return -1;
-			}
-
-			return tree->GetMaxPriority();
+int rb_red_blk_tree::RBExactQueryIterative(const Packet& q,
+		FieldOrder_t fieldOrder, size_t level) {
+	//check if singleton
+	if (level == fieldOrder.size()) {
+		return GetMaxPriority();
+	} else if (count == 1) {
+		//  auto chain_boxes = tree->chain_boxes;
+		for (size_t i = level; i < fieldOrder.size(); i++) {
+			if (q[fieldOrder[i]] < chain_boxes[i - level].low)
+				return -1;
+			if (q[fieldOrder[i]] > chain_boxes[i - level].high)
+				return -1;
 		}
 
-		rb_red_blk_node* x = tree->root->left;
-		rb_red_blk_node* nil = tree->nil;
+		return GetMaxPriority();
+	}
 
+	rb_red_blk_node* x = root->left;
+	if (x == nil)
+		return -1;
+
+	int compVal = CompareQuery(x->key, q, level, fieldOrder);
+	// printf("Compval = %d\n", compVal);
+	while (0 != compVal) {/*assignemnt*/
+		if (1 == compVal) { /* x->key > q */
+			x = x->left;
+		} else if (-1 == compVal) /*x->key < q */{
+			x = x->right;
+		}
 		if (x == nil)
 			return -1;
 		compVal = CompareQuery(x->key, q, level, fieldOrder);
-		// printf("Compval = %d\n", compVal);
-		while (0 != compVal) {/*assignemnt*/
-			if (1 == compVal) { /* x->key > q */
-				x = x->left;
-			} else if (-1 == compVal) /*x->key < q */{
-				x = x->right;
-			}
-			if (x == nil)
-				return -1;
-			compVal = CompareQuery(x->key, q, level, fieldOrder);
-		}
-		tree = x->rb_tree_next_level;
-		level++;
 	}
+	return x->rb_tree_next_level->RBExactQueryIterative(q, fieldOrder, level + 1);
 
 	// printf("level = %d, priority = %d\n", level, x->mid_ptr.node_max_priority);
 	//return RBExactQuery(x->rb_tree_next_level, q, level + 1, fieldOrder);
 }
 
-int RBExactQueryPriority(rb_red_blk_tree* tree, const Packet& q, size_t level,
-		const std::vector<int>& fieldOrder, int priority_so_far) {
+int rb_red_blk_tree::RBExactQueryPriority(const Packet& q, size_t level,
+		FieldOrder_t fieldOrder, int priority_so_far) {
 
 	//printf("entering level %d - tree->GetMaxPriority =%d\n", level,tree->GetMaxPriority());
-	if (priority_so_far > tree->GetMaxPriority())
+	if (priority_so_far > GetMaxPriority())
 		return -1;
 	//check if singleton
 	if (level == fieldOrder.size()) {
-		return tree->GetMaxPriority();
-	} else if (tree->count == 1) {
+		return GetMaxPriority();
+	} else if (count == 1) {
 		//  auto chain_boxes = tree->chain_boxes; 
 		for (size_t i = level; i < fieldOrder.size(); i++) {
-			if (q[fieldOrder[i]] < tree->chain_boxes[i - level].low)
+			if (q[fieldOrder[i]] < chain_boxes[i - level].low)
 				return -1;
-			if (q[fieldOrder[i]] > tree->chain_boxes[i - level].high)
+			if (q[fieldOrder[i]] > chain_boxes[i - level].high)
 				return -1;
 		}
-		return tree->GetMaxPriority();
+		return GetMaxPriority();
 	}
 
-	rb_red_blk_node* x = tree->root->left;
-	rb_red_blk_node* nil = tree->nil;
+	rb_red_blk_node* x = root->left;
 	int compVal;
 	if (x == nil)
 		return -1;
@@ -1042,28 +853,12 @@ int RBExactQueryPriority(rb_red_blk_tree* tree, const Packet& q, size_t level,
 	}
 
 	// printf("level = %d, priority = %d\n", level, x->mid_ptr.node_max_priority);
-	return RBExactQueryPriority(x->rb_tree_next_level, q, level + 1, fieldOrder,
+	return x->rb_tree_next_level->RBExactQueryPriority(q, level + 1, fieldOrder,
 			priority_so_far);
 }
 
-/***********************************************************************/
-/*  FUNCTION:  RBDeleteFixUp */
-/**/
-/*    INPUTS:  tree is the tree to fix and x is the child of the spliced */
-/*             out node in RBTreeDelete. */
-/**/
-/*    OUTPUT:  none */
-/**/
-/*    EFFECT:  Performs rotations and changes colors to restore red-black */
-/*             properties after a node is deleted */
-/**/
-/*    Modifies Input: tree, x */
-/**/
-/*    The algorithm from this function is from _Introduction_To_Algorithms_ */
-/***********************************************************************/
-
-void RBDeleteFixUp(rb_red_blk_tree* tree, rb_red_blk_node* x) {
-	rb_red_blk_node* root = tree->root->left;
+void rb_red_blk_tree::RBDeleteFixUp(rb_red_blk_node* x) {
+	rb_red_blk_node* root = this->root->left;
 	rb_red_blk_node* w;
 
 	while ((!x->red) && (root != x)) {
@@ -1072,7 +867,7 @@ void RBDeleteFixUp(rb_red_blk_tree* tree, rb_red_blk_node* x) {
 			if (w->red) {
 				w->red = 0;
 				x->parent->red = 1;
-				LeftRotate(tree, x->parent);
+				LeftRotate(x->parent);
 				w = x->parent->right;
 			}
 			if ((!w->right->red) && (!w->left->red)) {
@@ -1082,13 +877,13 @@ void RBDeleteFixUp(rb_red_blk_tree* tree, rb_red_blk_node* x) {
 				if (!w->right->red) {
 					w->left->red = 0;
 					w->red = 1;
-					RightRotate(tree, w);
+					RightRotate(w);
 					w = x->parent->right;
 				}
 				w->red = x->parent->red;
 				x->parent->red = 0;
 				w->right->red = 0;
-				LeftRotate(tree, x->parent);
+				LeftRotate(x->parent);
 				x = root; /* this is to exit while loop */
 			}
 		} else { /* the code below is has left and right switched from above */
@@ -1096,7 +891,7 @@ void RBDeleteFixUp(rb_red_blk_tree* tree, rb_red_blk_node* x) {
 			if (w->red) {
 				w->red = 0;
 				x->parent->red = 1;
-				RightRotate(tree, x->parent);
+				RightRotate(x->parent);
 				w = x->parent->left;
 			}
 			if ((!w->right->red) && (!w->left->red)) {
@@ -1106,13 +901,13 @@ void RBDeleteFixUp(rb_red_blk_tree* tree, rb_red_blk_node* x) {
 				if (!w->left->red) {
 					w->right->red = 0;
 					w->red = 1;
-					LeftRotate(tree, w);
+					LeftRotate(w);
 					w = x->parent->left;
 				}
 				w->red = x->parent->red;
 				x->parent->red = 0;
 				w->left->red = 0;
-				RightRotate(tree, x->parent);
+				RightRotate(x->parent);
 				x = root; /* this is to exit while loop */
 			}
 		}
@@ -1120,45 +915,45 @@ void RBDeleteFixUp(rb_red_blk_tree* tree, rb_red_blk_node* x) {
 	x->red = 0;
 
 #ifdef DEBUG_ASSERT
-	assert(!tree->nil->red && "nil not black in RBDeleteFixUp");
+	assert(!nil->red && "nil not black in RBDeleteFixUp");
 #endif
 }
 
-void ClearStack(std::stack<std::pair<rb_red_blk_tree *, rb_red_blk_node *>>& st,
+void ClearStack(std::stack<std::pair<rb_red_blk_tree *, rb_red_blk_tree::rb_red_blk_node *>>& st,
 		rb_red_blk_tree* tree) {
 	while (!st.empty()) {
 		auto e = st.top();
 		st.pop();
 		if (e.first == tree) {
-			RBDelete(tree, e.second);
+			delete e.second;
 			return;
 		}
-		RBDelete(e.first, e.second);
-		RBTreeDestroy(e.first);
+		e.first->RBDelete(e.second);
+		delete e.first;
 	}
 
 }
-void RBTreeDeleteWithPathCompression(rb_red_blk_tree*& tree,
+
+void rb_red_blk_tree::RBTreeDeleteWithPathCompression(rb_red_blk_tree*& tree,
 		const std::vector<Range1d>& key, size_t level,
-		const std::vector<int>& fieldOrder, int priority,
+		FieldOrder_t fieldOrder, int priority,
 		bool& JustDeletedTree) {
 	if (level == fieldOrder.size()) {
 		tree->count--;
 		tree->PopPriority(priority);
 		if (tree->count == 0) {
-			RBTreeDestroy(tree);
+			delete tree;
 			JustDeletedTree = true;
 		}
 		return;
 	}
 	if (tree->count == 1) {
-
 		if (level == 0) {
 			tree->count = 0;
 			tree->chain_boxes.clear();
 			tree->ClearPriority();
 		} else {
-			RBTreeDestroy(tree);
+			delete tree;
 			JustDeletedTree = true;
 		}
 		return;
@@ -1177,14 +972,14 @@ void RBTreeDeleteWithPathCompression(rb_red_blk_tree*& tree,
 						begin(temp_tree->chain_boxes),
 						end(temp_tree->chain_boxes));
 
-				auto newtree = RBTreeCreate();
+				auto newtree = new rb_red_blk_tree();
 				newtree->chain_boxes = tree->chain_boxes;
 
 				if (temp_tree->GetSizeList() == 2) {
 					temp_tree->PopPriority(priority);
 				}
 				int new_priority = temp_tree->GetMaxPriority();
-				RBTreeDestroy(tree);
+				delete tree;
 
 				tree = newtree;
 				tree->count = 1;
@@ -1272,7 +1067,7 @@ void RBTreeDeleteWithPathCompression(rb_red_blk_tree*& tree,
 			RBTreeDeleteWithPathCompression(x->rb_tree_next_level, key,
 					level + 1, fieldOrder, priority, justDelete);
 			if (justDelete)
-				RBDelete(tree, x);
+				tree->RBDelete(x);
 
 			return;
 
@@ -1307,13 +1102,13 @@ void RBTreeDeleteWithPathCompression(rb_red_blk_tree*& tree,
 /*    The algorithm from this function is from _Introduction_To_Algorithms_ */
 /***********************************************************************/
 
-void RBDelete(rb_red_blk_tree* tree, rb_red_blk_node* z) {
+void rb_red_blk_tree::RBDelete(rb_red_blk_node* z) {
 	rb_red_blk_node* y;
 	rb_red_blk_node* x;
-	rb_red_blk_node* nil = tree->nil;
-	rb_red_blk_node* root = tree->root;
+	rb_red_blk_node* nil = this->nil;
+	rb_red_blk_node* root = this->root;
 
-	y = ((z->left == nil) || (z->right == nil)) ? z : TreeSuccessor(tree, z);
+	y = ((z->left == nil) || (z->right == nil)) ? z : TreeSuccessor(z);
 	x = (y->left == nil) ? y->right : y->left;
 	if (root == (x->parent = y->parent)) { /* assignment of y->p to x->p is intentional */
 		root->left = x;
@@ -1327,12 +1122,12 @@ void RBDelete(rb_red_blk_tree* tree, rb_red_blk_node* z) {
 	if (y != z) { /* y should not be nil in this case */
 
 #ifdef DEBUG_ASSERT
-		assert((y != tree->nil) && "y is nil in RBDelete\n");
+		assert((y != this->nil) && "y is nil in RBDelete\n");
 #endif
 		/* y is the node to splice out and x is its child */
 
 		if (!(y->red))
-			RBDeleteFixUp(tree, x);
+			RBDeleteFixUp(x);
 
 		//  tree->DestroyKey(z->key);
 		//  tree->DestroyInfo(z->info);
@@ -1351,31 +1146,20 @@ void RBDelete(rb_red_blk_tree* tree, rb_red_blk_node* z) {
 //    tree->DestroyKey(y->key);
 		//   tree->DestroyInfo(y->info);
 		if (!(y->red))
-			RBDeleteFixUp(tree, x);
-		free(y);
+			RBDeleteFixUp(x);
+		delete y;
 	}
 
 #ifdef DEBUG_ASSERT
-	assert(!tree->nil->red && "nil not black in RBDelete");
+	assert(!this->nil->red && "nil not black in RBDelete");
 #endif
 }
 
-/***********************************************************************/
-/*  FUNCTION:  RBDEnumerate */
-/**/
-/*    INPUTS:  tree is the tree to look for keys >= low */
-/*             and <= high with respect to the Compare function */
-/**/
-/*    OUTPUT:  stack containing pointers to the nodes between [low,high] */
-/**/
-/*    Modifies Input: none */
-/***********************************************************************/
-
-std::stack<void *> * RBEnumerate(rb_red_blk_tree* tree, const Range1d& low,
-		const Range1d& high) {
+std::stack<void *> * rb_red_blk_tree::RBEnumerate(
+		const Range1d& low, const Range1d& high) {
 	auto enumResultStack = new std::stack<void *>;
-	rb_red_blk_node* nil = tree->nil;
-	rb_red_blk_node* x = tree->root->left;
+	rb_red_blk_node* nil = this->nil;
+	rb_red_blk_node* x = this->root->left;
 	rb_red_blk_node* lastBest = nil;
 
 	while (nil != x) {
@@ -1388,7 +1172,7 @@ std::stack<void *> * RBEnumerate(rb_red_blk_tree* tree, const Range1d& low,
 	}
 	while ((lastBest != nil) && (1 != CompareBox(low, lastBest->key))) {
 		enumResultStack->push(lastBest);
-		lastBest = TreePredecessor(tree, lastBest);
+		lastBest = TreePredecessor(lastBest);
 	}
 	return (enumResultStack);
 }
@@ -1404,12 +1188,11 @@ std::stack<void *> * RBEnumerate(rb_red_blk_tree* tree, const Range1d& low,
  *    Modifies Input: none
  ***********************************************************************/
 
-void RBSerializeIntoRulesRecursion(rb_red_blk_tree * treenode,
-		rb_red_blk_node * node, size_t level,
-		const std::vector<int>& fieldOrder, std::vector<Range1d>& box_so_far,
+void rb_red_blk_tree::RBSerializeIntoRulesRecursion(rb_red_blk_node * node, size_t level,
+		FieldOrder_t fieldOrder, std::vector<Range1d>& box_so_far,
 		std::vector<Rule>& rules_so_far) {
 	if (level == fieldOrder.size()) {
-		for (int n : treenode->priority_list) {
+		for (int n : this->priority_list) {
 			Rule r(fieldOrder.size());
 			for (int i = 0; i < r.dim; i++) {
 				r.range[fieldOrder[i]] = box_so_far[i];
@@ -1419,10 +1202,10 @@ void RBSerializeIntoRulesRecursion(rb_red_blk_tree * treenode,
 		}
 		return;
 	}
-	if (treenode->count == 1) {
-		box_so_far.insert(std::end(box_so_far), begin(treenode->chain_boxes),
-				end(treenode->chain_boxes));
-		for (int n : treenode->priority_list) {
+	if (this->count == 1) {
+		box_so_far.insert(std::end(box_so_far), begin(this->chain_boxes),
+				end(this->chain_boxes));
+		for (int n : this->priority_list) {
 			Rule r(fieldOrder.size());
 
 			for (int i = 0; i < r.dim; i++) {
@@ -1432,33 +1215,33 @@ void RBSerializeIntoRulesRecursion(rb_red_blk_tree * treenode,
 			rules_so_far.push_back(r);
 		}
 
-		for (size_t i = 0; i < treenode->chain_boxes.size(); i++)
+		for (size_t i = 0; i < this->chain_boxes.size(); i++)
 			box_so_far.pop_back();
 
 		return;
 	}
 
-	if (treenode->nil == node)
+	if (this->nil == node)
 		return;
 
 	box_so_far.push_back(node->key);
 	auto tree = node->rb_tree_next_level;
-	RBSerializeIntoRulesRecursion(tree, tree->root->left, level + 1, fieldOrder,
+	tree->RBSerializeIntoRulesRecursion(tree->root->left, level + 1, fieldOrder,
 			box_so_far, rules_so_far);
 	box_so_far.pop_back();
 
-	RBSerializeIntoRulesRecursion(treenode, node->left, level, fieldOrder,
+	RBSerializeIntoRulesRecursion(node->left, level, fieldOrder,
 			box_so_far, rules_so_far);
-	RBSerializeIntoRulesRecursion(treenode, node->right, level, fieldOrder,
+	RBSerializeIntoRulesRecursion(node->right, level, fieldOrder,
 			box_so_far, rules_so_far);
 
 }
 
-std::vector<Rule> RBSerializeIntoRules(rb_red_blk_tree* tree,
-		const std::vector<int>& fieldOrder) {
+std::vector<Rule> rb_red_blk_tree::RBSerializeIntoRules(
+		FieldOrder_t fieldOrder) {
 	std::vector<Range1d> boxes_so_far;
 	std::vector<Rule> rules_so_far;
-	RBSerializeIntoRulesRecursion(tree, tree->root->left, 0, fieldOrder,
+	RBSerializeIntoRulesRecursion(this->root->left, 0, fieldOrder,
 			boxes_so_far, rules_so_far);
 	return rules_so_far;
 }
@@ -1466,18 +1249,18 @@ std::vector<Rule> RBSerializeIntoRules(rb_red_blk_tree* tree,
 /******************/
 
 //Practice of self-documenting codes.
-int CalculateMemoryConsumptionRecursion(rb_red_blk_tree * treenode,
+int rb_red_blk_tree::CalculateMemoryConsumptionRecursion(
 		rb_red_blk_node * node, size_t level,
-		const std::vector<int>& fieldOrder) {
+		FieldOrder_t fieldOrder) {
 	if (level == fieldOrder.size()) {
 
-		int num_rules_in_this_leaf = treenode->priority_list.size();
+		int num_rules_in_this_leaf = this->priority_list.size();
 		int sizeofint = 4;
 		int also_max_priority = 1;
 		return (num_rules_in_this_leaf + also_max_priority) * sizeofint;
 
 	}
-	if (treenode->count == 1) {
+	if (this->count == 1) {
 		int size_of_remaining_intervals = 0;
 		for (size_t i = level; i < fieldOrder.size(); i++) {
 			int field = fieldOrder[i];
@@ -1493,7 +1276,7 @@ int CalculateMemoryConsumptionRecursion(rb_red_blk_tree * treenode,
 			}
 			size_of_remaining_intervals += intervalsize;
 		}
-		int num_rules_in_this_leaf = treenode->priority_list.size();
+		int num_rules_in_this_leaf = this->priority_list.size();
 		int sizeofint = 4;
 		int also_max_priority = 1;
 
@@ -1501,18 +1284,18 @@ int CalculateMemoryConsumptionRecursion(rb_red_blk_tree * treenode,
 				+ (num_rules_in_this_leaf + also_max_priority) * sizeofint;
 	}
 
-	if (treenode->nil == node)
+	if (this->nil == node)
 		return 0;
 
 	int memory_usage = 0;
 	auto tree = node->rb_tree_next_level;
 
-	memory_usage += CalculateMemoryConsumptionRecursion(tree, tree->root->left,
+	memory_usage += tree->CalculateMemoryConsumptionRecursion(tree->root->left,
 			level + 1, fieldOrder);
-	memory_usage += CalculateMemoryConsumptionRecursion(treenode, node->left,
-			level, fieldOrder);
-	memory_usage += CalculateMemoryConsumptionRecursion(treenode, node->right,
-			level, fieldOrder);
+	memory_usage += CalculateMemoryConsumptionRecursion(
+			node->left, level, fieldOrder);
+	memory_usage += CalculateMemoryConsumptionRecursion(
+			node->right, level, fieldOrder);
 
 	int number_pointers_in_internal_node = 4;
 	int aux_data_internal_node_byte = 1;
@@ -1536,9 +1319,7 @@ int CalculateMemoryConsumptionRecursion(rb_red_blk_tree * treenode,
 			+ aux_data_internal_node_byte;
 }
 
-int CalculateMemoryConsumption(rb_red_blk_tree* tree,
-		const std::vector<int>& fieldOrder) {
-
-	return CalculateMemoryConsumptionRecursion(tree, tree->root->left, 0,
+int rb_red_blk_tree::CalculateMemoryConsumption(FieldOrder_t fieldOrder) {
+	return CalculateMemoryConsumptionRecursion(this->root->left, 0,
 			fieldOrder);
 }
