@@ -45,7 +45,10 @@ public:
 	virtual ~PacketClassifier() {}
 
 protected:
-	void QueryUpdate(int query) { 
+	/**
+	 * Update query counters for performance analysis
+	 */
+	void QueryCountersUpdate(int query) { 
 		packetHistogram[query]++;
 		queryCount += query;
 	}

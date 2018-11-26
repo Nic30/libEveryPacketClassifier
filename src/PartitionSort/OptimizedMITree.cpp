@@ -91,14 +91,13 @@ void OptimizedMITree::Print() const {
 
 void OptimizedMITree::PrintFieldOrder() const {
 	for (size_t i = 0; i < fieldOrder.size(); i++) {
-		printf("%d ", fieldOrder[i]);
+		std::cout << fieldOrder[i] << " ";
 	}
-	printf("\n");
+	std::cout << std::endl;
 }
 
 int OptimizedMITree::ClassifyAPacket(const Packet& one_packet) const {
 	return root->exactQueryIterative(one_packet, fieldOrder);
-	//	return   RBExactQuery(root, one_packet, 0,fieldOrder);
 }
 
 int OptimizedMITree::ClassifyAPacket(const Packet& one_packet,
@@ -117,7 +116,7 @@ bool OptimizedMITree::Empty() const {
 }
 
 void OptimizedMITree::ReconstructIfNumRulesLessThanOrEqualTo(
-		int threshold = 10) {
+		int threshold) {
 	if (isMature)
 		return;
 

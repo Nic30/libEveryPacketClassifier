@@ -11,14 +11,13 @@ int PartitionSort::ClassifyAPacket(const Packet& packet) {
 	int result = -1;
 	int query = 0;
 	for (const auto& t : mitrees) {
-
 		if (result > t->MaxPriority()) {
 			break;
 		}
 		query++;
 		result = std::max(t->ClassifyAPacket(packet), result);
 	}
-	QueryUpdate(query);
+	QueryCountersUpdate(query);
 	return result;
 
 }
@@ -53,8 +52,9 @@ PartitionSort::~PartitionSort() {
 
 void PartitionSort::DeleteRule(size_t i) {
 	if (i < 0 || i >= rules.size()) {
-		printf("Warning index delete rule out of bound: do nothing here\n");
-		printf("%lu vs. size: %lu", i, rules.size());
+		std::cout << "Warning index delete rule out of bound: do nothing here"
+				<< std::endl;
+		std::cout << i << " vs. size: " << rules.size() << std::endl;
 		return;
 	}
 	bool prioritychange = false;
@@ -104,11 +104,11 @@ void PartitionSort::InsertRule(const Rule& one_rule) {
 void PartitionSort::InsertionSortMITrees() {
 	int i, j, numLength = mitrees.size();
 	OptimizedMITree * key;
-	for (j = 1; j < numLength; j++)
-	{
+	for (j = 1; j < numLength; j++) {
 		key = mitrees[j];
-		for (i = j - 1; (i >= 0) && (mitrees[i]-> MaxPriority() < key-> MaxPriority()); i--)
-		{
+		for (i = j - 1; (i >= 0); i--) {
+			if (!(mitrees[i]->MaxPriority() < key->MaxPriority()))
+				break;
 			mitrees[i + 1] = mitrees[i];
 		}
 		mitrees[i + 1] = key;

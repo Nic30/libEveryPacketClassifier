@@ -1,5 +1,5 @@
-#ifndef  SORTABLE_H
-#define  SORTABLE_H
+#pragma once
+
 #include "../ElementaryClasses.h"
 #include "../Utilities/IntervalUtilities.h"
 
@@ -8,7 +8,6 @@ class SortableRulesetPartitioner {
 
 	typedef std::vector<Rule> part;
 public:
-	static const int LOW = 0 , HIGH = 1;
 	static bool IsBucketReallySortable(const SortableRuleset & b);
 
 	/*For GrInd */
@@ -122,8 +121,4 @@ public:
 private:
 	std::vector<Rule> rule_list;
 	std::vector<int> field_order;
-
-
 };
-
-#endif

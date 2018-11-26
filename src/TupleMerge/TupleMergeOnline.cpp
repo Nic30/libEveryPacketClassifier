@@ -103,7 +103,7 @@ int TupleMergeOnline::ClassifyAPacket(const Packet& p) {
 			q++;
 		}
 	}
-	QueryUpdate(q);
+	QueryCountersUpdate(q);
 	return prior;
 }
 

@@ -150,7 +150,7 @@ int TupleSpaceSearch::ClassifyAPacket(const Packet& packet) {
 		priority = std::max(priority, result);
 		query++;
 	}
-	QueryUpdate(query);
+	QueryCountersUpdate(query);
 	return priority;
 }
 void TupleSpaceSearch::DeleteRule(size_t i) {
@@ -237,7 +237,7 @@ int PriorityTupleSpaceSearch::ClassifyAPacket(const Packet& packet) {
 		q++;
 		priority = priority > result ? priority : result;
 	}
-	QueryUpdate(q);
+	QueryCountersUpdate(q);
 	return priority;
 }
 void PriorityTupleSpaceSearch::DeleteRule(size_t i) {
