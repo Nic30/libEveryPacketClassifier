@@ -205,21 +205,6 @@ bool RedBlackTree::canInsert(const std::vector<Range1d>& z,
 	return true;
 }
 
-/***********************************************************************/
-/*  FUNCTION:  TreeInsertHelp  */
-/**/
-/*  INPUTS:  tree is the tree to insert into and z is the node to insert */
-/**/
-/*  OUTPUT:  none */
-/**/
-/*  Modifies Input:  tree, z */
-/**/
-/*  EFFECTS:  Inserts z into the tree as if it were a regular binary tree */
-/*            using the algorithm described in _Introduction_To_Algorithms_ */
-/*            by Cormen et al.  This funciton is only intended to be called */
-/*            by the RBTreeInsert function and not by the user */
-/***********************************************************************/
-
 bool RedBlackTree::insertWithPathCompressionHelp(
 		RedBlackTree_node* z, const std::vector<Range1d>& b, size_t level,
 		FieldOrder_t fieldOrder, int priority,
@@ -311,26 +296,6 @@ bool RedBlackTree::insertWithPathCompressionHelp(
 #endif
 	return false;
 }
-
-/*  Before calling Insert RBTree the node x should have its key set */
-
-/***********************************************************************/
-/*  FUNCTION:  RBTreeInsert */
-/**/
-/*  INPUTS:  tree is the red-black tree to insert a node which has a key */
-/*           pointed to by key and info pointed to by info.  */
-/**/
-/*  OUTPUT:  This function returns a pointer to the newly inserted node */
-/*           which is guarunteed to be valid until this node is deleted. */
-/*           What this means is if another data structure stores this */
-/*           pointer then the tree does not need to be searched when this */
-/*           is to be deleted. */
-/**/
-/*  Modifies Input: tree */
-/**/
-/*  EFFECTS:  Creates a node node which contains the appropriate key and */
-/*            info pointers and inserts it into the tree. */
-/***********************************************************************/
 
 RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
 		const std::vector<Range1d>& key, size_t level,
@@ -562,7 +527,6 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
 
 	return (newNode);
 }
-
 
 RedBlackTree::RedBlackTree_node * RedBlackTree::insert(
 		const std::vector<Range1d>& key, size_t level,
@@ -1111,21 +1075,6 @@ void RedBlackTree::deleteWithPathCompression(RedBlackTree*& tree,
 	exit(0);
 
 }
-/***********************************************************************/
-/*  FUNCTION:  RBDelete */
-/**/
-/*    INPUTS:  tree is the tree to delete node z from */
-/**/
-/*    OUTPUT:  none */
-/**/
-/*    EFFECT:  Deletes z from tree and frees the key and info of z */
-/*             using DestoryKey and DestoryInfo.  Then calls */
-/*             RBDeleteFixUp to restore red-black properties */
-/**/
-/*    Modifies Input: tree, z */
-/**/
-/*    The algorithm from this function is from _Introduction_To_Algorithms_ */
-/***********************************************************************/
 
 void RedBlackTree::deleteNode(RedBlackTree_node* z) {
 	RedBlackTree_node* y;
@@ -1202,17 +1151,6 @@ std::stack<void *> * RedBlackTree::RBEnumerate(
 	return (enumResultStack);
 }
 
-/**********************************************************************
- *  FUNCTION:  RBSerializeIntoRulesRecursion
- *
- *    INPUTS:  tree: 'tree' at 'level' for current 'fieldOrder'
- *
- *
- *    OUTPUT:  a vector of Rule
- *
- *    Modifies Input: none
- ***********************************************************************/
-
 void RedBlackTree::serializeIntoRulesRecursion(RedBlackTree_node * node, size_t level,
 		FieldOrder_t fieldOrder, std::vector<Range1d>& box_so_far,
 		std::vector<Rule>& rules_so_far) {
@@ -1271,9 +1209,6 @@ std::vector<Rule> RedBlackTree::serializeIntoRules(
 	return rules_so_far;
 }
 
-/******************/
-
-//Practice of self-documenting codes.
 int RedBlackTree::calculateMemoryConsumptionRecursion(
 		RedBlackTree_node * node, size_t level,
 		FieldOrder_t fieldOrder) {
