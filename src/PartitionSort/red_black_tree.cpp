@@ -2,30 +2,32 @@
 #include <assert.h>
 
 void RedBlackTree::pushPriority(int p) {
-	  max_priority_local = std::max(p, max_priority_local);
-	  priority_list.push_back(p);
+	max_priority_local = std::max(p, max_priority_local);
+	priority_list.push_back(p);
 }
 
 void RedBlackTree::popPriority(int p) {
-	  find(begin(priority_list), end(priority_list),p);
-	  priority_list.erase(find(begin(priority_list), end(priority_list), p));
-	  if (p == max_priority_local ) {
-		  max_priority_local = *std::max_element(begin(priority_list), end(priority_list));
-	  }
-	  if (priority_list.empty()) max_priority_local = -1;
+	find(begin(priority_list), end(priority_list), p);
+	priority_list.erase(find(begin(priority_list), end(priority_list), p));
+	if (p == max_priority_local) {
+		max_priority_local = *std::max_element(begin(priority_list),
+				end(priority_list));
+	}
+	if (priority_list.empty())
+		max_priority_local = -1;
 }
 
 void RedBlackTree::clearPriority() {
-	  max_priority_local = -1;
-	  priority_list.clear();
+	max_priority_local = -1;
+	priority_list.clear();
 }
 
 int RedBlackTree::getMaxPriority() const {
-	  return max_priority_local;
+	return max_priority_local;
 }
 
-int RedBlackTree::getSizeList() const{
-	  return priority_list.size();
+int RedBlackTree::getSizeList() const {
+	return priority_list.size();
 }
 
 int CompareBox(const Range1d& a, const Range1d& b) {
@@ -159,8 +161,8 @@ bool inline IsIdentical(unsigned a1, unsigned b1, unsigned a2, unsigned b2) {
 	return a1 == a2 && b1 == b2;
 }
 
-bool RedBlackTree::canInsert(const std::vector<Range1d>& z,
-		size_t level, FieldOrder_t fieldOrder) {
+bool RedBlackTree::canInsert(const std::vector<Range1d>& z, size_t level,
+		FieldOrder_t fieldOrder) {
 
 	if (level == fieldOrder.size()) {
 		return true;
@@ -197,7 +199,7 @@ bool RedBlackTree::canInsert(const std::vector<Range1d>& z,
 				return true;
 			else
 				return x->rb_tree_next_level->canInsert(z, level + 1,
-							fieldOrder);
+						fieldOrder);
 		} else { /* x.key || z.key */
 			return false;
 		}
@@ -205,10 +207,9 @@ bool RedBlackTree::canInsert(const std::vector<Range1d>& z,
 	return true;
 }
 
-bool RedBlackTree::insertWithPathCompressionHelp(
-		RedBlackTree_node* z, const std::vector<Range1d>& b, size_t level,
-		FieldOrder_t fieldOrder, int priority,
-		RedBlackTree_node*& out_ptr) {
+bool RedBlackTree::insertWithPathCompressionHelp(RedBlackTree_node* z,
+		const std::vector<Range1d>& b, size_t level, FieldOrder_t fieldOrder,
+		int priority, RedBlackTree_node*& out_ptr) {
 	/*  This function should only be called by InsertRBTree (see above) */
 	RedBlackTree_node* x;
 	RedBlackTree_node* y;
@@ -261,8 +262,8 @@ bool RedBlackTree::insertWithPathCompressionHelp(
 
 				 }
 				 else {*/
-				x->rb_tree_next_level->insertWithPathCompression(b,
-						level + 1, fieldOrder, priority);
+				x->rb_tree_next_level->insertWithPathCompression(b, level + 1,
+						fieldOrder, priority);
 				//}
 
 			} else {
@@ -288,8 +289,8 @@ bool RedBlackTree::insertWithPathCompressionHelp(
 	//need to create a tree first then followed by insertion
 	//we use path-compression here since this tree contains a single rule
 	z->rb_tree_next_level = new RedBlackTree();
-	z->rb_tree_next_level->insertWithPathCompression(b, level + 1,
-			fieldOrder, priority);
+	z->rb_tree_next_level->insertWithPathCompression(b, level + 1, fieldOrder,
+			priority);
 
 #ifdef DEBUG_ASSERT
 	assert(!nil->red && "nil not red in TreeInsertHelp");
@@ -298,8 +299,8 @@ bool RedBlackTree::insertWithPathCompressionHelp(
 }
 
 RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
-		const std::vector<Range1d>& key, size_t level,
-		FieldOrder_t fieldOrder, int priority) {
+		const std::vector<Range1d>& key, size_t level, FieldOrder_t fieldOrder,
+		int priority) {
 
 	RedBlackTree_node * y;
 	RedBlackTree_node * x;
@@ -390,8 +391,7 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
 						key[fieldOrder[level + run]].low,
 						key[fieldOrder[level + run]].high)) {
 					printf("Warning not intersect?\n");
-					printf("[%u %u] vs. [%u %u]\n",
-							temp_chain_boxes[run].low,
+					printf("[%u %u] vs. [%u %u]\n", temp_chain_boxes[run].low,
 							temp_chain_boxes[run].high,
 							key[fieldOrder[level + run]].low,
 							key[fieldOrder[level + run]].high);
@@ -413,7 +413,7 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
 				auto PrependChainbox =
 						[](std::vector<Range1d>& cb, int n_prepend) {
 							std::vector<Range1d> t;
-							for (int i = 0; i < n_prepend; i++) t.push_back({999, 100020});
+							for (int i = 0; i < n_prepend; i++) t.push_back( {999, 100020});
 							t.insert(end(t), begin(cb), end(cb));
 							return t;
 						};
@@ -444,11 +444,9 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
 						return t;
 					};
 
-			auto z1 = insert(
-					PrependChainbox(temp_chain_boxes, level), level + run,
-					naturalFieldOrder, xpriority);
-			auto z2 = insert(key, level + run, fieldOrder,
-					priority);
+			auto z1 = insert(PrependChainbox(temp_chain_boxes, level),
+					level + run, naturalFieldOrder, xpriority);
+			auto z2 = insert(key, level + run, fieldOrder, priority);
 			count = 2;
 
 			z1->rb_tree_next_level = new RedBlackTree();
@@ -474,8 +472,8 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
 	x->key = key[fieldOrder[level]];
 	RedBlackTree_node * out_ptr;
 
-	if (insertWithPathCompressionHelp(x, key, level, fieldOrder,
-			priority, out_ptr)) {
+	if (insertWithPathCompressionHelp(x, key, level, fieldOrder, priority,
+			out_ptr)) {
 		//insertion finds identical box.
 		//do nothing for now
 		return out_ptr;
@@ -529,8 +527,8 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
 }
 
 RedBlackTree::RedBlackTree_node * RedBlackTree::insert(
-		const std::vector<Range1d>& key, size_t level,
-		FieldOrder_t field_order, int priority) {
+		const std::vector<Range1d>& key, size_t level, FieldOrder_t field_order,
+		int priority) {
 
 	if (level == key.size())
 		return nullptr;
@@ -597,9 +595,8 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insert(
 }
 
 bool RedBlackTree::insertHelp(RedBlackTree_node* z,
-		const std::vector<Range1d>& b, size_t level,
-		FieldOrder_t field_order, int priority,
-		RedBlackTree_node*& out_ptr) {
+		const std::vector<Range1d>& b, size_t level, FieldOrder_t field_order,
+		int priority, RedBlackTree_node*& out_ptr) {
 	/*  This function should only be called by InsertRBTree  */
 	RedBlackTree_node* x;
 	RedBlackTree_node* y;
@@ -648,7 +645,8 @@ bool RedBlackTree::insertHelp(RedBlackTree_node* z,
 
 }
 
-RedBlackTree::RedBlackTree_node* RedBlackTree::getSuccessor(RedBlackTree_node* x) {
+RedBlackTree::RedBlackTree_node* RedBlackTree::getSuccessor(
+		RedBlackTree_node* x) {
 	RedBlackTree_node* y;
 	if (nil != (y = x->right)) { /* assignment to y is intentional */
 		while (y->left != nil) { /* returns the minium of the right subtree of x */
@@ -667,7 +665,8 @@ RedBlackTree::RedBlackTree_node* RedBlackTree::getSuccessor(RedBlackTree_node* x
 	}
 }
 
-RedBlackTree::RedBlackTree_node* RedBlackTree::getPredecessor(RedBlackTree_node* x) {
+RedBlackTree::RedBlackTree_node* RedBlackTree::getPredecessor(
+		RedBlackTree_node* x) {
 	RedBlackTree_node* y;
 	if (nil != (y = x->left)) { /* assignment to y is intentional */
 		while (y->right != nil) { /* returns the maximum of the left subtree of x */
@@ -714,7 +713,6 @@ void RedBlackTree::destHelper(RedBlackTree_node* x) {
 		delete x;
 	}
 }
-
 
 RedBlackTree::~RedBlackTree() {
 	destHelper(root->left);
@@ -765,8 +763,8 @@ int RedBlackTree::exactQuery(const Packet& q, size_t level,
 	return x->rb_tree_next_level->exactQuery(q, level + 1, fieldOrder);
 }
 
-int RedBlackTree::exactQueryIterative(const Packet& q,
-		FieldOrder_t fieldOrder, size_t level) {
+int RedBlackTree::exactQueryIterative(const Packet& q, FieldOrder_t fieldOrder,
+		size_t level) {
 	//check if singleton
 	if (level == fieldOrder.size()) {
 		return getMaxPriority();
@@ -908,7 +906,8 @@ void RedBlackTree::deleteFixUp(RedBlackTree_node* x) {
 #endif
 }
 
-void ClearStack(std::stack<std::pair<RedBlackTree *, RedBlackTree::RedBlackTree_node *>>& st,
+void ClearStack(
+		std::stack<std::pair<RedBlackTree *, RedBlackTree::RedBlackTree_node *>>& st,
 		RedBlackTree* tree) {
 	while (!st.empty()) {
 		auto e = st.top();
@@ -924,9 +923,8 @@ void ClearStack(std::stack<std::pair<RedBlackTree *, RedBlackTree::RedBlackTree_
 }
 
 void RedBlackTree::deleteWithPathCompression(RedBlackTree*& tree,
-		const std::vector<Range1d>& key, size_t level,
-		FieldOrder_t fieldOrder, int priority,
-		bool& JustDeletedTree) {
+		const std::vector<Range1d>& key, size_t level, FieldOrder_t fieldOrder,
+		int priority, bool& JustDeletedTree) {
 	if (level == fieldOrder.size()) {
 		tree->count--;
 		tree->popPriority(priority);
@@ -1053,8 +1051,8 @@ void RedBlackTree::deleteWithPathCompression(RedBlackTree*& tree,
 		} else if (compare_result == 0) { /* x.key = z.key */
 			bool justDelete = false;
 			tree->count--;
-			deleteWithPathCompression(x->rb_tree_next_level, key,
-					level + 1, fieldOrder, priority, justDelete);
+			deleteWithPathCompression(x->rb_tree_next_level, key, level + 1,
+					fieldOrder, priority, justDelete);
 			if (justDelete)
 				tree->deleteNode(x);
 
@@ -1062,8 +1060,7 @@ void RedBlackTree::deleteWithPathCompression(RedBlackTree*& tree,
 
 		} else { /* x.key || z.key */
 			printf("x:[%u %u], key:[%u %u]\n", x->key.low, x->key.high,
-					key[fieldOrder[level]].low,
-					key[fieldOrder[level]].high);
+					key[fieldOrder[level]].low, key[fieldOrder[level]].high);
 			printf(
 					"Warning RBFindNodeSequence : x.key || key[fieldOrder[level]]\n");
 		}
@@ -1129,8 +1126,8 @@ void RedBlackTree::deleteNode(RedBlackTree_node* z) {
 #endif
 }
 
-std::stack<void *> * RedBlackTree::RBEnumerate(
-		const Range1d& low, const Range1d& high) {
+std::stack<void *> * RedBlackTree::RBEnumerate(const Range1d& low,
+		const Range1d& high) {
 	auto enumResultStack = new std::stack<void *>;
 	RedBlackTree_node* nil = this->nil;
 	RedBlackTree_node* x = this->root->left;
@@ -1151,8 +1148,8 @@ std::stack<void *> * RedBlackTree::RBEnumerate(
 	return (enumResultStack);
 }
 
-void RedBlackTree::serializeIntoRulesRecursion(RedBlackTree_node * node, size_t level,
-		FieldOrder_t fieldOrder, std::vector<Range1d>& box_so_far,
+void RedBlackTree::serializeIntoRulesRecursion(RedBlackTree_node * node,
+		size_t level, FieldOrder_t fieldOrder, std::vector<Range1d>& box_so_far,
 		std::vector<Rule>& rules_so_far) {
 	if (level == fieldOrder.size()) {
 		for (int n : this->priority_list) {
@@ -1193,25 +1190,23 @@ void RedBlackTree::serializeIntoRulesRecursion(RedBlackTree_node * node, size_t 
 			box_so_far, rules_so_far);
 	box_so_far.pop_back();
 
-	serializeIntoRulesRecursion(node->left, level, fieldOrder,
-			box_so_far, rules_so_far);
-	serializeIntoRulesRecursion(node->right, level, fieldOrder,
-			box_so_far, rules_so_far);
+	serializeIntoRulesRecursion(node->left, level, fieldOrder, box_so_far,
+			rules_so_far);
+	serializeIntoRulesRecursion(node->right, level, fieldOrder, box_so_far,
+			rules_so_far);
 
 }
 
-std::vector<Rule> RedBlackTree::serializeIntoRules(
-		FieldOrder_t fieldOrder) {
+std::vector<Rule> RedBlackTree::serializeIntoRules(FieldOrder_t fieldOrder) {
 	std::vector<Range1d> boxes_so_far;
 	std::vector<Rule> rules_so_far;
-	serializeIntoRulesRecursion(this->root->left, 0, fieldOrder,
-			boxes_so_far, rules_so_far);
+	serializeIntoRulesRecursion(this->root->left, 0, fieldOrder, boxes_so_far,
+			rules_so_far);
 	return rules_so_far;
 }
 
-int RedBlackTree::calculateMemoryConsumptionRecursion(
-		RedBlackTree_node * node, size_t level,
-		FieldOrder_t fieldOrder) {
+int RedBlackTree::calculateMemoryConsumptionRecursion(RedBlackTree_node * node,
+		size_t level, FieldOrder_t fieldOrder) {
 	if (level == fieldOrder.size()) {
 
 		int num_rules_in_this_leaf = this->priority_list.size();
@@ -1252,10 +1247,10 @@ int RedBlackTree::calculateMemoryConsumptionRecursion(
 
 	memory_usage += tree->calculateMemoryConsumptionRecursion(tree->root->left,
 			level + 1, fieldOrder);
-	memory_usage += calculateMemoryConsumptionRecursion(
-			node->left, level, fieldOrder);
-	memory_usage += calculateMemoryConsumptionRecursion(
-			node->right, level, fieldOrder);
+	memory_usage += calculateMemoryConsumptionRecursion(node->left, level,
+			fieldOrder);
+	memory_usage += calculateMemoryConsumptionRecursion(node->right, level,
+			fieldOrder);
 
 	int number_pointers_in_internal_node = 4;
 	int aux_data_internal_node_byte = 1;
@@ -1280,6 +1275,5 @@ int RedBlackTree::calculateMemoryConsumptionRecursion(
 }
 
 int RedBlackTree::calculateMemoryConsumption(FieldOrder_t fieldOrder) {
-	return calculateMemoryConsumptionRecursion(this->root->left, 0,
-			fieldOrder);
+	return calculateMemoryConsumptionRecursion(this->root->left, 0, fieldOrder);
 }
