@@ -9,7 +9,7 @@ class OptimizedMITree: public ClassifierTable  {
 public:
 	OptimizedMITree(const SortableRuleset& rules) {
 		numRules = 0;
-		root = new rb_red_blk_tree();
+		root = new RedBlackTree();
 		fieldOrder = rules.GetFieldOrdering();
 		maxPriority = -1;
 		for (const auto& r : rules.GetRule()) {
@@ -19,19 +19,19 @@ public:
 		
 	}
 	OptimizedMITree(const std::vector<int>& fieldOrder) : fieldOrder(fieldOrder){
-		root = new rb_red_blk_tree();
+		root = new RedBlackTree();
 		numRules = 0; 
 		maxPriority = -1;
 	}
 	OptimizedMITree(const Rule& r) {
-		root = new rb_red_blk_tree();
+		root = new RedBlackTree();
 		numRules = 0; 
 		fieldOrder = SortableRulesetPartitioner::GetFieldOrderByRule(r);
 		maxPriority = -1;
 	}
 	OptimizedMITree() {
 		numRules = 0;
-		root = new rb_red_blk_tree();
+		root = new RedBlackTree();
 		fieldOrder = { 0, 1, 2, 3 };
 		maxPriority = -1;
 	}
@@ -41,7 +41,7 @@ public:
 	void Insertion(const Rule& rule) {
 		priorityContainer.insert(rule.priority); 
 		maxPriority = std::max(maxPriority, rule.priority);
-		root->RBTreeInsertWithPathCompression(rule.range, 0, fieldOrder, rule.priority);
+		root->insertWithPathCompression(rule.range, 0, fieldOrder, rule.priority);
 		numRules++;
 		counter++;
 	}
@@ -50,7 +50,7 @@ public:
 			priorityContainer.insert(rule.priority);
 			priorityChange = rule.priority > maxPriority;
 			maxPriority = std::max(maxPriority, rule.priority);
-			root->RBTreeInsertWithPathCompression(rule.range, 0, fieldOrder, rule.priority);
+			root->insertWithPathCompression(rule.range, 0, fieldOrder, rule.priority);
 			numRules++; 
 			counter++;
    //		} 
@@ -61,7 +61,7 @@ public:
 			priorityContainer.insert(rule.priority);
 			priorityChange = rule.priority > maxPriority;
 			maxPriority = std::max(maxPriority, rule.priority);
-			root->RBTreeInsertWithPathCompression(rule.range, 0, fieldOrder, rule.priority);
+			root->insertWithPathCompression(rule.range, 0, fieldOrder, rule.priority);
 			numRules++;
 			return true;
 		} else {
@@ -84,16 +84,16 @@ public:
 		}
 		numRules--;
 		bool JustDeletedTree;
-		rb_red_blk_tree::RBTreeDeleteWithPathCompression(root, rule.range, 0, fieldOrder, rule.priority, JustDeletedTree);
+		RedBlackTree::deleteWithPathCompression(root, rule.range, 0, fieldOrder, rule.priority, JustDeletedTree);
 	}
 	bool CanInsertRule(const Rule& r) const {
-		return root->RBTreeCanInsert(r.range, 0, fieldOrder);
+		return root->canInsert(r.range, 0, fieldOrder);
 	}
  
 
 	//void DeleteRule(MITreeRule * mrule);
 	void  Print() const {
-		root->RBTreePrint();
+		root->print();
 	};
 	void PrintFieldOrder() const {
 		for (size_t i = 0; i < fieldOrder.size(); i++) {
@@ -102,11 +102,11 @@ public:
 		printf("\n");
 	}
 	int ClassifyAPacket(const Packet& one_packet)const {
-		return root->RBExactQueryIterative(one_packet, fieldOrder);
+		return root->exactQueryIterative(one_packet, fieldOrder);
 		//	return   RBExactQuery(root, one_packet, 0,fieldOrder);
 	}
 	int ClassifyAPacket(const Packet& one_packet,int priority_so_far)const {
-		return root->RBExactQueryPriority(one_packet, 0, fieldOrder, priority_so_far);
+		return root->exactQueryPriority(one_packet, 0, fieldOrder, priority_so_far);
 	}
 	//std::vector<MITreeRule *> MRules;
 
@@ -134,14 +134,14 @@ public:
 		}
 	}
 	std::vector<Rule> SerializeIntoRules() const {
-		return root->RBSerializeIntoRules(fieldOrder);
+		return root->serializeIntoRules(fieldOrder);
 	}
 	std::vector<Rule> GetRules() const {
 		return SerializeIntoRules();
 	}
 
 	int MemoryConsumption() const{
-		return root-> CalculateMemoryConsumption(fieldOrder);
+		return root-> calculateMemoryConsumption(fieldOrder);
 	}
 
 	Memory MemSizeBytes(Memory ruleSize) const {
@@ -150,7 +150,7 @@ public:
 	
 private:
 	bool isMature = false;
-	rb_red_blk_tree * root;
+	RedBlackTree * root;
 	int counter = 0;
 	int numRules =0;
 	std::vector<int> fieldOrder;
@@ -170,6 +170,6 @@ private:
 		fieldOrder.clear();
 		priorityContainer.clear();
 		maxPriority = -1;
-		root = new rb_red_blk_tree();
+		root = new RedBlackTree();
 	}
 };
