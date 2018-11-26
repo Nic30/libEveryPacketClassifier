@@ -84,6 +84,7 @@ int rb_selftest0() {
 
 	//mitree.Deletion(r1, prioritychange);
 	//printf("p1 result: %d\n", mitree.ClassifyAPacket(p1));
+	return 0;
 }
 
 /*
