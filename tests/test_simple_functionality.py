@@ -58,9 +58,11 @@ class ValidationTC(SimpleFunctionalityTC):
     def run_bin(self, alg, ruleset=None):
         if ruleset is None:
             ruleset = self.DEFAULT_RULESET
-
-        check_call([BIN, f"c={alg}", f"f={ruleset}", "m=Validation"])
-
+        cmd = [BIN, f"c={alg}", f"f={ruleset}", "m=Validation"]
+        try:
+            check_call(cmd)
+        except CalledProcessError:
+            raise AssertionError(" ".join(cmd), "failed")
 
 if __name__ == "__main__":
     suite = unittest.TestSuite()
