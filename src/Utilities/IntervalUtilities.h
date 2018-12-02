@@ -16,7 +16,7 @@ public:
 	static std::pair<std::vector<int>, int> MWISIntervals(const std::vector<Rule>& I, int x);
 
 	static std::vector<WeightedInterval> CreateUniqueInterval(const std::vector<Rule>& rules, int field);
-	static std::vector<LightWeightedInterval> FastCreateUniqueInterval(const std::vector<interval>& rules);
+	static std::vector<LightWeightedInterval> FastCreateUniqueInterval(const std::vector<Range1dWeighted>& rules);
 	static std::vector<std::vector<WeightedInterval>> CreateUniqueIntervalsForEachField(const std::vector<Rule>& rules);
  
 	static std::vector<Rule> RedundancyRemoval(const std::vector<Rule>& rules);

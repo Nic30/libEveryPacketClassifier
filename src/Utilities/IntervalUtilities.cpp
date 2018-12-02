@@ -148,13 +148,13 @@ std::pair<std::vector<int>, int> Utilities::MWISIntervals(
 }
 
 std::vector<LightWeightedInterval> Utilities::FastCreateUniqueInterval(
-		const std::vector<interval>& rules_given_field) {
+		const std::vector<Range1dWeighted>& rules_given_field) {
 
 	int num_rules = rules_given_field.size();
 	int count = 1;
 	std::vector<LightWeightedInterval> out;
 	out.reserve(rules_given_field.size());
-	interval current_interval = rules_given_field[0];
+	Range1dWeighted current_interval = rules_given_field[0];
 
 	for (int i = 1; i < num_rules; i++) {
 		if (rules_given_field[i] == current_interval) {
@@ -176,11 +176,11 @@ std::vector<WeightedInterval> Utilities::CreateUniqueInterval(
 		const std::vector<Rule>& rules, int field) {
 	//sort partition by field j
 
-	std::multiset<interval> sorted_rules;
+	std::multiset<Range1dWeighted> sorted_rules;
 	int i = 0;
 	for (const auto r : rules) {
 		sorted_rules.insert(
-				interval(r.range[field].low, r.range[field].high, i++));
+				Range1dWeighted(r.range[field].low, r.range[field].high, i++));
 	}
 	std::vector<WeightedInterval> out;
 	out.reserve(rules.size());

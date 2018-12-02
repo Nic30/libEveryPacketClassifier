@@ -125,11 +125,11 @@ struct Rule {
 	}
 };
 
-class interval: public Range1d {
+class Range1dWeighted: public Range1d {
 public:
 
-	interval(): interval(0, 0, -1) {}
-	interval(Point1d low, Point1d high, int id) :
+	Range1dWeighted(): Range1dWeighted(0, 0, -1) {}
+	Range1dWeighted(Point1d low, Point1d high, int id) :
 			Range1d(low, high), id(id), weight(1) {
 	}
 
@@ -137,13 +137,15 @@ public:
 	int weight;
 };
 
-struct EndPoint {
+class EndPoint {
+public:
 	EndPoint(double val, bool isRightEnd, int id) :
-			val(val), isRightEnd(isRightEnd), id(id) {
-	}
+			val(val), isRightEnd(isRightEnd), id(id) {}
+
 	bool operator <(const EndPoint & rhs) const {
 		return val < rhs.val;
 	}
+
 	double val;
 	bool isRightEnd;
 	int id;
@@ -193,10 +195,14 @@ enum PSMode {
 
 inline void SortRules(std::vector<Rule>& rules) {
 	sort(rules.begin(), rules.end(),
-			[](const Rule& rx, const Rule& ry) {return rx.priority >= ry.priority;});
+			[](const Rule& rx, const Rule& ry) {
+		return rx.priority >= ry.priority;
+	});
 }
 
 inline void SortRules(std::vector<Rule*>& rules) {
 	sort(rules.begin(), rules.end(),
-			[](const Rule* rx, const Rule* ry) {return rx->priority >= ry->priority;});
+			[](const Rule* rx, const Rule* ry) {
+		return rx->priority >= ry->priority;
+	});
 }

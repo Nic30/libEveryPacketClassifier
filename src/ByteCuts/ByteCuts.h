@@ -76,7 +76,7 @@ public:
 		return trees[tableIndex]->Cost();
 	}
 private:
-	bool IsWideAddress(interval s) const;
+	bool IsWideAddress(Range1dWeighted s) const;
 	void BuildTree(const std::vector<Rule>& rules);
 	void BuildBadTree(const std::vector<Rule>& rules);
 	std::vector<Rule> Separate(const std::vector<Rule>& rules, std::vector<Rule>& remain);

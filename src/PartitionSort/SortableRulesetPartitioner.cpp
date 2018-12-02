@@ -427,13 +427,13 @@ std::pair<std::vector<SortableRulesetPartitioner::part>, int> SortableRulesetPar
 	if (apartition.size() == 0) {
 		return make_pair(std::vector<part>(), 0);
 	}
-	std::vector<interval> rules_given_field;
+	std::vector<Range1dWeighted> rules_given_field;
 	rules_given_field.reserve(apartition.size());
 	int i = 0;
 	for (const auto & r : apartition) {
 		rules_given_field.emplace_back(r.range[field].low, r.range[field].high, i++);
 	}
-	std::sort(std::begin(rules_given_field), std::end(rules_given_field), [](const interval& lhs, const interval& rhs) {
+	std::sort(std::begin(rules_given_field), std::end(rules_given_field), [](const Range1dWeighted& lhs, const Range1dWeighted& rhs) {
 		if (lhs.high < rhs.high) {
 			return lhs.high < rhs.high;
 		}

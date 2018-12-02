@@ -183,7 +183,7 @@ int ByteCutsClassifier::ClassifyAPacket(const Packet& packet) {
 	return result;
 }
 
-bool ByteCutsClassifier::IsWideAddress(interval s) const {
+bool ByteCutsClassifier::IsWideAddress(Range1dWeighted s) const {
 	return (s.low + 0xFFFF) < s.high;
 }
 
