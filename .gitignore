@@ -8,8 +8,4 @@ Debug/packetClassificators
 results
 
 # eclise project
-.cproject
-.project
-.settings/
-.pydevproject
 /Debug/
