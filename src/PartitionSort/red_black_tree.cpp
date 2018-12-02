@@ -397,12 +397,12 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
 	}
 
 	newNode = x;
-	_insert(x);
+	_insertFix(x);
 
 	return (newNode);
 }
 
-void RedBlackTree::_insert(RedBlackTree_node * t) {
+void RedBlackTree::_insertFix(RedBlackTree_node * t) {
 	RedBlackTree_node *u;
 	if (root == t) {
 		t->red = 0;
@@ -469,7 +469,7 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insert(
 	}
 
 	RedBlackTree_node * newNode = x;
-	_insert(x);
+	_insertFix(x);
 
 	return newNode;
 }

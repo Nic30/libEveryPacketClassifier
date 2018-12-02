@@ -139,9 +139,9 @@ public:
 			const std::vector<int>& fieldOrder, int priority = 0);
 
 	/*
-	 * Regular red-black tree insert method
+	 * Regular red-black tree insertFix method
 	 * */
-	void _insert(RedBlackTree_node * x);
+	void _insertFix(RedBlackTree_node * x);
 
 	bool canInsert(const std::vector<Range1d>& z, size_t level,
 			FieldOrder_t fieldOrder);
