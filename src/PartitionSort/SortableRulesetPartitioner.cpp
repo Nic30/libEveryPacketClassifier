@@ -24,7 +24,8 @@ std::pair<std::vector<SortableRulesetPartitioner::part>, bool> SortableRulesetPa
 	for (const auto& p : all_partition) {
 		auto pvi = IsThisPartitionSortable(p, current_field);
 		bool isSortable = pvi.second;
-		if (!isSortable) return make_pair(new_entire_partition, false);
+		if (!isSortable)
+			return make_pair(new_entire_partition, false);
 		new_entire_partition.insert(end(new_entire_partition), begin(pvi.first), end(pvi.first));
 	}
 	return make_pair(new_entire_partition, true);
@@ -170,8 +171,7 @@ std::vector<SortableRuleset> SortableRulesetPartitioner::SortableRulesetPartitio
 		}
 
 		if (rule_and_field_order.first.size() == 0) {
-			printf("Warning rule_and_field_order.first = 0 in SortableRulesetPartitioning\n");
-			exit(0);
+			throw std::runtime_error("Warning rule_and_field_order.first = 0 in SortableRulesetPartitioning\n");
 		}
 
 		SortableRuleset sb = SortableRuleset(rule_and_field_order.first, rule_and_field_order.second);
@@ -328,8 +328,7 @@ int SortableRulesetPartitioner::ComputeMaxIntersectionRecursive(const std::vecto
 			while (qx == end_pointx[i_e].first) {
 				int priority = end_pointx[i_e].second;
 				if (index_rule_this_loop[priority] < 0) {
-					printf("ERROR in OPTDecompositionRecursive: index_rule_this_loop[priority] < 0 \n");
-					exit(1);
+					throw std::runtime_error("ERROR in OPTDecompositionRecursive: index_rule_this_loop[priority] < 0 \n");
 				}
 
 				int index_to_delete = index_rule_this_loop[priority];
@@ -540,7 +539,6 @@ std::pair<std::vector<Rule>, std::vector<int>> SortableRulesetPartitioner::FastG
 	//fill in the rest of the field in order
 	for (int j = 0; j < num_fields; j++) {
 		if (std::find(begin(current_field), end(current_field), j) == end(current_field)) {
-			;
 			current_field.push_back(j);
 		}
 	}
