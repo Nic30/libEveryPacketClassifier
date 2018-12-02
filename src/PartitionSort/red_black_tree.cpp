@@ -52,69 +52,55 @@ RedBlackTree::RedBlackTree() {
 	temp->red = 0;
 }
 
-void RedBlackTree::rotateLeft(RedBlackTree_node* x) {
-	RedBlackTree_node* y;
+void RedBlackTree::rotateLeft(RedBlackTree_node* p) {
+	if (p->right == nullptr)
+		return;
+	else {
+		auto y = p->right;
+		if (y->left) {
+			p->right = y->left;
+			y->left->parent = p;
+		} else
+			p->right = nullptr;
+		if (p->parent)
+			y->parent = p->parent;
 
-	/*  I originally wrote this function to use the sentinel for */
-	/*  nil to avoid checking for nil.  However this introduces a */
-	/*  very subtle bug because sometimes this function modifies */
-	/*  the parent pointer of nil.  This can be a problem if a */
-	/*  function which calls LeftRotate also uses the nil sentinel */
-	/*  and expects the nil sentinel's parent pointer to be unchanged */
-	/*  after calling this function.  For example, when RBDeleteFixUP */
-	/*  calls LeftRotate it expects the parent pointer of nil to be */
-	/*  unchanged. */
-
-	y = x->right;
-	x->right = y->left;
-
-	if (y->left)
-		y->left->parent = x; /* used to use sentinel here */
-	/* and do an unconditional assignment instead of testing for nil */
-
-	y->parent = x->parent;
-
-	/* instead of checking if x->parent is the root as in the book, we */
-	/* count on the root sentinel to implicitly take care of this case */
-	if (x == x->parent->left) {
-		x->parent->left = y;
-	} else {
-		x->parent->right = y;
+		if (p->parent == nullptr)
+			root = y;
+		else {
+			if (p == p->parent->left)
+				p->parent->left = y;
+			else
+				p->parent->right = y;
+		}
+		y->left = p;
+		p->parent = y;
 	}
-	y->left = x;
-	x->parent = y;
 }
 
-void RedBlackTree::rotateRight(RedBlackTree_node* y) {
-	RedBlackTree_node* x;
-
-	/*  I originally wrote this function to use the sentinel for */
-	/*  nil to avoid checking for nil.  However this introduces a */
-	/*  very subtle bug because sometimes this function modifies */
-	/*  the parent pointer of nil.  This can be a problem if a */
-	/*  function which calls LeftRotate also uses the nil sentinel */
-	/*  and expects the nil sentinel's parent pointer to be unchanged */
-	/*  after calling this function.  For example, when RBDeleteFixUP */
-	/*  calls LeftRotate it expects the parent pointer of nil to be */
-	/*  unchanged. */
-
-	x = y->left;
-	y->left = x->right;
-
-	if (x->right)
-		x->right->parent = y; /*used to use sentinel here */
-	/* and do an unconditional assignment instead of testing for nil */
-
-	/* instead of checking if x->parent is the root as in the book, we */
-	/* count on the root sentinel to implicitly take care of this case */
-	x->parent = y->parent;
-	if (y == y->parent->left) {
-		y->parent->left = x;
-	} else {
-		y->parent->right = x;
+void RedBlackTree::rotateRight(RedBlackTree_node* p) {
+	if (p->left == nullptr)
+		return;
+	else {
+		auto y = p->left;
+		if (y->right) {
+			p->left = y->right;
+			y->right->parent = p;
+		} else
+			p->left = nullptr;
+		if (p->parent)
+			y->parent = p->parent;
+		if (p->parent == nullptr)
+			root = y;
+		else {
+			if (p == p->parent->left)
+				p->parent->left = y;
+			else
+				p->parent->right = y;
+		}
+		y->right = p;
+		p->parent = y;
 	}
-	x->right = y;
-	y->parent = x;
 }
 
 bool RedBlackTree::canInsert(const std::vector<Range1d>& z, size_t level,
