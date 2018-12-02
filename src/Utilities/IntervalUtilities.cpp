@@ -29,8 +29,8 @@ bool Utilities::IsIdentical(const Rule& r1, const Rule& r2) {
 	return true;
 }
 
-int Utilities::GetMaxOverlap(const std::multiset<unsigned int>& lo,
-		const std::multiset<unsigned int>& hi) {
+int Utilities::GetMaxOverlap(const std::multiset<Point1d>& lo,
+		const std::multiset<Point1d>& hi) {
 	if (lo.size() == 0) {
 		return 0;
 		//	cout << "error in GetMaxOverLap: lo size = 0 " << endl;
