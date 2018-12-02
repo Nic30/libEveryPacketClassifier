@@ -30,19 +30,6 @@ int RedBlackTree::getSizeList() const {
 	return priority_list.size();
 }
 
-int CompareBox(const Range1d& a, const Range1d& b) {
-	if (a == b)
-		return 0;
-	else if (a.isIntersect(b))
-		return 2;
-	else if (a.high < b.low)
-		return -1;
-	else if (a.low > b.high)
-		return 1;
-
-	throw std::runtime_error("Something went wrong during compare");
-}
-
 int inline CompareQuery(const Range1d& a, const Packet& q, size_t level,
 		RedBlackTree::FieldOrder_t fieldOrder) {
 	if (a.high < q[fieldOrder[level]]) {
@@ -152,7 +139,7 @@ bool RedBlackTree::canInsert(const std::vector<Range1d>& z, size_t level,
 
 	RedBlackTree_node* x = root->left;
 	while (x) {
-		int compare_result = CompareBox(x->key, z[fieldOrder[level]]);
+		int compare_result = x->key.cmp(z[fieldOrder[level]]);
 		if (compare_result == 1) { /* x.key > z.key */
 			x = x->left;
 		} else if (compare_result == -1) { /* x.key < z.key */
@@ -182,7 +169,7 @@ bool RedBlackTree::insertWithPathCompressionHelp(RedBlackTree_node* z,
 	x = root->left;
 	while (x) {
 		y = x;
-		int compare_result = CompareBox(x->key, z->key);
+		int compare_result = x->key.cmp(z->key);
 		if (compare_result == 1) { /* x.key > z.key */
 			x = x->left;
 		} else if (compare_result == -1) { /* x.key < z.key */
@@ -248,27 +235,12 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
 		auto temp_chain_boxes = chain_boxes;
 		int xpriority = getMaxPriority();
 
-		//  tree->pq = std::priority_queue<int>();
 		count++;
-		//  tree->PushPriority(priority);
 
-		/* bool is_identical = 1;
-		 for (int i = level; i < fieldOrder.size(); i++) {
-		 if (tree->chain_boxes[i - level] != key[fieldOrder[i]]){
-		 is_identical = 0;
-		 break;
-		 }
-		 }
-		 if (is_identical) {
-		 //TODO:: move tree->pq.push(priority); to this line
-		 tree->count = 1;
-		 return nullptr;
-		 }*/
 		//quick check if identical just reset count = 1;
 		chain_boxes.clear();
 
 		//unzipping the next level
-
 		std::vector<int> naturalFieldOrder(fieldOrder.size());
 		std::iota(begin(naturalFieldOrder), end(naturalFieldOrder), 0);
 		size_t run = 0;
@@ -285,9 +257,6 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
 								== key[fieldOrder[level + run]].high)) {
 
 					x->rb_tree_next_level = new RedBlackTree();
-
-					//  x->rb_tree_next_level->PushPriority(xpriority);
-					// x->rb_tree_next_level->PushPriority(priority);
 					x->rb_tree_next_level->count = 2;
 					x = x->rb_tree_next_level->insert(key, level + run,
 							fieldOrder, priority);
@@ -325,8 +294,6 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
 				}
 				//split into z and x node
 				x->rb_tree_next_level = new RedBlackTree();
-				//  x->rb_tree_next_level->PushPriority(priority);
-				// x->rb_tree_next_level->PushPriority(xpriority);
 				auto PrependChainbox =
 						[](std::vector<Range1d>& cb, int n_prepend) {
 							std::vector<Range1d> t;
@@ -380,10 +347,6 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
 	}
 
 	count++;
-	/* tree->PushPriority(priority);
-	 int maxpri = tree->GetMaxPriority();
-	 tree->priority_list.clear();
-	 tree->PushPriority(maxpri);*/
 
 	x = new RedBlackTree_node;
 	x->key = key[fieldOrder[level]];
@@ -486,7 +449,7 @@ bool RedBlackTree::insertHelp(RedBlackTree_node* z,
 	x = root->left;
 	while (x) {
 		y = x;
-		int compare_result = CompareBox(x->key, z->key);
+		int compare_result = x->key.cmp(z->key);
 		if (compare_result == 1) { /* x.key > z.key */
 			x = x->left;
 		} else if (compare_result == -1) { /* x.key < z.key */
@@ -497,8 +460,6 @@ bool RedBlackTree::insertHelp(RedBlackTree_node* z,
 				x->rb_tree_next_level->insert(b, level + 1, field_order,
 						priority);
 			} else {
-				//	x->node_max_priority = std::max(x->node_max_priority, priority);
-				//x->nodes_priority[x->num_node_priority++] = priority;
 				out_ptr = x;
 			}
 			delete z;
@@ -509,7 +470,7 @@ bool RedBlackTree::insertHelp(RedBlackTree_node* z,
 		}
 	}
 	z->parent = y;
-	if ((y == root) || (1 == CompareBox(y->key, z->key))) { /* y.key > z.key */
+	if ((y == root) || (1 == y->key.cmp(z->key))) { /* y.key > z.key */
 		y->left = z;
 	} else {
 		y->right = z;
@@ -590,7 +551,6 @@ void RedBlackTree::print() {
 
 int RedBlackTree::exactQuery(const Packet& q, size_t level,
 		FieldOrder_t fieldOrder) {
-	//printf("entering level %d - tree->GetMaxPriority =%d\n", level,tree->GetMaxPriority());
 
 	//check if singleton
 	if (level == fieldOrder.size()) {
@@ -610,7 +570,6 @@ int RedBlackTree::exactQuery(const Packet& q, size_t level,
 	if (x == nullptr)
 		return -1;
 	int compVal = CompareQuery(x->key, q, level, fieldOrder);
-	// printf("Compval = %d\n", compVal);
 	while (0 != compVal) {/*assignemnt*/
 		if (1 == compVal) { /* x->key > q */
 			x = x->left;
@@ -660,9 +619,6 @@ int RedBlackTree::exactQueryIterative(const Packet& q, FieldOrder_t fieldOrder,
 		compVal = CompareQuery(x->key, q, level, fieldOrder);
 	}
 	return x->rb_tree_next_level->exactQueryIterative(q, fieldOrder, level + 1);
-
-	// printf("level = %d, priority = %d\n", level, x->mid_ptr.node_max_priority);
-	//return RBExactQuery(x->rb_tree_next_level, q, level + 1, fieldOrder);
 }
 
 int RedBlackTree::exactQueryPriority(const Packet& q, size_t level,
@@ -810,8 +766,6 @@ void RedBlackTree::deleteWithPathCompression(RedBlackTree*& tree,
 
 		//first time tree->count ==2; this mean you need to create chain box here;
 		//keep going until you find the node that contians tree->count = 1
-		//	std::stack<std::pair<rb_red_blk_tree *, rb_red_blk_node *>> stack_so_far;
-
 		while (true) {
 			if (temp_tree->count == 1 || level + run == fieldOrder.size()) {
 				tree->chain_boxes.insert(end(tree->chain_boxes),
@@ -832,22 +786,6 @@ void RedBlackTree::deleteWithPathCompression(RedBlackTree*& tree,
 				tree->pushPriority(new_priority);
 				return;
 			}
-			/*if (level + run == fieldOrder.size()) {
-			 auto newtree = RBTreeCreate();
-			 newtree->chain_boxes = tree->chain_boxes;
-			 RBTreeDestroy(tree);
-			 tree = newtree;
-			 tree->count = 1;
-			 if (temp_tree->GetSizeList() == 2) {
-			 temp_tree->PopPriority(priority);
-			 }
-			 tree->PushPriority(temp_tree->GetMaxPriority());
-
-			 //	RBTreeDestroy(temp_tree);
-			 //ClearStack(stack_so_far, tree);
-			 //tree->PopPriority(priority);
-			 return ;
-			 }*/
 			temp_tree->count--;
 			RedBlackTree_node * x = temp_tree->root->left;
 			if (x->left == nullptr && x->right == nullptr) {
@@ -855,9 +793,7 @@ void RedBlackTree::deleteWithPathCompression(RedBlackTree*& tree,
 				//stack_so_far.push(std::make_pair(temp_tree, x));
 				temp_tree = x->rb_tree_next_level;
 			} else {
-				int compare_result = CompareBox(x->key,
-						key[fieldOrder[level + run]]);
-				//stack_so_far.push(std::make_pair(temp_tree, x));
+				int compare_result = x->key.cmp(key[fieldOrder[level + run]]);
 				if (compare_result == 0) { //hit top = delete top then go leaf node to collect correct chain box
 					if (x->left == nullptr) {
 						temp_tree = x->right->rb_tree_next_level;
@@ -866,27 +802,10 @@ void RedBlackTree::deleteWithPathCompression(RedBlackTree*& tree,
 						temp_tree = x->left->rb_tree_next_level;
 						tree->chain_boxes.push_back(x->left->key);
 					}
-					//	tree->chain_boxes.push_back(x->left == temp_tree->nil?x->right->key:x->left->key);
-					//	temp_tree = x->rb_tree_next_level;
 				} else {
 					temp_tree = x->rb_tree_next_level;
 					tree->chain_boxes.push_back(x->key);
 				}
-
-				/*if (compare_result == -1){  root < z.key 
-				 //delete right child
-				 //stack_so_far.push(std::make_pair(temp_tree, x->right));
-				 tree->chain_boxes.push_back( x->key);
-				 temp_tree = x->right->rb_tree_next_level;
-				 } else if(compare_result == 1) {
-				 //delete left child
-				 //stack_so_far.push(std::make_pair(temp_tree, x->left));
-				 temp_tree = x->left->rb_tree_next_level;
-				 tree->chain_boxes.push_back(x->key);
-				 } else {
-				 printf("Warning::RBTreeDeleteWithPathCompression Overlap at level %d\n",level+run);
-				 }*/
-
 			}
 			run++;
 
@@ -899,7 +818,7 @@ void RedBlackTree::deleteWithPathCompression(RedBlackTree*& tree,
 
 	while (x) {
 		//y = x;
-		int compare_result = CompareBox(x->key, key[fieldOrder[level]]);
+		int compare_result = x->key.cmp(key[fieldOrder[level]]);
 		if (compare_result == 1) { /* x.key > z.key */
 			x = x->left;
 		} else if (compare_result == -1) { /* x.key < z.key */
@@ -950,8 +869,6 @@ void RedBlackTree::deleteNode(RedBlackTree_node* z) {
 		if (!(y->red))
 			deleteFixUp(x);
 
-		//  tree->DestroyKey(z->key);
-		//  tree->DestroyInfo(z->info);
 		y->left = z->left;
 		y->right = z->right;
 		y->parent = z->parent;
@@ -964,8 +881,6 @@ void RedBlackTree::deleteNode(RedBlackTree_node* z) {
 		}
 		delete z;
 	} else {
-//    tree->DestroyKey(y->key);
-		//   tree->DestroyInfo(y->info);
 		if (!(y->red))
 			deleteFixUp(x);
 		delete y;
@@ -979,14 +894,14 @@ std::stack<RedBlackTree::RedBlackTree_node*> * RedBlackTree::RBEnumerate(
 	RedBlackTree_node* lastBest = nullptr;
 
 	while (x) {
-		if (1 == (CompareBox(x->key, high))) { /* x->key > high */
+		if (1 == (x->key.cmp(high))) { /* x->key > high */
 			x = x->left;
 		} else {
 			lastBest = x;
 			x = x->right;
 		}
 	}
-	while (lastBest && (1 != CompareBox(low, lastBest->key))) {
+	while (lastBest && (1 != low.cmp(lastBest->key))) {
 		enumResultStack->push(lastBest);
 		lastBest = getPredecessor(lastBest);
 	}
@@ -1052,14 +967,15 @@ std::vector<Rule> RedBlackTree::serializeIntoRules(FieldOrder_t fieldOrder) {
 
 int RedBlackTree::calculateMemoryConsumptionRecursion(RedBlackTree_node * node,
 		size_t level, FieldOrder_t fieldOrder) {
-	if (level == fieldOrder.size()) {
 
+	if (level == fieldOrder.size()) {
 		int num_rules_in_this_leaf = this->priority_list.size();
 		int sizeofint = 4;
 		int also_max_priority = 1;
 		return (num_rules_in_this_leaf + also_max_priority) * sizeofint;
 
 	}
+
 	if (this->count == 1) {
 		int size_of_remaining_intervals = 0;
 		for (size_t i = level; i < fieldOrder.size(); i++) {
@@ -1077,11 +993,10 @@ int RedBlackTree::calculateMemoryConsumptionRecursion(RedBlackTree_node * node,
 			size_of_remaining_intervals += intervalsize;
 		}
 		int num_rules_in_this_leaf = this->priority_list.size();
-		int sizeofint = 4;
 		int also_max_priority = 1;
 
 		return size_of_remaining_intervals
-				+ (num_rules_in_this_leaf + also_max_priority) * sizeofint;
+				+ (num_rules_in_this_leaf + also_max_priority) * sizeof(unsigned);
 	}
 
 	if (node == nullptr)

@@ -27,6 +27,7 @@ using Packet = std::vector<Point1d>;
 
 class Range1d {
 public:
+	static constexpr int UNCOMPARABLE = 2;
 	Range1d(): low(0), high(0) {}
 	Range1d(Point1d low, Point1d high) :
 			low(low), high(high) {
@@ -55,6 +56,23 @@ public:
 
 	bool operator ==(const Range1d& other) const {
 		return low == other.low && high == other.high;
+	}
+
+	int cmp(const Range1d* other) const {
+		return cmp(*other);
+	}
+
+	int cmp(const Range1d& other) const {
+		if (*this == other)
+			return 0;
+		else if (this->isIntersect(other))
+			return UNCOMPARABLE;
+		else if (this->high < other.low)
+			return -1;
+		else if (this->low > other.high)
+			return 1;
+
+		throw std::runtime_error("Something went wrong during compare");
 	}
 
 	friend std::ostream & operator<<(std::ostream & str, const Range1d & r) {
