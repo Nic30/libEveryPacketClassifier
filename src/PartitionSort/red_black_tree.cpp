@@ -59,13 +59,8 @@ RedBlackTree::RedBlackTree() {
 	RedBlackTree_node* temp;
 	/*  see the comment in the rb_red_blk_tree structure in red_black_tree.h */
 	/*  for information on nil and root */
-	temp = this->nil = new RedBlackTree_node;
-	temp->parent = temp->left = temp->right = temp;
-	temp->red = 0;
-	temp->key = {1111, 1111};
-
 	temp = this->root = new RedBlackTree_node;
-	temp->parent = temp->left = temp->right = this->nil;
+	temp->parent = temp->left = temp->right = nullptr;
 	temp->key = {2222, 2222};
 	temp->red = 0;
 }
@@ -86,7 +81,7 @@ void RedBlackTree::rotateLeft(RedBlackTree_node* x) {
 	y = x->right;
 	x->right = y->left;
 
-	if (y->left != nil)
+	if (y->left)
 		y->left->parent = x; /* used to use sentinel here */
 	/* and do an unconditional assignment instead of testing for nil */
 
@@ -101,10 +96,6 @@ void RedBlackTree::rotateLeft(RedBlackTree_node* x) {
 	}
 	y->left = x;
 	x->parent = y;
-
-#ifdef DEBUG_ASSERT
-	assert(!this->nil->red && "nil not red in LeftRotate");
-#endif
 }
 
 void RedBlackTree::rotateRight(RedBlackTree_node* y) {
@@ -123,7 +114,7 @@ void RedBlackTree::rotateRight(RedBlackTree_node* y) {
 	x = y->left;
 	y->left = x->right;
 
-	if (nil != x->right)
+	if (x->right)
 		x->right->parent = y; /*used to use sentinel here */
 	/* and do an unconditional assignment instead of testing for nil */
 
@@ -137,10 +128,6 @@ void RedBlackTree::rotateRight(RedBlackTree_node* y) {
 	}
 	x->right = y;
 	y->parent = x;
-
-#ifdef DEBUG_ASSERT
-	assert(!nil->red && "nil not red in RightRotate");
-#endif
 }
 
 bool RedBlackTree::canInsert(const std::vector<Range1d>& z, size_t level,
@@ -164,7 +151,7 @@ bool RedBlackTree::canInsert(const std::vector<Range1d>& z, size_t level,
 	}
 
 	RedBlackTree_node* x = root->left;
-	while (x != nil) {
+	while (x) {
 		int compare_result = CompareBox(x->key, z[fieldOrder[level]]);
 		if (compare_result == 1) { /* x.key > z.key */
 			x = x->left;
@@ -190,10 +177,10 @@ bool RedBlackTree::insertWithPathCompressionHelp(RedBlackTree_node* z,
 	RedBlackTree_node* x;
 	RedBlackTree_node* y;
 
-	z->left = z->right = nil;
+	z->left = z->right = nullptr;
 	y = root;
 	x = root->left;
-	while (x != nil) {
+	while (x) {
 		y = x;
 		int compare_result = CompareBox(x->key, z->key);
 		if (compare_result == 1) { /* x.key > z.key */
@@ -203,45 +190,8 @@ bool RedBlackTree::insertWithPathCompressionHelp(RedBlackTree_node* z,
 		} else if (compare_result == 0) { /* x.key = z.key */
 
 			if (level != fieldOrder.size() - 1) {
-				/*if (x->rb_tree_next_level->count == 1) {
-				 //path compression
-
-				 auto temp_chain_boxes = x->rb_tree_next_level->chain_boxes;
-				 int xpriority = x->rb_tree_next_level->GetMaxPriority();
-
-				 free(x->rb_tree_next_level);
-				 //unzipping the next level
-				 int run = 1;
-
-				 std::vector<int> naturalFieldOrder(fieldOrder.size());
-				 std::iota(begin(naturalFieldOrder), end(naturalFieldOrder), 0);
-				 while ( (temp_chain_boxes[run][0] == b[fieldOrder[level + run]][0] && temp_chain_boxes[run][1] == b[fieldOrder[level + run]][1])) {
-				 x->rb_tree_next_level = RBTreeCreate();
-				 x->rb_tree_next_level->count = 1;
-				 x = RBTreeInsert(x->rb_tree_next_level, temp_chain_boxes, level + run, naturalFieldOrder, priority);
-				 run++;
-				 if (level + run >= fieldOrder.size()) break;
-				 }
-
-				 if (level + run  >= fieldOrder.size()) {
-				 x->rb_tree_next_level = RBTreeCreate();
-				 x->rb_tree_next_level->pq.push(priority);
-				 x->rb_tree_next_level->pq.push(xpriority);
-				 out_ptr = x;
-				 }
-				 else if (!(temp_chain_boxes[run][0] == b[fieldOrder[level + run]][0] && temp_chain_boxes[run][1] == b[fieldOrder[level + run]][1])) {
-				 //split into z and x node
-				 x->rb_tree_next_level = RBTreeCreate();
-				 RBTreeInsert(x->rb_tree_next_level, temp_chain_boxes, level + run, naturalFieldOrder, xpriority);
-				 RBTreeInsert(x->rb_tree_next_level, b, level + run, fieldOrder, priority);
-				 }
-
-				 }
-				 else {*/
 				x->rb_tree_next_level->insertWithPathCompression(b, level + 1,
 						fieldOrder, priority);
-				//}
-
 			} else {
 				if (x->rb_tree_next_level == nullptr)
 					x->rb_tree_next_level = new RedBlackTree();
@@ -249,7 +199,7 @@ bool RedBlackTree::insertWithPathCompressionHelp(RedBlackTree_node* z,
 				x->rb_tree_next_level->pushPriority(priority);
 				out_ptr = x;
 			}
-			free(z);
+			delete z;
 			return true;
 		} else { /* x.key || z.key */
 			printf("Warning TreeInsertPathcompressionHelp : x.key || z.key\n");
@@ -268,9 +218,6 @@ bool RedBlackTree::insertWithPathCompressionHelp(RedBlackTree_node* z,
 	z->rb_tree_next_level->insertWithPathCompression(b, level + 1, fieldOrder,
 			priority);
 
-#ifdef DEBUG_ASSERT
-	assert(!nil->red && "nil not red in TreeInsertHelp");
-#endif
 	return false;
 }
 
@@ -278,7 +225,6 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
 		const std::vector<Range1d>& key, size_t level, FieldOrder_t fieldOrder,
 		int priority) {
 
-	RedBlackTree_node * y;
 	RedBlackTree_node * x;
 	RedBlackTree_node * newNode;
 
@@ -451,50 +397,58 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
 	}
 
 	newNode = x;
-	x->red = 1;
-	while (x->parent->red) { /* use sentinel instead of checking for root */
-		if (x->parent == x->parent->parent->left) {
-			y = x->parent->parent->right;
-			if (y->red) {
-				x->parent->red = 0;
-				y->red = 0;
-				x->parent->parent->red = 1;
-				x = x->parent->parent;
-			} else {
-				if (x == x->parent->right) {
-					x = x->parent;
-					rotateLeft(x);
-				}
-				x->parent->red = 0;
-				x->parent->parent->red = 1;
-				rotateRight(x->parent->parent);
-			}
-		} else { /* case for x->parent == x->parent->parent->right */
-			y = x->parent->parent->left;
-			if (y->red) {
-				x->parent->red = 0;
-				y->red = 0;
-				x->parent->parent->red = 1;
-				x = x->parent->parent;
-			} else {
-				if (x == x->parent->left) {
-					x = x->parent;
-					rotateRight(x);
-				}
-				x->parent->red = 0;
-				x->parent->parent->red = 1;
-				rotateLeft(x->parent->parent);
-			}
-		}
-	}
-	root->left->red = 0;
-
-#ifdef DEBUG_ASSERT
-	assert(!nil->red && "nil not red in RBTreeInsert");
-	assert(!root->red && "root not red in RBTreeInsert");
-#endif
+	_insert(x);
 
 	return (newNode);
+}
+
+void RedBlackTree::_insert(RedBlackTree_node * t) {
+	RedBlackTree_node *u;
+	if (root == t) {
+		t->red = 0;
+		return;
+	}
+	while (t->parent != nullptr && t->parent->red) {
+		auto g = t->parent->parent;
+		if (g->left == t->parent) {
+			if (g->right != NULL) {
+				u = g->right;
+				if (u->red) {
+					t->parent->red = 0;
+					u->red = 0;
+					g->red = 1;
+					t = g;
+				}
+			} else {
+				if (t->parent->right == t) {
+					t = t->parent;
+					rotateLeft(t);
+				}
+				t->parent->red = 0;
+				g->red = 1;
+				rotateRight(g);
+			}
+		} else {
+			if (g->left != NULL) {
+				u = g->left;
+				if (u->red) {
+					t->parent->red = 0;
+					u->red = 0;
+					g->red = 1;
+					t = g;
+				}
+			} else {
+				if (t->parent->left == t) {
+					t = t->parent;
+					rotateRight(t);
+				}
+				t->parent->red = 0;
+				g->red = 1;
+				rotateLeft(g);
+			}
+		}
+		root->red = 0;
+	}
 }
 
 RedBlackTree::RedBlackTree_node * RedBlackTree::insert(
@@ -504,11 +458,8 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insert(
 	if (level == key.size())
 		return nullptr;
 
-	RedBlackTree_node * y;
-	RedBlackTree_node * x;
-	RedBlackTree_node * newNode;
 
-	x = new RedBlackTree_node;
+	RedBlackTree_node * x = new RedBlackTree_node;
 	x->key = key[field_order[level]];
 	RedBlackTree_node * out_ptr;
 	if (insertHelp(x, key, level, field_order, priority, out_ptr)) {
@@ -517,50 +468,8 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insert(
 		return out_ptr;
 	}
 
-	newNode = x;
-	x->red = 1;
-	while (x->parent->red) { /* use sentinel instead of checking for root */
-		if (x->parent == x->parent->parent->left) {
-			y = x->parent->parent->right;
-			if (y->red) {
-				x->parent->red = 0;
-				y->red = 0;
-				x->parent->parent->red = 1;
-				x = x->parent->parent;
-			} else {
-				if (x == x->parent->right) {
-					x = x->parent;
-					rotateLeft(x);
-				}
-				x->parent->red = 0;
-				x->parent->parent->red = 1;
-				rotateRight(x->parent->parent);
-			}
-		} else { /* case for x->parent == x->parent->parent->right */
-			y = x->parent->parent->left;
-			if (y->red) {
-				x->parent->red = 0;
-				y->red = 0;
-				x->parent->parent->red = 1;
-				x = x->parent->parent;
-			} else {
-				if (x == x->parent->left) {
-					x = x->parent;
-					rotateRight(x);
-				}
-				x->parent->red = 0;
-				x->parent->parent->red = 1;
-				rotateLeft(x->parent->parent);
-			}
-		}
-	}
-	root->left->red = 0;
-	//printf("Done: [%u %u]\n", newNode->key);
-
-#ifdef DEBUG_ASSERT
-	assert(!nil->red && "nil not red in RBTreeInsert");
-	assert(!root->red && "root not red in RBTreeInsert");
-#endif
+	RedBlackTree_node * newNode = x;
+	_insert(x);
 
 	return newNode;
 }
@@ -572,10 +481,10 @@ bool RedBlackTree::insertHelp(RedBlackTree_node* z,
 	RedBlackTree_node* x;
 	RedBlackTree_node* y;
 
-	z->left = z->right = nil;
+	z->left = z->right = nullptr;
 	y = root;
 	x = root->left;
-	while (x != nil) {
+	while (x) {
 		y = x;
 		int compare_result = CompareBox(x->key, z->key);
 		if (compare_result == 1) { /* x.key > z.key */
@@ -608,18 +517,14 @@ bool RedBlackTree::insertHelp(RedBlackTree_node* z,
 	//found new one to insert to but will not propagate
 	out_ptr = z;
 
-#ifdef DEBUG_ASSERT
-	assert(!nil->red && "nil not red in TreeInsertHelp");
-#endif
 	return false;
-
 }
 
 RedBlackTree::RedBlackTree_node* RedBlackTree::getSuccessor(
 		RedBlackTree_node* x) {
 	RedBlackTree_node* y;
-	if (nil != (y = x->right)) { /* assignment to y is intentional */
-		while (y->left != nil) { /* returns the minium of the right subtree of x */
+	if (nullptr != (y = x->right)) { /* assignment to y is intentional */
+		while (y->left) { /* returns the minium of the right subtree of x */
 			y = y->left;
 		}
 		return y;
@@ -630,7 +535,7 @@ RedBlackTree::RedBlackTree_node* RedBlackTree::getSuccessor(
 			y = y->parent;
 		}
 		if (y == root)
-			return nil;
+			return nullptr;
 		return y;
 	}
 }
@@ -638,8 +543,8 @@ RedBlackTree::RedBlackTree_node* RedBlackTree::getSuccessor(
 RedBlackTree::RedBlackTree_node* RedBlackTree::getPredecessor(
 		RedBlackTree_node* x) {
 	RedBlackTree_node* y;
-	if (nil != (y = x->left)) { /* assignment to y is intentional */
-		while (y->right != nil) { /* returns the maximum of the left subtree of x */
+	if (nullptr != (y = x->left)) { /* assignment to y is intentional */
+		while (y->right) { /* returns the maximum of the left subtree of x */
 			y = y->right;
 		}
 		return y;
@@ -647,7 +552,7 @@ RedBlackTree::RedBlackTree_node* RedBlackTree::getPredecessor(
 		y = x->parent;
 		while (x == y->left) {
 			if (y == root)
-				return (nil);
+				return nullptr;
 			x = y;
 			y = y->parent;
 		}
@@ -656,7 +561,7 @@ RedBlackTree::RedBlackTree_node* RedBlackTree::getPredecessor(
 }
 
 void RedBlackTree::printInorder(RedBlackTree_node* x) {
-	if (x != nil) {
+	if (x) {
 		printInorder(x->left);
 		std::cout << "tree->count = " << count << std::endl;
 		std::cout << x->key << std::endl;
@@ -665,7 +570,7 @@ void RedBlackTree::printInorder(RedBlackTree_node* x) {
 }
 
 void RedBlackTree::destHelper(RedBlackTree_node* x) {
-	if (x != nil) {
+	if (x) {
 		if (x->rb_tree_next_level != nullptr)
 			delete x->rb_tree_next_level;
 		destHelper(x->left);
@@ -677,7 +582,6 @@ void RedBlackTree::destHelper(RedBlackTree_node* x) {
 RedBlackTree::~RedBlackTree() {
 	destHelper(root->left);
 	delete root;
-	delete nil;
 }
 
 void RedBlackTree::print() {
@@ -703,10 +607,9 @@ int RedBlackTree::exactQuery(const Packet& q, size_t level,
 	}
 
 	RedBlackTree_node* x = root->left;
-	int compVal;
-	if (x == nil)
+	if (x == nullptr)
 		return -1;
-	compVal = CompareQuery(x->key, q, level, fieldOrder);
+	int compVal = CompareQuery(x->key, q, level, fieldOrder);
 	// printf("Compval = %d\n", compVal);
 	while (0 != compVal) {/*assignemnt*/
 		if (1 == compVal) { /* x->key > q */
@@ -714,7 +617,7 @@ int RedBlackTree::exactQuery(const Packet& q, size_t level,
 		} else if (-1 == compVal) /*x->key < q */{
 			x = x->right;
 		}
-		if (x == nil)
+		if (x == nullptr)
 			return -1;
 		compVal = CompareQuery(x->key, q, level, fieldOrder);
 	}
@@ -741,7 +644,7 @@ int RedBlackTree::exactQueryIterative(const Packet& q, FieldOrder_t fieldOrder,
 	}
 
 	RedBlackTree_node* x = root->left;
-	if (x == nil)
+	if (x == nullptr)
 		return -1;
 
 	int compVal = CompareQuery(x->key, q, level, fieldOrder);
@@ -752,7 +655,7 @@ int RedBlackTree::exactQueryIterative(const Packet& q, FieldOrder_t fieldOrder,
 		} else if (-1 == compVal) /*x->key < q */{
 			x = x->right;
 		}
-		if (x == nil)
+		if (x == nullptr)
 			return -1;
 		compVal = CompareQuery(x->key, q, level, fieldOrder);
 	}
@@ -784,7 +687,7 @@ int RedBlackTree::exactQueryPriority(const Packet& q, size_t level,
 
 	RedBlackTree_node* x = root->left;
 	int compVal;
-	if (x == nil)
+	if (x == nullptr)
 		return -1;
 	compVal = CompareQuery(x->key, q, level, fieldOrder);
 	// printf("Compval = %d\n", compVal);
@@ -794,7 +697,7 @@ int RedBlackTree::exactQueryPriority(const Packet& q, size_t level,
 		} else if (-1 == compVal) /*x->key < q */{
 			x = x->right;
 		}
-		if (x == nil)
+		if (x == nullptr)
 			return -1;
 		compVal = CompareQuery(x->key, q, level, fieldOrder);
 	}
@@ -860,10 +763,6 @@ void RedBlackTree::deleteFixUp(RedBlackTree_node* x) {
 		}
 	}
 	x->red = 0;
-
-#ifdef DEBUG_ASSERT
-	assert(!nil->red && "nil not black in RBDeleteFixUp");
-#endif
 }
 
 void ClearStack(
@@ -951,7 +850,7 @@ void RedBlackTree::deleteWithPathCompression(RedBlackTree*& tree,
 			 }*/
 			temp_tree->count--;
 			RedBlackTree_node * x = temp_tree->root->left;
-			if (x->left == temp_tree->nil && x->right == temp_tree->nil) {
+			if (x->left == nullptr && x->right == nullptr) {
 				tree->chain_boxes.push_back(x->key);
 				//stack_so_far.push(std::make_pair(temp_tree, x));
 				temp_tree = x->rb_tree_next_level;
@@ -960,7 +859,7 @@ void RedBlackTree::deleteWithPathCompression(RedBlackTree*& tree,
 						key[fieldOrder[level + run]]);
 				//stack_so_far.push(std::make_pair(temp_tree, x));
 				if (compare_result == 0) { //hit top = delete top then go leaf node to collect correct chain box
-					if (x->left == temp_tree->nil) {
+					if (x->left == nullptr) {
 						temp_tree = x->right->rb_tree_next_level;
 						tree->chain_boxes.push_back(x->right->key);
 					} else {
@@ -996,12 +895,9 @@ void RedBlackTree::deleteWithPathCompression(RedBlackTree*& tree,
 	}
 
 	RedBlackTree_node* x;
-	//rb_red_blk_node* y;
-	RedBlackTree_node* nil = tree->nil;
-	//y = tree->root;
 	x = tree->root->left;
 
-	while (x != nil) {
+	while (x) {
 		//y = x;
 		int compare_result = CompareBox(x->key, key[fieldOrder[level]]);
 		if (compare_result == 1) { /* x.key > z.key */
@@ -1035,11 +931,10 @@ void RedBlackTree::deleteWithPathCompression(RedBlackTree*& tree,
 void RedBlackTree::deleteNode(RedBlackTree_node* z) {
 	RedBlackTree_node* y;
 	RedBlackTree_node* x;
-	RedBlackTree_node* nil = this->nil;
 	RedBlackTree_node* root = this->root;
 
-	y = ((z->left == nil) || (z->right == nil)) ? z : getSuccessor(z);
-	x = (y->left == nil) ? y->right : y->left;
+	y = ((z->left == nullptr) || (z->right == nullptr)) ? z : getSuccessor(z);
+	x = (y->left == nullptr) ? y->right : y->left;
 	if (root == (x->parent = y->parent)) { /* assignment of y->p to x->p is intentional */
 		root->left = x;
 	} else {
@@ -1050,10 +945,6 @@ void RedBlackTree::deleteNode(RedBlackTree_node* z) {
 		}
 	}
 	if (y != z) { /* y should not be nil in this case */
-
-#ifdef DEBUG_ASSERT
-		assert((y != this->nil) && "y is nil in RBDelete\n");
-#endif
 		/* y is the node to splice out and x is its child */
 
 		if (!(y->red))
@@ -1071,7 +962,7 @@ void RedBlackTree::deleteNode(RedBlackTree_node* z) {
 		} else {
 			z->parent->right = y;
 		}
-		free(z);
+		delete z;
 	} else {
 //    tree->DestroyKey(y->key);
 		//   tree->DestroyInfo(y->info);
@@ -1079,20 +970,15 @@ void RedBlackTree::deleteNode(RedBlackTree_node* z) {
 			deleteFixUp(x);
 		delete y;
 	}
-
-#ifdef DEBUG_ASSERT
-	assert(!this->nil->red && "nil not black in RBDelete");
-#endif
 }
 
-std::stack<void *> * RedBlackTree::RBEnumerate(const Range1d& low,
-		const Range1d& high) {
-	auto enumResultStack = new std::stack<void *>;
-	RedBlackTree_node* nil = this->nil;
+std::stack<RedBlackTree::RedBlackTree_node*> * RedBlackTree::RBEnumerate(
+		const Range1d& low, const Range1d& high) {
+	auto enumResultStack = new std::stack<RedBlackTree_node*>();
 	RedBlackTree_node* x = this->root->left;
-	RedBlackTree_node* lastBest = nil;
+	RedBlackTree_node* lastBest = nullptr;
 
-	while (nil != x) {
+	while (x) {
 		if (1 == (CompareBox(x->key, high))) { /* x->key > high */
 			x = x->left;
 		} else {
@@ -1100,11 +986,11 @@ std::stack<void *> * RedBlackTree::RBEnumerate(const Range1d& low,
 			x = x->right;
 		}
 	}
-	while ((lastBest != nil) && (1 != CompareBox(low, lastBest->key))) {
+	while (lastBest && (1 != CompareBox(low, lastBest->key))) {
 		enumResultStack->push(lastBest);
 		lastBest = getPredecessor(lastBest);
 	}
-	return (enumResultStack);
+	return enumResultStack;
 }
 
 void RedBlackTree::serializeIntoRulesRecursion(RedBlackTree_node * node,
@@ -1140,7 +1026,7 @@ void RedBlackTree::serializeIntoRulesRecursion(RedBlackTree_node * node,
 		return;
 	}
 
-	if (this->nil == node)
+	if (node == nullptr)
 		return;
 
 	box_so_far.push_back(node->key);
@@ -1198,7 +1084,7 @@ int RedBlackTree::calculateMemoryConsumptionRecursion(RedBlackTree_node * node,
 				+ (num_rules_in_this_leaf + also_max_priority) * sizeofint;
 	}
 
-	if (this->nil == node)
+	if (node == nullptr)
 		return 0;
 
 	int memory_usage = 0;

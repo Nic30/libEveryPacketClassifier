@@ -31,7 +31,6 @@ public:
 	/*  parent and no key or info.  The point of using these sentinels is so */
 	/*  that the root and nil nodes do not require special cases in the code */
 	RedBlackTree_node* root;
-	RedBlackTree_node* nil;
 
 	int count = 0;
 	std::vector<Range1d> chain_boxes;
@@ -52,7 +51,7 @@ public:
 	/**/
 	/*    Modifies Input: none */
 	/***********************************************************************/
-	std::stack<void *> * RBEnumerate(const Range1d& low, const Range1d& high);
+	std::stack<RedBlackTree_node*> * RBEnumerate(const Range1d& low, const Range1d& high);
 
 	void pushPriority(int p);
 	void popPriority(int p);
@@ -138,6 +137,11 @@ public:
 	/***********************************************************************/
 	RedBlackTree_node * insert(const std::vector<Range1d>& key, size_t level,
 			const std::vector<int>& fieldOrder, int priority = 0);
+
+	/*
+	 * Regular red-black tree insert method
+	 * */
+	void _insert(RedBlackTree_node * x);
 
 	bool canInsert(const std::vector<Range1d>& z, size_t level,
 			FieldOrder_t fieldOrder);

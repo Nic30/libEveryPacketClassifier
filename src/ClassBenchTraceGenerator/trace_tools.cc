@@ -48,7 +48,7 @@ std::vector<Packet> header_gen(int d, std::vector<Rule>& filters, float a,
 		num_headers += Copies;
 	}
 
-	delete (new_hdr);
+	delete [] new_hdr;
 	return std::vector<Packet>(begin(temp_packets),
 			begin(temp_packets) + threshold);
 }
