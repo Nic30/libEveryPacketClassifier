@@ -236,47 +236,49 @@ vector<SortableRuleset> SortableRulesetPartitioner::AdaptiveIncrementalInsertion
 }
 
 vector<int> SortableRulesetPartitioner::GetFieldOrderByRule(const Rule& r) {
-	//assume ClassBench Format
 	vector<unsigned> rank(r.dim, 0);
 	// 0 -> point, 1 -> shorter than half range, 2 -> longer than half range
 	//assign rank to each field
 	for (int i = 0; i < r.dim; i++) {
-		const int imod5 = i % 5;
-		if (imod5 == 0 || imod5 == 1) {
-			//IP
-			auto length = r.range[imod5].high - r.range[imod5].low + 1;
-			if (length == 1)
-				rank[i] = 0;
-			else if (length > 0 && length < (1u << 31))
-				rank[i] = 1;
-			else if (length == 0)
-				rank[i] = 3;
-			else
-				rank[i] = 2;
-		} else if (imod5 == 2 || imod5 == 3) {
-			//Port
-			auto length = r.range[imod5].high - r.range[imod5].low + 1;
-			if (length == 1)
-				rank[i] = 0;
-			else if (length < (1 << 15))
-				rank[i] = 1;
-			else if (length < (1 << 16))
-				rank[i] = 2;
-			else
-				rank[i] = 3;
-		} else {
-			//Protocol
-			auto length = r.range[imod5].high - r.range[imod5].low + 1;
-			if (length == 1)
-				rank[i] = 0;
-			else if (length < (1 << 7))
-				rank[i] = 1;
-			else if (length < 256)
-				rank[i] = 2;
-			else
-				rank[i] = 3;
-
+		int _r = 0;
+		auto length = r.range[i].high - r.range[i].low + 1;
+		switch (i) {
+			case FieldSA:
+			case FieldDA:
+				if (length == 1)
+					_r = 0;
+				else if (length > 0 && length < (1u << 31))
+					_r = 1;
+				else if (length == 0)
+					_r = 3;
+				else
+					_r = 2;
+				break;
+			case FieldSP:
+			case FieldDP:
+				if (length == 1)
+					_r = 0;
+				else if (length < (1 << 15))
+					_r = 1;
+				else if (length < (1 << 16))
+					_r = 2;
+				else
+					_r = 3;
+				break;
+			case FieldProto:
+				if (length == 1)
+					_r = 0;
+				else if (length < (1 << 7))
+					_r = 1;
+				else if (length < 256)
+					_r = 2;
+				else
+					_r = 3;
+				break;
+			default:
+				throw std::runtime_error("Not implemented for this dimmension");
 		}
+		rank[i] = _r;
 	}
 	return sort_indexes(rank);
 }
