@@ -128,7 +128,13 @@ struct Rule {
 class Range1dWeighted: public Range1d {
 public:
 
-	Range1dWeighted(): Range1dWeighted(0, 0, -1) {}
+	Range1dWeighted() :
+			Range1dWeighted(0, 0, -1) {
+	}
+	Range1dWeighted(Range1d range, int id) :
+			Range1d(range), id(id), weight(1) {
+	}
+
 	Range1dWeighted(Point1d low, Point1d high, int id) :
 			Range1d(low, high), id(id), weight(1) {
 	}

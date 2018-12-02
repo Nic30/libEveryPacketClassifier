@@ -71,8 +71,8 @@ std::pair<std::vector<int>, int> Utilities::FastMWISIntervals(
 
 	std::vector<EndPoint> endpoints;
 	for (size_t i = 0; i < I.size(); i++) {
-		endpoints.push_back(EndPoint(I[i].GetLow(), 0, i));
-		endpoints.push_back(EndPoint(I[i].GetHigh(), 1, i));
+		endpoints.push_back(EndPoint(I[i].low, 0, i));
+		endpoints.push_back(EndPoint(I[i].high, 1, i));
 	}
 
 	std::sort(begin(endpoints), end(endpoints));
@@ -114,7 +114,7 @@ std::pair<std::vector<int>, int> Utilities::FastMWISIntervals(
 
 	for (const auto& e : endpoints) {
 		if (!e.isRightEnd) {
-			chi[e.id] = temp_max + I[e.id].GetWeight();
+			chi[e.id] = temp_max + I[e.id].weight;
 		} else {
 			if (chi[e.id] > temp_max) {
 				temp_max = chi[e.id];
@@ -125,11 +125,11 @@ std::pair<std::vector<int>, int> Utilities::FastMWISIntervals(
 
 	S_max.push_back(last_interval);
 	max_MIS = temp_max;
-	temp_max = temp_max - I[last_interval].GetWeight();
+	temp_max = temp_max - I[last_interval].weight;
 	for (int j = last_interval - 1; j >= 0; j--) {
-		if (chi[j] == temp_max && I[j].GetHigh() < I[last_interval].GetLow()) {
+		if (chi[j] == temp_max && I[j].high < I[last_interval].low) {
 			S_max.push_back(j);
-			temp_max = temp_max - I[j].GetWeight();
+			temp_max = temp_max - I[j].weight;
 			last_interval = j;
 		}
 	}
@@ -150,23 +150,24 @@ std::pair<std::vector<int>, int> Utilities::MWISIntervals(
 std::vector<LightWeightedInterval> Utilities::FastCreateUniqueInterval(
 		const std::vector<Range1dWeighted>& rules_given_field) {
 
-	int num_rules = rules_given_field.size();
-	int count = 1;
+	size_t num_rules = rules_given_field.size();
 	std::vector<LightWeightedInterval> out;
-	out.reserve(rules_given_field.size());
-	Range1dWeighted current_interval = rules_given_field[0];
+	if (num_rules == 0)
+		return out;
 
-	for (int i = 1; i < num_rules; i++) {
+	int count = 1;
+	out.reserve(num_rules);
+	Range1dWeighted current_interval = rules_given_field[0];
+	for (size_t i = 1; i < num_rules; i++) {
 		if (rules_given_field[i] == current_interval) {
 			count++;
 		} else {
-			out.emplace_back(current_interval.low, current_interval.high,
-					count + 1);
+			out.emplace_back(current_interval, count + 1);
 			current_interval = rules_given_field[i];
 			count = 1;
 		}
 		if (i == num_rules - 1) {
-			out.emplace_back(current_interval.low, current_interval.high, count + 1);
+			out.emplace_back(current_interval, count + 1);
 		}
 	}
 
@@ -174,14 +175,13 @@ std::vector<LightWeightedInterval> Utilities::FastCreateUniqueInterval(
 }
 std::vector<WeightedInterval> Utilities::CreateUniqueInterval(
 		const std::vector<Rule>& rules, int field) {
-	//sort partition by field j
-
+	// sort partition by field j
 	std::multiset<Range1dWeighted> sorted_rules;
 	int i = 0;
 	for (const auto r : rules) {
-		sorted_rules.insert(
-				Range1dWeighted(r.range[field].low, r.range[field].high, i++));
+		sorted_rules.insert(Range1dWeighted(r.range[field], i++));
 	}
+
 	std::vector<WeightedInterval> out;
 	out.reserve(rules.size());
 	while (!sorted_rules.empty()) {
@@ -219,13 +219,13 @@ std::pair<std::vector<int>, int> Utilities::MWISIntervals(
 
 	sort(begin(sorted_I), end(sorted_I),
 			[](const std::pair<WeightedInterval, int>& lhs, const std::pair<WeightedInterval, int>& rhs) -> bool {
-		return lhs.first.GetHigh() < rhs.first.GetHigh();
+		return lhs.first.high < rhs.first.high;
 	});
 
 	std::vector<EndPoint> endpoints;
 	for (size_t i = 0; i < sorted_I.size(); i++) {
-		endpoints.push_back(EndPoint(sorted_I[i].first.GetLow(), LOW, i));
-		endpoints.push_back(EndPoint(sorted_I[i].first.GetHigh(), HIGH, i));
+		endpoints.push_back(EndPoint(sorted_I[i].first.low, LOW, i));
+		endpoints.push_back(EndPoint(sorted_I[i].first.high, HIGH, i));
 	}
 	std::sort(begin(endpoints), end(endpoints));
 	//add perturbation to make points unique
@@ -282,11 +282,11 @@ std::pair<std::vector<int>, int> Utilities::MWISIntervals(
 	max_MIS = temp_max;
 	temp_max = temp_max - sorted_I[last_interval].first.GetWeight();
 	for (int j = last_interval - 1; j >= 0; j--) {
+		auto tmp = sorted_I[j];
 		if (chi[j] == temp_max
-				&& sorted_I[j].first.GetHigh()
-						< sorted_I[last_interval].first.GetLow()) {
-			S_max.push_back(sorted_I[j].second);
-			temp_max = temp_max - sorted_I[j].first.GetWeight();
+				&& tmp.first.high < sorted_I[last_interval].first.low) {
+			S_max.push_back(tmp.second);
+			temp_max = temp_max - tmp.first.GetWeight();
 			last_interval = j;
 		}
 	}

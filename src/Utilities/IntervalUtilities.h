@@ -23,70 +23,72 @@ public:
 
 };
  
-struct LightWeightedInterval {
-	LightWeightedInterval(unsigned int a, unsigned int b, int w) : a(a), b(b), w(w) {}
-	unsigned int a;
-	unsigned int b;
-	int w;
-	unsigned int GetLow() const { return a; }
-	unsigned int GetHigh() const { return b; }
-	int GetWeight() const { return w; }
+class LightWeightedInterval: public Range1d {
+public:
+	LightWeightedInterval(Point1d low, Point1d high, int w) : Range1d(low, high), weight(w) {}
+	LightWeightedInterval(Range1d range, int w) : Range1d(range), weight(w) {}
+
+	int weight;
+
 	void Push(int x) {
 		rule_indices.push_back(x);
 	}
 	std::vector<int> GetRuleIndices() const {
 		return rule_indices;
 	}
+private:
 	std::vector<int> rule_indices;
 };
 
 
-class WeightedInterval{
+class WeightedInterval: public Range1d {
 public:
 
-	WeightedInterval(const std::vector<Rule>& rules, unsigned int a, unsigned int b) : rules(rules) {
+	WeightedInterval(const std::vector<Rule>& rules, Point1d low, Point1d high) : Range1d(low, high), rules(rules) {
 		if (rules.size() == 0) {
-			std::cout << "ERROR: EMPTY RULE AND CONSTRUCT INTERVAL?" << std::endl;
-			exit(0);
+			throw std::runtime_error("ERROR: EMPTY RULE AND CONSTRUCT INTERVAL?");
 		}
-		ival = std::make_pair(a, b);
 		SetWeightBySizePlusOne();
 		field = 0;
 	}
+
 	WeightedInterval(const std::vector<Rule>& rules, int field) : rules(rules), field(field) {
 		if (rules.size() == 0) {
-			std::cout << "ERROR: EMPTY RULE AND CONSTRUCT INTERVAL?" << std::endl;
-			exit(0);
+			throw std::runtime_error("ERROR: EMPTY RULE AND CONSTRUCT INTERVAL?");
 		}
-		ival = std::make_pair(rules[0].range[field].low, rules[0].range[field].high);
+		low = rules[0].range[field].low;
+		high = rules[0].range[field].high;
+		if (low > high)
+			throw std::runtime_error("WeightedInterval bad values for constructor");
 		SetWeightBySizePlusOne();
 	}
+
 	int CountPOM(int second_field) {
-		std::multiset<unsigned int> Astart;
-		std::multiset<unsigned int> Aend;
-		for (int i = 0; i < (int)rules.size();
-			 i++) {
-			Astart.insert(rules[i].range[second_field].low);
-			Aend.insert(rules[i].range[second_field].high);
+		std::multiset<Point1d> Astart;
+		std::multiset<Point1d> Aend;
+		for (auto r: rules) {
+			Astart.insert(r.range[second_field].low);
+			Aend.insert(r.range[second_field].high);
 		}
 		return Utilities::GetMaxOverlap(Astart, Aend);
 	}
+
 	void SetWeightByPenaltyPOM(int second_field) {
 		weight = std::max((int)rules.size() - 100 * CountPOM(second_field), 1);
 	}
+
 	void SetWeightBySizePlusOne() {
 		weight = rules.size() +1;
 	}
+
 	void SetWeightBySize() {
 		weight = rules.size();
 	}
-	unsigned int GetLow() const{ return ival.first; }
-	unsigned int GetHigh() const { return ival.second; }
+
 	std::vector<Rule> GetRules() const{ return rules; }
 	int GetField() const { return field; }
 	int GetWeight() const { return weight; }
 protected:
-	std::pair<unsigned int, unsigned int> ival;
 	int weight = 100000;
 	std::vector<Rule> rules;
 	int  field;

@@ -7,10 +7,10 @@ pair<vector<SortableRulesetPartitioner::part>, bool> SortableRulesetPartitioner:
 		const part& apartition, int current_field) {
 	vector<WeightedInterval> wi = Utilities::CreateUniqueInterval(apartition,
 			current_field);
-	multiset<unsigned int> low, hi;
+	multiset<Point1d> low, hi;
 	for (auto & i : wi) {
-		low.insert(i.GetLow());
-		hi.insert(i.GetHigh());
+		low.insert(i.low);
+		hi.insert(i.high);
 	}
 	vector<part> new_partitions;
 	for (auto& w : wi) {
@@ -18,9 +18,10 @@ pair<vector<SortableRulesetPartitioner::part>, bool> SortableRulesetPartitioner:
 		for (auto& r : w.GetRules()) {
 			temp_partition_rule.push_back(r);
 		}
+		// [TODO] do not copy vector again
 		new_partitions.push_back(temp_partition_rule);
 	}
-	return make_pair(new_partitions, Utilities::GetMaxOverlap(low, hi) == 1);
+	return {new_partitions, Utilities::GetMaxOverlap(low, hi) == 1};
 }
 pair<vector<SortableRulesetPartitioner::part>, bool> SortableRulesetPartitioner::IsEntirePartitionSortable(
 		const vector<part>& all_partition, int current_field) {
@@ -453,7 +454,7 @@ WeightedInterval SortableRulesetPartitioner::MaximumIndependentSetGivenFieldRecu
 		for (auto& wi : vwi) {
 			vwi_opt.push_back(
 					MaximumIndependentSetGivenFieldRecursion(wi.GetRules(),
-							fields, depth + 1, wi.GetLow(), wi.GetHigh()));
+							fields, depth + 1, wi.low, wi.high));
 		}
 	} else {
 		vwi_opt = vwi;

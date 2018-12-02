@@ -68,6 +68,7 @@ private:
 	/*Helper For GrInd */
 	static std::pair<std::vector<SortableRulesetPartitioner::part>, bool> IsThisPartitionSortable(
 			const part& apartition, int current_field);
+
 	static std::pair<std::vector<SortableRulesetPartitioner::part>, bool> IsEntirePartitionSortable(
 			const std::vector<part>& all_partition, int current_field);
 	static std::pair<std::vector<part>, int> MWISonPartition(
