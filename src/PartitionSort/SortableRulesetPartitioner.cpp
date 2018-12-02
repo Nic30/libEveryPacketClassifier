@@ -1,17 +1,18 @@
 #include "SortableRulesetPartitioner.h"
 #include "../Utilities/IntervalUtilities.h"
 #include <assert.h>
+using namespace std;
 
-std::pair<std::vector<SortableRulesetPartitioner::part>, bool> SortableRulesetPartitioner::IsThisPartitionSortable(
+pair<vector<SortableRulesetPartitioner::part>, bool> SortableRulesetPartitioner::IsThisPartitionSortable(
 		const part& apartition, int current_field) {
-	std::vector<WeightedInterval> wi = Utilities::CreateUniqueInterval(
+	vector<WeightedInterval> wi = Utilities::CreateUniqueInterval(
 			apartition, current_field);
-	std::multiset<unsigned int> low, hi;
+	multiset<unsigned int> low, hi;
 	for (auto & i : wi) {
 		low.insert(i.GetLow());
 		hi.insert(i.GetHigh());
 	}
-	std::vector<part> new_partitions;
+	vector<part> new_partitions;
 	for (auto& w : wi) {
 		part temp_partition_rule;
 		for (auto& r : w.GetRules()) {
@@ -19,12 +20,12 @@ std::pair<std::vector<SortableRulesetPartitioner::part>, bool> SortableRulesetPa
 		}
 		new_partitions.push_back(temp_partition_rule);
 	}
-	return std::make_pair(new_partitions,
+	return make_pair(new_partitions,
 			Utilities::GetMaxOverlap(low, hi) == 1);
 }
-std::pair<std::vector<SortableRulesetPartitioner::part>, bool> SortableRulesetPartitioner::IsEntirePartitionSortable(
-		const std::vector<part>& all_partition, int current_field) {
-	std::vector<part> new_entire_partition;
+pair<vector<SortableRulesetPartitioner::part>, bool> SortableRulesetPartitioner::IsEntirePartitionSortable(
+		const vector<part>& all_partition, int current_field) {
+	vector<part> new_entire_partition;
 	for (const auto& p : all_partition) {
 		auto pvi = IsThisPartitionSortable(p, current_field);
 		bool isSortable = pvi.second;
@@ -38,7 +39,7 @@ std::pair<std::vector<SortableRulesetPartitioner::part>, bool> SortableRulesetPa
 
 bool SortableRulesetPartitioner::IsBucketReallySortable(
 		const SortableRuleset & b) {
-	std::vector<part> all_partitions;
+	vector<part> all_partitions;
 	all_partitions.push_back(b.GetRule());
 	for (int f : b.GetFieldOrdering()) {
 		auto p = IsEntirePartitionSortable(all_partitions, f);
@@ -50,16 +51,16 @@ bool SortableRulesetPartitioner::IsBucketReallySortable(
 	return true;
 }
 
-std::pair<std::vector<SortableRulesetPartitioner::part>, int> SortableRulesetPartitioner::MWISonPartition(
+pair<vector<SortableRulesetPartitioner::part>, int> SortableRulesetPartitioner::MWISonPartition(
 		const part& apartition, int current_field) {
-	std::vector<WeightedInterval> wi = Utilities::CreateUniqueInterval(
+	vector<WeightedInterval> wi = Utilities::CreateUniqueInterval(
 			apartition, current_field);
 	//printf("Field %d\n", current_field);
 	auto mwis = Utilities::MWISIntervals(wi);
 
-	std::vector<part> vp;
-	std::vector<WeightedInterval> temp_wi;
-	std::vector<part> new_partitions;
+	vector<part> vp;
+	vector<WeightedInterval> temp_wi;
+	vector<part> new_partitions;
 	for (int i : mwis.first) {
 		part temp_partition_rule;
 		for (auto& r : wi[i].GetRules()) {
@@ -71,9 +72,9 @@ std::pair<std::vector<SortableRulesetPartitioner::part>, int> SortableRulesetPar
 	return make_pair(new_partitions, mwis.second);
 }
 
-std::pair<std::vector<SortableRulesetPartitioner::part>, int> SortableRulesetPartitioner::MWISonEntirePartition(
-		const std::vector<part>& all_partition, int current_field) {
-	std::vector<part> new_entire_partition;
+pair<vector<SortableRulesetPartitioner::part>, int> SortableRulesetPartitioner::MWISonEntirePartition(
+		const vector<part>& all_partition, int current_field) {
+	vector<part> new_entire_partition;
 	int sum_weight = 0;
 	for (const auto& p : all_partition) {
 
@@ -82,17 +83,17 @@ std::pair<std::vector<SortableRulesetPartitioner::part>, int> SortableRulesetPar
 				end(pvi.first));
 		sum_weight += pvi.second;
 	}
-	return std::make_pair(new_entire_partition, sum_weight);
+	return make_pair(new_entire_partition, sum_weight);
 }
 
 void SortableRulesetPartitioner::BestFieldAndConfiguration(
-		std::vector<part>& all_partition, std::vector<int>& current_field,
+		vector<part>& all_partition, vector<int>& current_field,
 		int num_fields) {
-	std::vector<SortableRulesetPartitioner::part> best_new_partition;
+	vector<SortableRulesetPartitioner::part> best_new_partition;
 	int best_so_far_mwis = -1;
 	int current_best_field = -1;
 	for (int j = 0; j < num_fields; j++) {
-		if (std::find(begin(current_field), end(current_field), j)
+		if (find(begin(current_field), end(current_field), j)
 				== end(current_field)) {
 
 			auto mwis = MWISonEntirePartition(all_partition, j);
@@ -107,67 +108,67 @@ void SortableRulesetPartitioner::BestFieldAndConfiguration(
 	current_field.push_back(current_best_field);
 }
 
-std::pair<bool, std::vector<int>> SortableRulesetPartitioner::GreedyFieldSelectionTwoIterations(
-		const std::vector<Rule>& rules) {
+pair<bool, vector<int>> SortableRulesetPartitioner::GreedyFieldSelectionTwoIterations(
+		const vector<Rule>& rules) {
 	if (rules.size() == 0) {
 		printf("Warning: GreedyFieldSelection rule size = 0\n ");
 	}
 	int num_fields = rules[0].dim;
 
-	std::vector<int> current_field;
-	std::vector<part> all_partitions;
+	vector<int> current_field;
+	vector<part> all_partitions;
 
 	all_partitions.push_back(rules);
 	for (int i = 0; i < 2; i++) {
 		BestFieldAndConfiguration(all_partitions, current_field, num_fields);
 	}
 
-	std::vector<Rule> current_rules;
+	vector<Rule> current_rules;
 	for (auto& r : all_partitions) {
 		current_rules.insert(end(current_rules), begin(r), end(r));
 	}
 	//fill in the rest of the field in order
 	for (int j = 0; j < num_fields; j++) {
-		if (std::find(begin(current_field), end(current_field), j)
+		if (find(begin(current_field), end(current_field), j)
 				== end(current_field)) {
 			current_field.push_back(j);
 		}
 	}
-	return std::make_pair(current_rules.size() == rules.size(), current_field);
+	return make_pair(current_rules.size() == rules.size(), current_field);
 }
-std::pair<std::vector<Rule>, std::vector<int>> SortableRulesetPartitioner::GreedyFieldSelection(
-		const std::vector<Rule>& rules) {
+pair<vector<Rule>, vector<int>> SortableRulesetPartitioner::GreedyFieldSelection(
+		const vector<Rule>& rules) {
 	if (rules.size() == 0) {
 		printf("Warning: GreedyFieldSelection rule size = 0\n ");
 	}
 	int num_fields = rules[0].dim;
 
-	std::vector<int> current_field;
-	std::vector<part> all_partitions;
+	vector<int> current_field;
+	vector<part> all_partitions;
 
 	all_partitions.push_back(rules);
 	for (int i = 0; i < num_fields; i++) {
 		BestFieldAndConfiguration(all_partitions, current_field, num_fields);
 	}
 
-	std::vector<Rule> current_rules;
+	vector<Rule> current_rules;
 	for (auto& r : all_partitions) {
 		current_rules.insert(end(current_rules), begin(r), end(r));
 	}
 	//fill in the rest of the field in order
 	for (int j = 0; j < num_fields; j++) {
-		if (std::find(begin(current_field), end(current_field), j)
+		if (find(begin(current_field), end(current_field), j)
 				== end(current_field)) {
 			current_field.push_back(j);
 		}
 	}
-	return std::make_pair(current_rules, current_field);
+	return make_pair(current_rules, current_field);
 }
 
-std::vector<SortableRuleset> SortableRulesetPartitioner::SortableRulesetPartitioningGFS(
-		const std::vector<Rule>& rules) {
-	std::vector<Rule> current_rules = rules;
-	std::vector<SortableRuleset> all_buckets;
+vector<SortableRuleset> SortableRulesetPartitioner::SortableRulesetPartitioningGFS(
+		const vector<Rule>& rules) {
+	vector<Rule> current_rules = rules;
+	vector<SortableRuleset> all_buckets;
 	for (size_t i = 0; i < current_rules.size(); i++)
 		current_rules[i].id = i;
 
@@ -180,7 +181,7 @@ std::vector<SortableRuleset> SortableRulesetPartitioner::SortableRulesetPartitio
 		}
 
 		if (rule_and_field_order.first.size() == 0) {
-			throw std::runtime_error(
+			throw runtime_error(
 					"Warning rule_and_field_order.first = 0 in SortableRulesetPartitioning\n");
 		}
 
@@ -197,12 +198,12 @@ std::vector<SortableRuleset> SortableRulesetPartitioner::SortableRulesetPartitio
 	return all_buckets;
 }
 
-std::vector<SortableRuleset> SortableRulesetPartitioner::AdaptiveIncrementalInsertion(
-		const std::vector<Rule>& rules, int threshold) {
-	std::vector<SortableRuleset> all_buckets;
+vector<SortableRuleset> SortableRulesetPartitioner::AdaptiveIncrementalInsertion(
+		const vector<Rule>& rules, int threshold) {
+	vector<SortableRuleset> all_buckets;
 
 	auto InsertRuleIntoAllBucket =
-			[threshold](const Rule& r, std::vector<SortableRuleset>& b) {
+			[threshold](const Rule& r, vector<SortableRuleset>& b) {
 				for (auto& bucket : b) {
 					if (bucket.InsertRule(r)) {
 						if (bucket.size() < threshold) {
@@ -214,16 +215,16 @@ std::vector<SortableRuleset> SortableRulesetPartitioner::AdaptiveIncrementalInse
 						return;
 					}
 				}
-				std::vector<int> field_order0(r.dim);
+				vector<int> field_order0(r.dim);
 				if (threshold == 0) {
-					std::iota(field_order0.begin(), field_order0.end(), 0);
+					iota(field_order0.begin(), field_order0.end(), 0);
 					field_order0 = Random::shuffle_vector(field_order0);
 				}
 				else {
 					field_order0 = SortableRulesetPartitioner::GetFieldOrderByRule(r);
 				}
 
-				std::vector<Rule> vr = {r};
+				vector<Rule> vr = {r};
 				b.emplace_back(vr, field_order0);
 			};
 
@@ -235,10 +236,10 @@ std::vector<SortableRuleset> SortableRulesetPartitioner::AdaptiveIncrementalInse
 	return all_buckets;
 }
 
-std::vector<int> SortableRulesetPartitioner::GetFieldOrderByRule(
+vector<int> SortableRulesetPartitioner::GetFieldOrderByRule(
 		const Rule& r) {
 	//assume ClassBench Format
-	std::vector<unsigned> rank(r.dim, 0);
+	vector<unsigned> rank(r.dim, 0);
 	// 0 -> point, 1 -> shorter than half range, 2 -> longer than half range
 	//assign rank to each field
 	for (int i = 0; i < r.dim; i++) {
@@ -283,27 +284,27 @@ std::vector<int> SortableRulesetPartitioner::GetFieldOrderByRule(
 }
 
 int SortableRulesetPartitioner::ComputeMaxIntersection(
-		const std::vector<Rule>& ruleset) {
+		const vector<Rule>& ruleset) {
 	if (ruleset.size() == 0)
 		printf(
 				"Warning SortableRulesetPartitioner::ComputeMaxIntersection: Empty ruleset\n");
 	//auto  result = SortableRulesetPartitioner::GreedyFieldSelection(ruleset);
 	auto field_order = { 0, 1, 2, 3, 4 };	 //result.second;
-	//std::reverse(begin(field_order), end(field_order));
+	//reverse(begin(field_order), end(field_order));
 	return ComputeMaxIntersectionRecursive(ruleset, ruleset[0].dim - 1,
 			field_order);
 }
 
 int SortableRulesetPartitioner::ComputeMaxIntersectionRecursive(
-		const std::vector<Rule>& rules, int field_depth,
-		const std::vector<int>& field_order) {
+		const vector<Rule>& rules, int field_depth,
+		const vector<int>& field_order) {
 
 	if (rules.size() == 0)
 		return 0;
 	if (field_depth <= 0) {
-		std::multiset<unsigned int> Astart;
-		std::multiset<unsigned int> Aend;
-		std::vector<Rule> rules_rr = Utilities::RedundancyRemoval(rules);
+		multiset<unsigned int> Astart;
+		multiset<unsigned int> Aend;
+		vector<Rule> rules_rr = Utilities::RedundancyRemoval(rules);
 		for (auto v : rules_rr) {
 			Astart.insert(v.range[field_order[field_depth]].low);
 			Aend.insert(v.range[field_order[field_depth]].high);
@@ -312,16 +313,16 @@ int SortableRulesetPartitioner::ComputeMaxIntersectionRecursive(
 		return max_olap;
 	}
 
-	std::vector<std::pair<unsigned int, unsigned int>> start_pointx;
-	std::vector<std::pair<unsigned int, unsigned int>> end_pointx;
+	vector<pair<unsigned int, unsigned int>> start_pointx;
+	vector<pair<unsigned int, unsigned int>> end_pointx;
 
-	std::vector<unsigned int> queries;
+	vector<unsigned int> queries;
 	for (int i = 0; i < (int) rules.size(); i++) {
 		start_pointx.push_back(
-				std::make_pair(rules[i].range[field_order[field_depth]].low,
+				make_pair(rules[i].range[field_order[field_depth]].low,
 						i));
 		end_pointx.push_back(
-				std::make_pair(rules[i].range[field_order[field_depth]].high,
+				make_pair(rules[i].range[field_order[field_depth]].high,
 						i));
 		queries.push_back(rules[i].range[field_order[field_depth]].low);
 		queries.push_back(rules[i].range[field_order[field_depth]].high);
@@ -334,9 +335,9 @@ int SortableRulesetPartitioner::ComputeMaxIntersectionRecursive(
 	size_t i_s = 0;
 	size_t i_e = 0;
 	int max_POM = 0;
-	std::vector<Rule> rule_this_loop;
-	std::vector<int> index_rule_this_loop(rules.size(), -1); //index by priority
-	std::vector<int> inverse_index_rule_this_loop(rules.size(), -1);
+	vector<Rule> rule_this_loop;
+	vector<int> index_rule_this_loop(rules.size(), -1); //index by priority
+	vector<int> inverse_index_rule_this_loop(rules.size(), -1);
 	for (unsigned int qx : queries) {
 		bool justInserted = 0;
 		bool justDeleted = 0;
@@ -357,7 +358,7 @@ int SortableRulesetPartitioner::ComputeMaxIntersectionRecursive(
 		if (justInserted) {
 			int this_POM = ComputeMaxIntersectionRecursive(rule_this_loop,
 					field_depth - 1, field_order);
-			max_POM = std::max(this_POM, max_POM);
+			max_POM = max(this_POM, max_POM);
 		}
 
 		// delete as long as qx  > ie
@@ -365,7 +366,7 @@ int SortableRulesetPartitioner::ComputeMaxIntersectionRecursive(
 			while (qx == end_pointx[i_e].first) {
 				int priority = end_pointx[i_e].second;
 				if (index_rule_this_loop[priority] < 0) {
-					throw std::runtime_error(
+					throw runtime_error(
 							"ERROR in OPTDecompositionRecursive: index_rule_this_loop[priority] < 0 \n");
 				}
 
@@ -390,24 +391,24 @@ int SortableRulesetPartitioner::ComputeMaxIntersectionRecursive(
 		if (justDeleted) {
 			int this_POM = ComputeMaxIntersectionRecursive(rule_this_loop,
 					field_depth - 1, field_order);
-			max_POM = std::max(this_POM, max_POM);
+			max_POM = max(this_POM, max_POM);
 		}
 	}
 
 	return max_POM;
 
 }
-std::vector<SortableRuleset> SortableRulesetPartitioner::MaximumIndepdenentSetPartitioning(
-		const std::vector<Rule>& rules) {
-	std::vector<Rule> current_rules = rules;
-	std::vector<SortableRuleset> all_buckets;
+vector<SortableRuleset> SortableRulesetPartitioner::MaximumIndepdenentSetPartitioning(
+		const vector<Rule>& rules) {
+	vector<Rule> current_rules = rules;
+	vector<SortableRuleset> all_buckets;
 	//int sum_rank = 0;
 	while (!current_rules.empty()) {
 		for (int i = 0; i < (int) current_rules.size(); i++)
 			current_rules[i].id = i;
 		auto out = MaximumIndependentSetAllFields(current_rules);
-		std::vector<Rule> temp_rules = out.first;
-		std::vector<int> field_order = out.second;
+		vector<Rule> temp_rules = out.first;
+		vector<int> field_order = out.second;
 		for (auto& r : temp_rules) {
 			current_rules[r.id].markedDelete = 1;
 		}
@@ -421,37 +422,37 @@ std::vector<SortableRuleset> SortableRulesetPartitioner::MaximumIndepdenentSetPa
 	return all_buckets;
 }
 
-std::pair<std::vector<Rule>, std::vector<int>> SortableRulesetPartitioner::MaximumIndependentSetAllFields(
-		const std::vector<Rule>& rules) {
-	std::vector<int> all_fields(rules[0].dim);
-	std::iota(begin(all_fields), end(all_fields), 0);
-	std::vector<Rule> best_so_far_rules(0);
-	std::vector<int> field_order;
+pair<vector<Rule>, vector<int>> SortableRulesetPartitioner::MaximumIndependentSetAllFields(
+		const vector<Rule>& rules) {
+	vector<int> all_fields(rules[0].dim);
+	iota(begin(all_fields), end(all_fields), 0);
+	vector<Rule> best_so_far_rules(0);
+	vector<int> field_order;
 	do {
 		auto vrules = MaximumIndependentSetGivenField(rules, all_fields);
 		if (vrules.size() > best_so_far_rules.size()) {
 			best_so_far_rules = vrules;
 			field_order = all_fields;
 		}
-	} while (std::next_permutation(all_fields.begin(), all_fields.end()));
+	} while (next_permutation(all_fields.begin(), all_fields.end()));
 	return make_pair(best_so_far_rules, field_order);
 }
 
-std::vector<Rule> SortableRulesetPartitioner::MaximumIndependentSetGivenField(
-		const std::vector<Rule>& rules, const std::vector<int>& fields) {
+vector<Rule> SortableRulesetPartitioner::MaximumIndependentSetGivenField(
+		const vector<Rule>& rules, const vector<int>& fields) {
 	return MaximumIndependentSetGivenFieldRecursion(rules, fields, 0, 0, 0).GetRules();
 }
 
 WeightedInterval SortableRulesetPartitioner::MaximumIndependentSetGivenFieldRecursion(
-		const std::vector<Rule>& rules, const std::vector<int>& fields,
+		const vector<Rule>& rules, const vector<int>& fields,
 		int depth, unsigned a, unsigned b) {
 	if (a > b) {
 		printf("Error: interval [a,b] where a > b???\n");
 		exit(1);
 	}
-	std::vector<WeightedInterval> vwi = Utilities::CreateUniqueInterval(rules,
+	vector<WeightedInterval> vwi = Utilities::CreateUniqueInterval(rules,
 			fields[depth]);
-	std::vector<WeightedInterval> vwi_opt;
+	vector<WeightedInterval> vwi_opt;
 	if (depth < rules[0].dim - 1) {
 		for (auto& wi : vwi) {
 			vwi_opt.push_back(
@@ -462,7 +463,7 @@ WeightedInterval SortableRulesetPartitioner::MaximumIndependentSetGivenFieldRecu
 		vwi_opt = vwi;
 	}
 	auto mwis = Utilities::MWISIntervals(vwi_opt);
-	std::vector<Rule> rules_mwis;
+	vector<Rule> rules_mwis;
 	for (int i : mwis.first) {
 		for (auto& r : vwi_opt[i].GetRules()) {
 			rules_mwis.push_back(r);
@@ -472,20 +473,20 @@ WeightedInterval SortableRulesetPartitioner::MaximumIndependentSetGivenFieldRecu
 }
 
 //////////
-std::pair<std::vector<SortableRulesetPartitioner::part>, int> SortableRulesetPartitioner::FastMWISonPartition(
+pair<vector<SortableRulesetPartitioner::part>, int> SortableRulesetPartitioner::FastMWISonPartition(
 		const part& apartition, int field) {
 
 	if (apartition.size() == 0) {
-		return make_pair(std::vector<part>(), 0);
+		return make_pair(vector<part>(), 0);
 	}
-	std::vector<Range1dWeighted> rules_given_field;
+	vector<Range1dWeighted> rules_given_field;
 	rules_given_field.reserve(apartition.size());
 	int i = 0;
 	for (const auto & r : apartition) {
 		rules_given_field.emplace_back(r.range[field].low, r.range[field].high,
 				i++);
 	}
-	std::sort(std::begin(rules_given_field), std::end(rules_given_field),
+	sort(begin(rules_given_field), end(rules_given_field),
 			[](const Range1dWeighted& lhs, const Range1dWeighted& rhs) {
 				if (lhs.high < rhs.high) {
 					return lhs.high < rhs.high;
@@ -493,13 +494,13 @@ std::pair<std::vector<SortableRulesetPartitioner::part>, int> SortableRulesetPar
 				return lhs.low < rhs.low;
 			});
 
-	std::vector<LightWeightedInterval> wi = Utilities::FastCreateUniqueInterval(
+	vector<LightWeightedInterval> wi = Utilities::FastCreateUniqueInterval(
 			rules_given_field);
 
 	auto mwis = Utilities::FastMWISIntervals(wi);
 
-	std::vector<part> vp;
-	std::vector<part> new_partitions;
+	vector<part> vp;
+	vector<part> new_partitions;
 	for (int i : mwis.first) {
 		part temp_partition_rule;
 		for (auto& ind : wi[i].GetRuleIndices()) {
@@ -512,9 +513,9 @@ std::pair<std::vector<SortableRulesetPartitioner::part>, int> SortableRulesetPar
 	return make_pair(new_partitions, mwis.second);
 }
 
-std::pair<std::vector<SortableRulesetPartitioner::part>, int> SortableRulesetPartitioner::FastMWISonEntirePartition(
-		const std::vector<part>& all_partition, int current_field) {
-	std::vector<part> new_entire_partition;
+pair<vector<SortableRulesetPartitioner::part>, int> SortableRulesetPartitioner::FastMWISonEntirePartition(
+		const vector<part>& all_partition, int current_field) {
+	vector<part> new_entire_partition;
 	int sum_weight = 0;
 	for (const auto& p : all_partition) {
 
@@ -523,18 +524,18 @@ std::pair<std::vector<SortableRulesetPartitioner::part>, int> SortableRulesetPar
 				end(pvi.first));
 		sum_weight += pvi.second;
 	}
-	return std::make_pair(new_entire_partition, sum_weight);
+	return make_pair(new_entire_partition, sum_weight);
 }
 
 void SortableRulesetPartitioner::FastBestFieldAndConfiguration(
-		std::vector<part>& all_partition, std::vector<int>& current_field,
+		vector<part>& all_partition, vector<int>& current_field,
 		int num_fields) {
 
-	std::vector<SortableRulesetPartitioner::part> best_new_partition;
+	vector<SortableRulesetPartitioner::part> best_new_partition;
 	int best_so_far_mwis = -1;
 	int current_best_field = -1;
 	for (int j = 0; j < num_fields; j++) {
-		if (std::find(begin(current_field), end(current_field), j)
+		if (find(begin(current_field), end(current_field), j)
 				== end(current_field)) {
 
 			auto mwis = FastMWISonEntirePartition(all_partition, j);
@@ -549,15 +550,15 @@ void SortableRulesetPartitioner::FastBestFieldAndConfiguration(
 	current_field.push_back(current_best_field);
 }
 
-std::pair<bool, std::vector<int>> SortableRulesetPartitioner::FastGreedyFieldSelectionTwoIterations(
-		const std::vector<Rule>& rules) {
+pair<bool, vector<int>> SortableRulesetPartitioner::FastGreedyFieldSelectionTwoIterations(
+		const vector<Rule>& rules) {
 	if (rules.size() == 0) {
 		printf("Warning: GreedyFieldSelection rule size = 0\n ");
 	}
 	int num_fields = rules[0].dim;
 
-	std::vector<int> current_field;
-	std::vector<part> all_partitions;
+	vector<int> current_field;
+	vector<part> all_partitions;
 
 	all_partitions.push_back(rules);
 	for (int i = 0; i < 2; i++) {
@@ -565,28 +566,28 @@ std::pair<bool, std::vector<int>> SortableRulesetPartitioner::FastGreedyFieldSel
 				num_fields);
 	}
 
-	std::vector<Rule> current_rules;
+	vector<Rule> current_rules;
 	for (auto& r : all_partitions) {
 		current_rules.insert(end(current_rules), begin(r), end(r));
 	}
 	//fill in the rest of the field in order
 	for (int j = 0; j < num_fields; j++) {
-		if (std::find(begin(current_field), end(current_field), j)
+		if (find(begin(current_field), end(current_field), j)
 				== end(current_field)) {
 			current_field.push_back(j);
 		}
 	}
-	return std::make_pair(current_rules.size() == rules.size(), current_field);
+	return make_pair(current_rules.size() == rules.size(), current_field);
 }
-std::pair<std::vector<Rule>, std::vector<int>> SortableRulesetPartitioner::FastGreedyFieldSelection(
-		const std::vector<Rule>& rules) {
+pair<vector<Rule>, vector<int>> SortableRulesetPartitioner::FastGreedyFieldSelection(
+		const vector<Rule>& rules) {
 	if (rules.size() == 0) {
 		printf("Warning: GreedyFieldSelection rule size = 0\n ");
 	}
 	int num_fields = rules[0].dim;
 
-	std::vector<int> current_field;
-	std::vector<part> all_partitions;
+	vector<int> current_field;
+	vector<part> all_partitions;
 
 	all_partitions.push_back(rules);
 	for (int i = 0; i < num_fields; i++) {
@@ -594,29 +595,29 @@ std::pair<std::vector<Rule>, std::vector<int>> SortableRulesetPartitioner::FastG
 				num_fields);
 	}
 
-	std::vector<Rule> current_rules;
+	vector<Rule> current_rules;
 	for (auto& r : all_partitions) {
 		current_rules.insert(end(current_rules), begin(r), end(r));
 	}
 	//fill in the rest of the field in order
 	for (int j = 0; j < num_fields; j++) {
-		if (std::find(begin(current_field), end(current_field), j)
+		if (find(begin(current_field), end(current_field), j)
 				== end(current_field)) {
 			current_field.push_back(j);
 		}
 	}
-	return std::make_pair(current_rules, current_field);
+	return make_pair(current_rules, current_field);
 }
 
-std::pair<bool, std::vector<int>> SortableRulesetPartitioner::FastGreedyFieldSelectionForAdaptive(
-		const std::vector<Rule>& rules) {
+pair<bool, vector<int>> SortableRulesetPartitioner::FastGreedyFieldSelectionForAdaptive(
+		const vector<Rule>& rules) {
 	if (rules.size() == 0) {
 		printf("Warning: GreedyFieldSelection rule size = 0\n ");
 	}
 	int num_fields = rules[0].dim;
 
-	std::vector<int> current_field;
-	std::vector<part> all_partitions;
+	vector<int> current_field;
+	vector<part> all_partitions;
 
 	all_partitions.push_back(rules);
 	for (int i = 0; i < num_fields; i++) {
@@ -625,12 +626,12 @@ std::pair<bool, std::vector<int>> SortableRulesetPartitioner::FastGreedyFieldSel
 	}
 
 	for (int j = 0; j < num_fields; j++) {
-		if (std::find(begin(current_field), end(current_field), j)
+		if (find(begin(current_field), end(current_field), j)
 				== end(current_field)) {
 			current_field.push_back(j);
 		}
 	}
 
-	return std::make_pair(all_partitions[0].size() == rules.size(),
+	return make_pair(all_partitions[0].size() == rules.size(),
 			current_field);
 }
