@@ -5,8 +5,8 @@ using namespace std;
 
 pair<vector<SortableRulesetPartitioner::part>, bool> SortableRulesetPartitioner::IsThisPartitionSortable(
 		const part& apartition, int current_field) {
-	vector<WeightedInterval> wi = Utilities::CreateUniqueInterval(
-			apartition, current_field);
+	vector<WeightedInterval> wi = Utilities::CreateUniqueInterval(apartition,
+			current_field);
 	multiset<unsigned int> low, hi;
 	for (auto & i : wi) {
 		low.insert(i.GetLow());
@@ -20,8 +20,7 @@ pair<vector<SortableRulesetPartitioner::part>, bool> SortableRulesetPartitioner:
 		}
 		new_partitions.push_back(temp_partition_rule);
 	}
-	return make_pair(new_partitions,
-			Utilities::GetMaxOverlap(low, hi) == 1);
+	return make_pair(new_partitions, Utilities::GetMaxOverlap(low, hi) == 1);
 }
 pair<vector<SortableRulesetPartitioner::part>, bool> SortableRulesetPartitioner::IsEntirePartitionSortable(
 		const vector<part>& all_partition, int current_field) {
@@ -53,8 +52,8 @@ bool SortableRulesetPartitioner::IsBucketReallySortable(
 
 pair<vector<SortableRulesetPartitioner::part>, int> SortableRulesetPartitioner::MWISonPartition(
 		const part& apartition, int current_field) {
-	vector<WeightedInterval> wi = Utilities::CreateUniqueInterval(
-			apartition, current_field);
+	vector<WeightedInterval> wi = Utilities::CreateUniqueInterval(apartition,
+			current_field);
 	//printf("Field %d\n", current_field);
 	auto mwis = Utilities::MWISIntervals(wi);
 
@@ -192,7 +191,8 @@ vector<SortableRuleset> SortableRulesetPartitioner::SortableRulesetPartitioningG
 		current_rules.erase(
 				remove_if(begin(current_rules), end(current_rules),
 						[](const Rule& r) {
-							return r.markedDelete;}), end(current_rules));
+							return r.markedDelete;
+						}), end(current_rules));
 
 	}
 	return all_buckets;
@@ -228,25 +228,23 @@ vector<SortableRuleset> SortableRulesetPartitioner::AdaptiveIncrementalInsertion
 				b.emplace_back(vr, field_order0);
 			};
 
-	// int i = 0;
 	for (const auto& r : rules) {
-
 		InsertRuleIntoAllBucket(r, all_buckets);
 	}
+
 	return all_buckets;
 }
 
-vector<int> SortableRulesetPartitioner::GetFieldOrderByRule(
-		const Rule& r) {
+vector<int> SortableRulesetPartitioner::GetFieldOrderByRule(const Rule& r) {
 	//assume ClassBench Format
 	vector<unsigned> rank(r.dim, 0);
 	// 0 -> point, 1 -> shorter than half range, 2 -> longer than half range
 	//assign rank to each field
 	for (int i = 0; i < r.dim; i++) {
-		int imod5 = i % 5;
+		const int imod5 = i % 5;
 		if (imod5 == 0 || imod5 == 1) {
 			//IP
-			unsigned int length = r.range[imod5].high - r.range[imod5].low + 1;
+			auto length = r.range[imod5].high - r.range[imod5].low + 1;
 			if (length == 1)
 				rank[i] = 0;
 			else if (length > 0 && length < (1u << 31))
@@ -257,7 +255,7 @@ vector<int> SortableRulesetPartitioner::GetFieldOrderByRule(
 				rank[i] = 2;
 		} else if (imod5 == 2 || imod5 == 3) {
 			//Port
-			unsigned int length = r.range[imod5].high - r.range[imod5].low + 1;
+			auto length = r.range[imod5].high - r.range[imod5].low + 1;
 			if (length == 1)
 				rank[i] = 0;
 			else if (length < (1 << 15))
@@ -268,7 +266,7 @@ vector<int> SortableRulesetPartitioner::GetFieldOrderByRule(
 				rank[i] = 3;
 		} else {
 			//Protocol
-			unsigned int length = r.range[imod5].high - r.range[imod5].low + 1;
+			auto length = r.range[imod5].high - r.range[imod5].low + 1;
 			if (length == 1)
 				rank[i] = 0;
 			else if (length < (1 << 7))
@@ -286,8 +284,7 @@ vector<int> SortableRulesetPartitioner::GetFieldOrderByRule(
 int SortableRulesetPartitioner::ComputeMaxIntersection(
 		const vector<Rule>& ruleset) {
 	if (ruleset.size() == 0)
-		printf(
-				"Warning SortableRulesetPartitioner::ComputeMaxIntersection: Empty ruleset\n");
+		cerr << "Warning SortableRulesetPartitioner::ComputeMaxIntersection: Empty ruleset" << std::endl;
 	//auto  result = SortableRulesetPartitioner::GreedyFieldSelection(ruleset);
 	auto field_order = { 0, 1, 2, 3, 4 };	 //result.second;
 	//reverse(begin(field_order), end(field_order));
@@ -302,8 +299,8 @@ int SortableRulesetPartitioner::ComputeMaxIntersectionRecursive(
 	if (rules.size() == 0)
 		return 0;
 	if (field_depth <= 0) {
-		multiset<unsigned int> Astart;
-		multiset<unsigned int> Aend;
+		multiset<Point1d> Astart;
+		multiset<Point1d> Aend;
 		vector<Rule> rules_rr = Utilities::RedundancyRemoval(rules);
 		for (auto v : rules_rr) {
 			Astart.insert(v.range[field_order[field_depth]].low);
@@ -313,19 +310,16 @@ int SortableRulesetPartitioner::ComputeMaxIntersectionRecursive(
 		return max_olap;
 	}
 
-	vector<pair<unsigned int, unsigned int>> start_pointx;
-	vector<pair<unsigned int, unsigned int>> end_pointx;
+	vector<pair<Point1d, Point1d>> start_pointx;
+	vector<pair<Point1d, Point1d>> end_pointx;
 
-	vector<unsigned int> queries;
-	for (int i = 0; i < (int) rules.size(); i++) {
-		start_pointx.push_back(
-				make_pair(rules[i].range[field_order[field_depth]].low,
-						i));
-		end_pointx.push_back(
-				make_pair(rules[i].range[field_order[field_depth]].high,
-						i));
-		queries.push_back(rules[i].range[field_order[field_depth]].low);
-		queries.push_back(rules[i].range[field_order[field_depth]].high);
+	vector<Point1d> queries;
+	for (Point1d i = 0; i < rules.size(); i++) {
+		auto r = rules[i].range[field_order[field_depth]];
+		start_pointx.push_back({r.low, i});
+		end_pointx.push_back({r.high, i});
+		queries.push_back(r.low);
+		queries.push_back(r.high);
 	}
 
 	sort(begin(start_pointx), end(start_pointx));
@@ -444,8 +438,8 @@ vector<Rule> SortableRulesetPartitioner::MaximumIndependentSetGivenField(
 }
 
 WeightedInterval SortableRulesetPartitioner::MaximumIndependentSetGivenFieldRecursion(
-		const vector<Rule>& rules, const vector<int>& fields,
-		int depth, unsigned a, unsigned b) {
+		const vector<Rule>& rules, const vector<int>& fields, int depth,
+		unsigned a, unsigned b) {
 	if (a > b) {
 		printf("Error: interval [a,b] where a > b???\n");
 		exit(1);
@@ -632,6 +626,5 @@ pair<bool, vector<int>> SortableRulesetPartitioner::FastGreedyFieldSelectionForA
 		}
 	}
 
-	return make_pair(all_partitions[0].size() == rules.size(),
-			current_field);
+	return make_pair(all_partitions[0].size() == rules.size(), current_field);
 }

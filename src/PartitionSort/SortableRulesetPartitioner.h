@@ -14,8 +14,10 @@ public:
 	//This function takes O(d^2 nlog n) time.
 	static std::vector<SortableRuleset> SortableRulesetPartitioningGFS(
 			const std::vector<Rule>& rules);
+
 	static std::pair<std::vector<Rule>, std::vector<int>> GreedyFieldSelection(
 			const std::vector<Rule>& rules);
+
 	static std::pair<bool, std::vector<int>> GreedyFieldSelectionTwoIterations(
 			const std::vector<Rule>& rules);
 
@@ -24,10 +26,12 @@ public:
 
 	static std::pair<std::vector<Rule>, std::vector<int>> FastGreedyFieldSelection(
 			const std::vector<Rule>& rules);
+
 	static std::pair<bool, std::vector<int>> FastGreedyFieldSelectionForAdaptive(
 			const std::vector<Rule>& rules);
 
 	static std::vector<int> GetFieldOrderByRule(const Rule& r);
+
 	static std::vector<SortableRuleset> AdaptiveIncrementalInsertion(
 			const std::vector<Rule>& rules, int);
 
@@ -51,8 +55,9 @@ private:
 			idx[i] = i;
 
 		// sort indexes based on comparing values in v
-		sort(idx.begin(), idx.end(),
-				[&v](int i1, int i2) {return v[i1] < v[i2];});
+		sort(idx.begin(), idx.end(), [&v](int i1, int i2) {
+			return v[i1] < v[i2];
+		});
 
 		return idx;
 	}
