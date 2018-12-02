@@ -175,6 +175,7 @@ bool RedBlackTree::insertWithPathCompressionHelp(RedBlackTree_node* z,
 			delete z;
 			return true;
 		} else { /* x.key || z.key */
+			// inserting coliding key
 			printf("Warning TreeInsertPathcompressionHelp : x.key || z.key\n");
 		}
 	}
@@ -233,8 +234,6 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
 		if (temp_chain_boxes[run].low == key[fieldOrder[level + run]].low
 				&& temp_chain_boxes[run].high
 						== key[fieldOrder[level + run]].high) {
-			//  printf("[%u %u] vs. [%u %u]\n", temp_chain_boxes[run][0], temp_chain_boxes[run][1], key[fieldOrder[level + run]][0], key[fieldOrder[level + run]][1]);
-
 			x = insert(key, level + run++, fieldOrder, xpriority);
 			if (level + run < fieldOrder.size()) {
 				while ((temp_chain_boxes[run].low
@@ -411,19 +410,18 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insert(
 	RedBlackTree_node * x = new RedBlackTree_node;
 	x->key = key[field_order[level]];
 	RedBlackTree_node * out_ptr;
-	if (insertHelp(x, key, level, field_order, priority, out_ptr)) {
-		//insertion finds identical box.
-		//do nothing for now
+	if (insert_and_check_if_exists(x, key, level, field_order, priority, out_ptr)) {
+		//insertion finds identical box. do nothing for now
+		delete x;
 		return out_ptr;
 	}
 
-	RedBlackTree_node * newNode = x;
 	_insertFix(x);
 
-	return newNode;
+	return x;
 }
 
-bool RedBlackTree::insertHelp(RedBlackTree_node* z,
+bool RedBlackTree::insert_and_check_if_exists(RedBlackTree_node* z,
 		const std::vector<Range1d>& b, size_t level, FieldOrder_t field_order,
 		int priority, RedBlackTree_node*& out_ptr) {
 	/*  This function should only be called by InsertRBTree  */
@@ -441,14 +439,13 @@ bool RedBlackTree::insertHelp(RedBlackTree_node* z,
 		} else if (compare_result == -1) { /* x.key < z.key */
 			x = x->right;
 		} else if (compare_result == 0) { /* x.key = z.key */
-			printf("Warning compare_result == 0??\n");
+			printf("Warning compare_result == 0??\n"); // reinserting a key
 			if (level != b.size() - 1) {
 				x->rb_tree_next_level->insert(b, level + 1, field_order,
 						priority);
 			} else {
 				out_ptr = x;
 			}
-			delete z;
 			return true;
 		} else { /* x.key || z.key */
 			std::cout << "x:" << x->key << ", z:" << z->key << std::endl;

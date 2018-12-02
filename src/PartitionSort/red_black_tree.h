@@ -115,7 +115,11 @@ public:
 			FieldOrder_t fieldOrder, int priority, RedBlackTree_node*& out_ptr);
 	int exactQueryPriority(const Packet& q, size_t level,
 			FieldOrder_t fieldOrder, int priority_so_far);
-	bool insertHelp(RedBlackTree_node* z, const std::vector<Range1d>& b,
+
+	/*
+	 * @return true if value specified by b exists in tree
+	 * */
+	bool insert_and_check_if_exists(RedBlackTree_node* z, const std::vector<Range1d>& b,
 			size_t level, FieldOrder_t fieldOrder, int priority,
 			RedBlackTree_node*& out_ptr);
 
