@@ -299,12 +299,3 @@ private:
 	/***********************************************************************/
 	void destHelper(RedBlackTree_node* x);
 };
-
-bool inline Overlap(unsigned int a1, unsigned int a2, unsigned int b1,
-		unsigned int b2) {
-	if (a1 <= b1) {
-		return b1 <= a2;
-	} else {
-		return a1 <= b2;
-	}
-}

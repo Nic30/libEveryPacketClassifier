@@ -44,8 +44,20 @@ public:
 		} else
 			return high < other.high;
 	}
-	bool operator ==(const Range1d& rhs) const {
-		return low == rhs.low && high == rhs.high;
+
+	bool operator >(const Range1d& other) const {
+		if (high != other.high) {
+			return high > other.high;
+		} else
+			return low > other.low;
+	}
+
+	bool isIntersect(const Range1d & other) const {
+		return std::max(low, other.low) <= std::min(high, other.high);
+	}
+
+	bool operator ==(const Range1d& other) const {
+		return low == other.low && high == other.high;
 	}
 
 	friend std::ostream & operator<<(std::ostream & str, const Range1d & r) {

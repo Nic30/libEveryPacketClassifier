@@ -31,21 +31,19 @@ int RedBlackTree::getSizeList() const {
 }
 
 int CompareBox(const Range1d& a, const Range1d& b) {
-	//size_t compare_size = a.size();
-	if (a.low == b.low && a.high == b.high)
+	if (a == b)
 		return 0;
-	if (Overlap(a.low, a.high, b.low, b.high))
+	else if (a.isIntersect(b))
 		return 2;
-	if (a.high < b.low) {
+	else if (a.high < b.low)
 		return -1;
-	} else if (a.low > b.high) {
+	else if (a.low > b.high)
 		return 1;
-	}
 
-	return 0;
+	throw std::runtime_error("Something went wrong during compare");
 }
 
-int inline CompareQuery(const Range1d& a, const Packet& q, int level,
+int inline CompareQuery(const Range1d& a, const Packet& q, size_t level,
 		RedBlackTree::FieldOrder_t fieldOrder) {
 	if (a.high < q[fieldOrder[level]]) {
 		return -1;
@@ -56,17 +54,6 @@ int inline CompareQuery(const Range1d& a, const Packet& q, int level,
 	return 0;
 }
 
-/***********************************************************************/
-/*  INPUTS:  All the inputs are names of functions.  CompFunc takes to */
-/*  void pointers to keys and returns 1 if the first argument is */
-/*  "greater than" the second.   DestFunc takes a pointer to a key and */
-/*  destroys it in the appropriate manner when the node containing that */
-/*  key is deleted.  InfoDestFunc is similar to DestFunc except it */
-/*  receives a pointer to the info of a node and destroys it. */
-/*  PrintFunc receives a pointer to the key of a node and prints it. */
-/*  PrintInfo receives a pointer to the info of a node and prints it. */
-/***********************************************************************/
-
 RedBlackTree::RedBlackTree() {
 	max_priority_local = -1;
 	RedBlackTree_node* temp;
@@ -76,6 +63,7 @@ RedBlackTree::RedBlackTree() {
 	temp->parent = temp->left = temp->right = temp;
 	temp->red = 0;
 	temp->key = {1111, 1111};
+
 	temp = this->root = new RedBlackTree_node;
 	temp->parent = temp->left = temp->right = this->nil;
 	temp->key = {2222, 2222};
@@ -154,25 +142,20 @@ void RedBlackTree::rotateRight(RedBlackTree_node* y) {
 	assert(!nil->red && "nil not red in RightRotate");
 #endif
 }
-bool inline IsIntersect(unsigned a1, unsigned b1, unsigned a2, unsigned b2) {
-	return std::max(a1, a2) <= std::min(b1, b2);
-}
-bool inline IsIdentical(unsigned a1, unsigned b1, unsigned a2, unsigned b2) {
-	return a1 == a2 && b1 == b2;
-}
 
 bool RedBlackTree::canInsert(const std::vector<Range1d>& z, size_t level,
 		FieldOrder_t fieldOrder) {
 
 	if (level == fieldOrder.size()) {
+		// can insert into rule list
 		return true;
 	} else if (count == 1) {
+		// this node has only one children
 		for (size_t i = level; i < fieldOrder.size(); i++) {
-			if (IsIdentical(z[fieldOrder[i]].low, z[fieldOrder[i]].high,
-					chain_boxes[i - level].low, chain_boxes[i - level].high))
+			if (z[fieldOrder[i]] == chain_boxes[i - level])
 				continue;
-			if (IsIntersect(z[fieldOrder[i]].low, z[fieldOrder[i]].high,
-					chain_boxes[i - level].low, chain_boxes[i - level].high))
+
+			if (z[fieldOrder[i]].isIntersect(chain_boxes[i - level]))
 				return false;
 			else
 				return true;
@@ -180,27 +163,20 @@ bool RedBlackTree::canInsert(const std::vector<Range1d>& z, size_t level,
 		return true;
 	}
 
-	//rb_red_blk_node* y;
-
-	//y = tree->root;
 	RedBlackTree_node* x = root->left;
 	while (x != nil) {
-		//y = x;
 		int compare_result = CompareBox(x->key, z[fieldOrder[level]]);
 		if (compare_result == 1) { /* x.key > z.key */
 			x = x->left;
 		} else if (compare_result == -1) { /* x.key < z.key */
 			x = x->right;
 		} else if (compare_result == 0) { /* x.key = z.key */
-			/*printf("TreeInsertHelp:: Exact Match!\n");
-			 return true;
-			 x = x->right;*/
 			if (level == z.size() - 1 || x->rb_tree_next_level == nullptr)
 				return true;
 			else
 				return x->rb_tree_next_level->canInsert(z, level + 1,
 						fieldOrder);
-		} else { /* x.key || z.key */
+		} else { // intersecting
 			return false;
 		}
 	}
@@ -280,7 +256,7 @@ bool RedBlackTree::insertWithPathCompressionHelp(RedBlackTree_node* z,
 		}
 	}
 	z->parent = y;
-	if ((y == root) || (1 == CompareBox(y->key, z->key))) { /* y.key > z.key */
+	if (y == root || y->key > z->key) {
 		y->left = z;
 	} else {
 		y->right = z;
@@ -382,14 +358,9 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
 				x->rb_tree_next_level->pushPriority(priority);
 				x->rb_tree_next_level->count++;
 				x->rb_tree_next_level->pushPriority(xpriority);
-			} else if (!(temp_chain_boxes[run].low
-					== key[fieldOrder[level + run]].low
-					&& temp_chain_boxes[run].high
-							== key[fieldOrder[level + run]].high)) {
-				if (IsIntersect(temp_chain_boxes[run].high,
-						temp_chain_boxes[run].high,
-						key[fieldOrder[level + run]].low,
-						key[fieldOrder[level + run]].high)) {
+			} else if (!(temp_chain_boxes[run] == key[fieldOrder[level + run]])) {
+				if (temp_chain_boxes[run].isIntersect(
+						key[fieldOrder[level + run]])) {
 					printf("Warning not intersect?\n");
 					printf("[%u %u] vs. [%u %u]\n", temp_chain_boxes[run].low,
 							temp_chain_boxes[run].high,
@@ -624,8 +595,7 @@ bool RedBlackTree::insertHelp(RedBlackTree_node* z,
 			delete z;
 			return true;
 		} else { /* x.key || z.key */
-			printf("x:[%u %u], z:[%u %u]\n", x->key.low, x->key.high,
-					z->key.low, z->key.high);
+			std::cout << "x:" << x->key << ", z:" << z->key << std::endl;
 			printf("Warning TreeInsertHelp : x.key || z.key\n");
 		}
 	}
@@ -686,20 +656,10 @@ RedBlackTree::RedBlackTree_node* RedBlackTree::getPredecessor(
 }
 
 void RedBlackTree::printInorder(RedBlackTree_node* x) {
-	// rb_red_blk_node* nil=tree->nil;
-	// rb_red_blk_node* root=tree->root;
 	if (x != nil) {
 		printInorder(x->left);
-		//printf("  key=");
 		std::cout << "tree->count = " << count << std::endl;
 		std::cout << x->key << std::endl;
-		//  printf("  l->key=");
-		// if( x->left != nil) tree->PrintKey(x->left->key);
-		//  printf("  r->key=");
-		//  if( x->right != nil)  tree->PrintKey(x->right->key);
-		// printf("  p->key=");
-		// if( x->parent != root) /*printf("NULL"); else*/ tree->PrintKey(x->parent->key);
-		// printf("  red=%i\n",x->red);
 		printInorder(x->right);
 	}
 }
@@ -1059,8 +1019,7 @@ void RedBlackTree::deleteWithPathCompression(RedBlackTree*& tree,
 			return;
 
 		} else { /* x.key || z.key */
-			printf("x:[%u %u], key:[%u %u]\n", x->key.low, x->key.high,
-					key[fieldOrder[level]].low, key[fieldOrder[level]].high);
+			std::cout << "x:"<< x->key << ", key:" << key[fieldOrder[level]] << std::endl;
 			printf(
 					"Warning RBFindNodeSequence : x.key || key[fieldOrder[level]]\n");
 		}
