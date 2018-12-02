@@ -37,7 +37,6 @@ void OptimizedMITree::Insertion(const Rule& rule) {
 	maxPriority = std::max(maxPriority, rule.priority);
 	root->insertWithPathCompression(rule.range, 0, fieldOrder, rule.priority);
 	numRules++;
-	counter++;
 }
 void OptimizedMITree::Insertion(const Rule& rule, bool& priorityChange) {
 	//	if (CanInsertRule(rule)) {
@@ -46,12 +45,10 @@ void OptimizedMITree::Insertion(const Rule& rule, bool& priorityChange) {
 	maxPriority = std::max(maxPriority, rule.priority);
 	root->insertWithPathCompression(rule.range, 0, fieldOrder, rule.priority);
 	numRules++;
-	counter++;
 	//		}
 }
 bool OptimizedMITree::TryInsertion(const Rule& rule, bool& priorityChange) {
 	if (CanInsertRule(rule)) {
-		counter++;
 		priorityContainer.insert(rule.priority);
 		priorityChange = rule.priority > maxPriority;
 		maxPriority = std::max(maxPriority, rule.priority);

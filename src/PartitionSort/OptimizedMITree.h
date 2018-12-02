@@ -40,7 +40,6 @@ public:
 private:
 	bool isMature = false;
 	RedBlackTree * root;
-	int counter = 0;
 	int numRules = 0;
 	std::vector<int> fieldOrder;
 	std::multiset<int> priorityContainer;
