@@ -30,6 +30,9 @@ public:
 	static std::pair<bool, std::vector<int>> FastGreedyFieldSelectionForAdaptive(
 			const std::vector<Rule>& rules);
 
+	/*
+	 * Get rank based on how many bits is specified in rule for each dimmension
+	 * */
 	static std::vector<int> GetFieldOrderByRule(const Rule& r);
 
 	static std::vector<SortableRuleset> AdaptiveIncrementalInsertion(
