@@ -148,15 +148,15 @@ bool Validation(const unordered_map<string, PacketClassifier*> classifiers,
 				[=](const auto& pair) {return pair.second == result;})) {
 			numWrong++;
 			for (auto x : p) {
-				printf("%u ", x);
+				std::cout << x << " ";
 			}
-			printf("\n");
+			std::cout << std::endl;
 			for (const auto& pair : results) {
-				printf("\t%s: %d\n", pair.first.c_str(), pair.second);
+				std:: cout << "\t" << pair.first << ": " << pair.second << std::endl;
 			}
 			for (const Rule& r : sorted) {
 				if (r.MatchesPacket(p)) {
-					printf("\tTruth: %d\n", r.priority);
+					std::cout << "\tTruth: " << r.priority << std::endl;
 					break;
 				}
 			}
@@ -205,13 +205,13 @@ int main(int argc, char* argv[]) {
 	//int repeat = GetIntOrElse(args, "r", 1);
 
 	if (GetBoolOrElse(args, "?", false)) {
-		printf("Arguments:\n");
-		printf("\t-f <file> Filter File\n");
-		printf("\t-p <file> Packet File\n");
-		printf("\t-o <file> Output File\n");
-		printf("\t-c <classifier> Classifier\n");
-		printf("\t-m <mode> Classification Mode\n");
-		exit(0);
+		std::cout << "Arguments:" << std::endl;
+		std::cout << "\t-f <file> Filter File:" << std::endl;
+		std::cout << "\t-p <file> Packet File:" << std::endl;
+		std::cout << "\t-o <file> Output File:" << std::endl;
+		std::cout << "\t-c <classifier> Classifier:" << std::endl;
+		std::cout << "\t-m <mode> Classification Mode:" << std::endl;
+		return 0;
 	}
 
 	//assign mode and classifer
