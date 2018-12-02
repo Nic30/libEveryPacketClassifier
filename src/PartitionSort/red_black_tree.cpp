@@ -290,7 +290,7 @@ RedBlackTree::RedBlackTree_node * RedBlackTree::insertWithPathCompression(
 								key[fieldOrder[i]].high);
 					}
 					printf("\n");
-					exit(0);
+					throw std::runtime_error("not intersect");
 				}
 				//split into z and x node
 				x->rb_tree_next_level = new RedBlackTree();
@@ -581,7 +581,6 @@ int RedBlackTree::exactQuery(const Packet& q, size_t level,
 		compVal = CompareQuery(x->key, q, level, fieldOrder);
 	}
 
-	// printf("level = %d, priority = %d\n", level, x->mid_ptr.node_max_priority);
 	return x->rb_tree_next_level->exactQuery(q, level + 1, fieldOrder);
 }
 
@@ -840,11 +839,8 @@ void RedBlackTree::deleteWithPathCompression(RedBlackTree*& tree,
 		}
 	}
 
-	printf(
-			"Error RBTreeDeleteWithPathCompression: can't find a node at level %zd\n",
-			level);
-	exit(0);
-
+	throw std::runtime_error(
+			std::string("Error RBTreeDeleteWithPathCompression: can't find a node at level ") + std::to_string(level));
 }
 
 void RedBlackTree::deleteNode(RedBlackTree_node* z) {
