@@ -161,7 +161,7 @@ void TupleMergeOnline::InsertRule(const Rule& rule) {
 			table->Insertion(rule, hasChanged);
 			assignments[rule.priority] = table;
 			
-			if (table->NumCollisions(rule) > collideLimit) {
+			if (int(table->NumCollisions(rule)) > collideLimit) {
 				// Split Table
 				vector<Rule> collisions = table->Collisions(rule);
 				Tuple compatTuple;
