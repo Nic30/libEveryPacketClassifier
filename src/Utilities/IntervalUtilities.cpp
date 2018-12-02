@@ -75,42 +75,7 @@ std::pair<std::vector<int>, int> Utilities::FastMWISIntervals(
 		endpoints.push_back(EndPoint(I[i].high, 1, i));
 	}
 
-	std::sort(begin(endpoints), end(endpoints));
-	size_t index_start_no_change = 0, index_end_no_change = 0;
-	for (size_t i = 0; i < endpoints.size() - 1; i++) {
-		if (endpoints[i].val != endpoints[i + 1].val) {
-			index_end_no_change = i;
-			if (index_start_no_change != index_end_no_change) {
-				double add_right_endpoint = EPS;
-				double subtract_left_endpoint = -EPS;
-				for (size_t k = index_start_no_change; k <= index_end_no_change;
-						k++) {
-					if (endpoints[k].isRightEnd) {
-						endpoints[k].val += add_right_endpoint;
-						add_right_endpoint += EPS;
-					} else {
-						endpoints[k].val += subtract_left_endpoint;
-						subtract_left_endpoint -= EPS;
-					}
-				}
-			}
-			index_start_no_change = i + 1;
-		}
-	}
-	if (index_start_no_change != endpoints.size() - 1) {
-		double add_right_endpoint = EPS;
-		double subtract_left_endpoint = -EPS;
-		for (size_t k = index_start_no_change; k <= endpoints.size() - 1; k++) {
-			if (endpoints[k].isRightEnd) {
-				endpoints[k].val += add_right_endpoint;
-				add_right_endpoint += EPS;
-			} else {
-				endpoints[k].val += subtract_left_endpoint;
-				subtract_left_endpoint -= EPS;
-			}
-		}
-	}
-	std::sort(begin(endpoints), end(endpoints));
+	_MWISIntervals_endpoints(endpoints);
 
 	for (const auto& e : endpoints) {
 		if (!e.isRightEnd) {
@@ -199,6 +164,46 @@ std::vector<WeightedInterval> Utilities::CreateUniqueInterval(
 	return out;
 }
 
+void Utilities::_MWISIntervals_endpoints(std::vector<EndPoint> & endpoints) {
+	std::sort(begin(endpoints), end(endpoints));
+	//add perturbation to make points unique
+	size_t index_start_no_change = 0, index_end_no_change = 0;
+	for (size_t i = 0; i < endpoints.size() - 1; i++) {
+		if (endpoints[i].val != endpoints[i + 1].val) {
+			index_end_no_change = i;
+			if (index_start_no_change != index_end_no_change) {
+				double add_right_endpoint = EPS;
+				double subtract_left_endpoint = -EPS;
+				for (size_t k = index_start_no_change; k <= index_end_no_change;
+						k++) {
+					if (endpoints[k].isRightEnd) {
+						endpoints[k].val += add_right_endpoint;
+						add_right_endpoint += EPS;
+					} else {
+						endpoints[k].val += subtract_left_endpoint;
+						subtract_left_endpoint -= EPS;
+					}
+				}
+			}
+			index_start_no_change = i + 1;
+		}
+	}
+	if (index_start_no_change != endpoints.size() - 1) {
+		double add_right_endpoint = EPS;
+		double subtract_left_endpoint = -EPS;
+		for (size_t k = index_start_no_change; k <= endpoints.size() - 1; k++) {
+			if (endpoints[k].isRightEnd) {
+				endpoints[k].val += add_right_endpoint;
+				add_right_endpoint += EPS;
+			} else {
+				endpoints[k].val += subtract_left_endpoint;
+				subtract_left_endpoint -= EPS;
+			}
+		}
+	}
+	std::sort(begin(endpoints), end(endpoints));
+}
+
 std::pair<std::vector<int>, int> Utilities::MWISIntervals(
 		const std::vector<WeightedInterval>&I) {
 	const int LOW = 0;
@@ -227,45 +232,8 @@ std::pair<std::vector<int>, int> Utilities::MWISIntervals(
 		endpoints.push_back(EndPoint(sorted_I[i].first.low, LOW, i));
 		endpoints.push_back(EndPoint(sorted_I[i].first.high, HIGH, i));
 	}
-	std::sort(begin(endpoints), end(endpoints));
-	//add perturbation to make points unique
 
-	size_t index_start_no_change = 0, index_end_no_change = 0;
-	for (size_t i = 0; i < endpoints.size() - 1; i++) {
-		if (endpoints[i].val != endpoints[i + 1].val) {
-			index_end_no_change = i;
-			if (index_start_no_change != index_end_no_change) {
-				double add_right_endpoint = EPS;
-				double subtract_left_endpoint = -EPS;
-				for (size_t k = index_start_no_change; k <= index_end_no_change;
-						k++) {
-					if (endpoints[k].isRightEnd) {
-						endpoints[k].val += add_right_endpoint;
-						add_right_endpoint += EPS;
-					} else {
-						endpoints[k].val += subtract_left_endpoint;
-						subtract_left_endpoint -= EPS;
-					}
-				}
-			}
-			index_start_no_change = i + 1;
-		}
-	}
-	if (index_start_no_change != endpoints.size() - 1) {
-		double add_right_endpoint = EPS;
-		double subtract_left_endpoint = -EPS;
-		for (int k = index_start_no_change; k <= (int) endpoints.size() - 1;
-				k++) {
-			if (endpoints[k].isRightEnd) {
-				endpoints[k].val += add_right_endpoint;
-				add_right_endpoint += EPS;
-			} else {
-				endpoints[k].val += subtract_left_endpoint;
-				subtract_left_endpoint -= EPS;
-			}
-		}
-	}
-	std::sort(begin(endpoints), end(endpoints));
+	_MWISIntervals_endpoints(endpoints);
 
 	for (const auto& e : endpoints) {
 		if (!e.isRightEnd) {

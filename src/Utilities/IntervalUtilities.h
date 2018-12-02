@@ -10,7 +10,7 @@ public:
 	static double EPS;
 	static bool  IsIdentical(const Rule& r1, const Rule& r2);
 	static int GetMaxOverlap(const std::multiset<unsigned int>& lo, const std::multiset< unsigned int>& hi);
-
+	static void _MWISIntervals_endpoints(std::vector<EndPoint> & endpoints);
 	static std::pair<std::vector<int>, int> MWISIntervals(const std::vector<WeightedInterval>&I);
 	static std::pair<std::vector<int>, int> FastMWISIntervals(const std::vector<LightWeightedInterval>&I);
 	static std::pair<std::vector<int>, int> MWISIntervals(const std::vector<Rule>& I, int x);
