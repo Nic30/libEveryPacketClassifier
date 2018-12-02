@@ -27,7 +27,7 @@ BinaryRangeSearch::BinaryRangeSearch(vector<Range1d>& ranges) {
 	bool isFound = false;
 	dividers.insert(dividers.end(), points.begin(), points.end());
 	for (size_t j = 0; j < ranges.size(); j++) {
-		if (ranges[j].ContainsPoint(0)) {
+		if (ranges[j].contains(0)) {
 			indices.push_back(j);
 			isFound = true;
 			break;
@@ -39,7 +39,7 @@ BinaryRangeSearch::BinaryRangeSearch(vector<Range1d>& ranges) {
 	for (size_t i = 0; i < dividers.size(); i++) {
 		isFound = false;
 		for (size_t j = 0; j < ranges.size(); j++) {
-			if (ranges[j].ContainsPoint(dividers[i])) {
+			if (ranges[j].contains(dividers[i])) {
 				indices.push_back(j);
 				isFound = true;
 				break;

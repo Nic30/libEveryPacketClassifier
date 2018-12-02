@@ -27,15 +27,12 @@ using Packet = std::vector<Point1d>;
 
 class Range1d {
 public:
-	Point1d low;
-	Point1d high;
-
 	Range1d(): low(0), high(0) {}
 	Range1d(Point1d low, Point1d high) :
 			low(low), high(high) {
 	}
 
-	inline bool ContainsPoint(Point1d x) {
+	inline bool contains(Point1d x) const {
 		return low <= x && x <= high;
 	}
 	bool operator <(const Range1d& other) const {
@@ -70,6 +67,9 @@ public:
 		ss << *this;
 		return ss.str();
 	}
+
+	Point1d low;
+	Point1d high;
 };
 
 /**
