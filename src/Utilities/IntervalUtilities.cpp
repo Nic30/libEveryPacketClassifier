@@ -1,5 +1,7 @@
 #include "IntervalUtilities.h"
 
+double Utilities::EPS = 0.0001;
+
 std::vector<Rule> Utilities::RedundancyRemoval(const std::vector<Rule>& rules) {
 	std::vector<bool> isVisited(rules.size(), 0);
 	std::vector<Rule> out;
@@ -79,16 +81,16 @@ std::pair<std::vector<int>, int> Utilities::FastMWISIntervals(
 		if (endpoints[i].val != endpoints[i + 1].val) {
 			index_end_no_change = i;
 			if (index_start_no_change != index_end_no_change) {
-				double add_right_endpoint = 0.0001;
-				double subtract_left_endpoint = -0.0001;
+				double add_right_endpoint = EPS;
+				double subtract_left_endpoint = -EPS;
 				for (size_t k = index_start_no_change; k <= index_end_no_change;
 						k++) {
 					if (endpoints[k].isRightEnd) {
 						endpoints[k].val += add_right_endpoint;
-						add_right_endpoint += 0.0001;
+						add_right_endpoint += EPS;
 					} else {
 						endpoints[k].val += subtract_left_endpoint;
-						subtract_left_endpoint -= 0.0001;
+						subtract_left_endpoint -= EPS;
 					}
 				}
 			}
@@ -96,15 +98,15 @@ std::pair<std::vector<int>, int> Utilities::FastMWISIntervals(
 		}
 	}
 	if (index_start_no_change != endpoints.size() - 1) {
-		double add_right_endpoint = 0.0001;
-		double subtract_left_endpoint = -0.0001;
+		double add_right_endpoint = EPS;
+		double subtract_left_endpoint = -EPS;
 		for (size_t k = index_start_no_change; k <= endpoints.size() - 1; k++) {
 			if (endpoints[k].isRightEnd) {
 				endpoints[k].val += add_right_endpoint;
-				add_right_endpoint += 0.0001;
+				add_right_endpoint += EPS;
 			} else {
 				endpoints[k].val += subtract_left_endpoint;
-				subtract_left_endpoint -= 0.0001;
+				subtract_left_endpoint -= EPS;
 			}
 		}
 	}
@@ -133,12 +135,15 @@ std::pair<std::vector<int>, int> Utilities::FastMWISIntervals(
 	}
 	return std::make_pair(S_max, max_MIS);
 }
+
 std::pair<std::vector<int>, int> Utilities::MWISIntervals(
 		const std::vector<Rule>& I, int x) {
 	// create an weighted interval from rules
 	std::vector<WeightedInterval> vc;
 	for_each(begin(I), end(I),
-			[&vc, x](const Rule & r) {vc.push_back(WeightedInterval(std::vector<Rule>(1, r), x));});
+			[&vc, x](const Rule & r) {
+		vc.push_back(WeightedInterval(std::vector<Rule>(1, r), x));
+	});
 	return MWISIntervals(vc);
 }
 
@@ -213,7 +218,9 @@ std::pair<std::vector<int>, int> Utilities::MWISIntervals(
 	}
 
 	sort(begin(sorted_I), end(sorted_I),
-			[](const std::pair<WeightedInterval, int>& lhs, const std::pair<WeightedInterval, int>& rhs) ->bool {return lhs.first.GetHigh() < rhs.first.GetHigh();});
+			[](const std::pair<WeightedInterval, int>& lhs, const std::pair<WeightedInterval, int>& rhs) -> bool {
+		return lhs.first.GetHigh() < rhs.first.GetHigh();
+	});
 
 	std::vector<EndPoint> endpoints;
 	for (size_t i = 0; i < sorted_I.size(); i++) {
@@ -228,16 +235,16 @@ std::pair<std::vector<int>, int> Utilities::MWISIntervals(
 		if (endpoints[i].val != endpoints[i + 1].val) {
 			index_end_no_change = i;
 			if (index_start_no_change != index_end_no_change) {
-				double add_right_endpoint = 0.0001;
-				double subtract_left_endpoint = -0.0001;
+				double add_right_endpoint = EPS;
+				double subtract_left_endpoint = -EPS;
 				for (size_t k = index_start_no_change; k <= index_end_no_change;
 						k++) {
 					if (endpoints[k].isRightEnd) {
 						endpoints[k].val += add_right_endpoint;
-						add_right_endpoint += 0.0001;
+						add_right_endpoint += EPS;
 					} else {
 						endpoints[k].val += subtract_left_endpoint;
-						subtract_left_endpoint -= 0.0001;
+						subtract_left_endpoint -= EPS;
 					}
 				}
 			}
@@ -245,16 +252,16 @@ std::pair<std::vector<int>, int> Utilities::MWISIntervals(
 		}
 	}
 	if (index_start_no_change != endpoints.size() - 1) {
-		double add_right_endpoint = 0.0001;
-		double subtract_left_endpoint = -0.0001;
+		double add_right_endpoint = EPS;
+		double subtract_left_endpoint = -EPS;
 		for (int k = index_start_no_change; k <= (int) endpoints.size() - 1;
 				k++) {
 			if (endpoints[k].isRightEnd) {
 				endpoints[k].val += add_right_endpoint;
-				add_right_endpoint += 0.0001;
+				add_right_endpoint += EPS;
 			} else {
 				endpoints[k].val += subtract_left_endpoint;
-				subtract_left_endpoint -= 0.0001;
+				subtract_left_endpoint -= EPS;
 			}
 		}
 	}

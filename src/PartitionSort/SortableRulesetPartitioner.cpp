@@ -148,7 +148,7 @@ std::pair<std::vector<Rule>, std::vector<int>> SortableRulesetPartitioner::Greed
 	}
 	//fill in the rest of the field in order
 	for (int j = 0; j < num_fields; j++) {
-		if (std::find(begin(current_field), end(current_field), j) == end(current_field)) {;
+		if (std::find(begin(current_field), end(current_field), j) == end(current_field)) {
 			current_field.push_back(j);
 		}
 	}
@@ -158,10 +158,12 @@ std::pair<std::vector<Rule>, std::vector<int>> SortableRulesetPartitioner::Greed
 std::vector<SortableRuleset> SortableRulesetPartitioner::SortableRulesetPartitioningGFS(const std::vector<Rule>& rules ) {
 	std::vector<Rule> current_rules = rules;
 	std::vector<SortableRuleset> all_buckets;
-	for (size_t i = 0; i < current_rules.size(); i++) current_rules[i].id = i;
+	for (size_t i = 0; i < current_rules.size(); i++)
+		current_rules[i].id = i;
+
 	while (!current_rules.empty()) {
-		
-		for (int i = 0; i < (int)current_rules.size(); i++) current_rules[i].tag = i;
+		for (size_t i = 0; i < current_rules.size(); i++)
+			current_rules[i].tag = i;
 		auto rule_and_field_order = GreedyFieldSelection(current_rules);
 		for (auto& r : rule_and_field_order.first)  {
 			current_rules[r.tag].markedDelete = 1;

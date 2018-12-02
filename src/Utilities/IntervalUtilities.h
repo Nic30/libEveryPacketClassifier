@@ -7,6 +7,7 @@ class WeightedInterval;
 struct LightWeightedInterval;
 class Utilities {
 public:
+	static double EPS;
 	static bool  IsIdentical(const Rule& r1, const Rule& r2);
 	static int GetMaxOverlap(const std::multiset<unsigned int>& lo, const std::multiset< unsigned int>& hi);
 
