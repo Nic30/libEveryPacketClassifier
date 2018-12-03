@@ -14,7 +14,8 @@ class RedBlackTree {
 public:
 	using FieldOrder_t = const std::vector<int>&;
 	//Total 29 bytes per node
-	struct RedBlackTree_node {
+	class RedBlackTree_node {
+	public:
 		Range1d key;
 		RedBlackTree_node* left;
 		RedBlackTree_node* right;

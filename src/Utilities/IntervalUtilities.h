@@ -34,6 +34,7 @@ public:
 		rule_indices.push_back(x);
 	}
 	std::vector<int> GetRuleIndices() const {
+		std::cout << rule_indices.size() << std::endl;
 		return rule_indices;
 	}
 private:

@@ -480,8 +480,7 @@ pair<vector<SortableRulesetPartitioner::part>, int> SortableRulesetPartitioner::
 	rules_given_field.reserve(apartition.size());
 	int i = 0;
 	for (const auto & r : apartition) {
-		rules_given_field.emplace_back(r.range[field].low, r.range[field].high,
-				i++);
+		rules_given_field.emplace_back(r.range[field], i++);
 	}
 	sort(begin(rules_given_field), end(rules_given_field),
 			[](const Range1dWeighted& lhs, const Range1dWeighted& rhs) {
@@ -500,7 +499,7 @@ pair<vector<SortableRulesetPartitioner::part>, int> SortableRulesetPartitioner::
 	vector<part> new_partitions;
 	for (int i : mwis.first) {
 		part temp_partition_rule;
-		for (auto& ind : wi[i].GetRuleIndices()) {
+		for (auto& ind : wi.at(i).GetRuleIndices()) {
 			temp_partition_rule.push_back(
 					apartition[rules_given_field[ind].id]);
 		}

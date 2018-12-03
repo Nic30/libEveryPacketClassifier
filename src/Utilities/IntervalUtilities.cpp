@@ -65,6 +65,10 @@ std::pair<std::vector<int>, int> Utilities::FastMWISIntervals(
 	int temp_max = 0;
 	int max_MIS = 0;
 	std::vector<int> S_max;
+	if (I.size() == 0) {
+		return {S_max, max_MIS};
+	}
+
 	S_max.reserve(I.size());
 	int last_interval = 0;
 	std::vector<int> chi(I.size(), 0);
@@ -87,7 +91,6 @@ std::pair<std::vector<int>, int> Utilities::FastMWISIntervals(
 			}
 		}
 	}
-
 	S_max.push_back(last_interval);
 	max_MIS = temp_max;
 	temp_max = temp_max - I[last_interval].weight;
@@ -98,7 +101,7 @@ std::pair<std::vector<int>, int> Utilities::FastMWISIntervals(
 			last_interval = j;
 		}
 	}
-	return std::make_pair(S_max, max_MIS);
+	return {S_max, max_MIS};
 }
 
 std::pair<std::vector<int>, int> Utilities::MWISIntervals(
@@ -167,8 +170,9 @@ std::vector<WeightedInterval> Utilities::CreateUniqueInterval(
 void Utilities::_MWISIntervals_endpoints(std::vector<EndPoint> & endpoints) {
 	std::sort(begin(endpoints), end(endpoints));
 	//add perturbation to make points unique
-	size_t index_start_no_change = 0, index_end_no_change = 0;
-	for (size_t i = 0; i < endpoints.size() - 1; i++) {
+	size_t index_start_no_change = 0,
+		   index_end_no_change = 0;
+	for (size_t i = 0; i + 1 < endpoints.size(); i++) {
 		if (endpoints[i].val != endpoints[i + 1].val) {
 			index_end_no_change = i;
 			if (index_start_no_change != index_end_no_change) {
@@ -191,7 +195,7 @@ void Utilities::_MWISIntervals_endpoints(std::vector<EndPoint> & endpoints) {
 	if (index_start_no_change != endpoints.size() - 1) {
 		double add_right_endpoint = EPS;
 		double subtract_left_endpoint = -EPS;
-		for (size_t k = index_start_no_change; k <= endpoints.size() - 1; k++) {
+		for (size_t k = index_start_no_change; k + 1 <= endpoints.size(); k++) {
 			if (endpoints[k].isRightEnd) {
 				endpoints[k].val += add_right_endpoint;
 				add_right_endpoint += EPS;
