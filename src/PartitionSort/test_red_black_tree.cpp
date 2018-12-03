@@ -45,12 +45,14 @@ int rb_selftest0() {
 	r5.range[3] = {0, 1};
 
 	OptimizedMITree mitree;
-	auto insert_checked = [&mitree](const Rule & r, bool expected_prioritychange) {
-		bool prioritychange = false;
-		mitree.Insertion(r, prioritychange);
-		if (!prioritychange)
-		throw selftest_fail(prioritychange, expected_prioritychange);
-	};
+	auto insert_checked =
+			[&mitree](const Rule & r, bool expected_prioritychange) {
+				bool prioritychange = false;
+				mitree.Insertion(r, prioritychange);
+				if (!prioritychange) {
+					throw selftest_fail(prioritychange, expected_prioritychange);
+				}
+			};
 	insert_checked(r1, true);
 
 	//mitree.Insertion(r4,prioritychange);
