@@ -1,6 +1,9 @@
 #include "PartitionSort.h"
+#include "test_red_black_tree.h"
+
 
 void PartitionSort::ConstructClassifier(const std::vector<Rule>& rules) {
+	rb_selftest0();
 	this->rules.reserve(rules.size());
 	for (const auto& r : rules) {
 		InsertRule(r);
