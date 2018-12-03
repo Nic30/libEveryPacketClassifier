@@ -1,6 +1,9 @@
 #include "PartitionSort.h"
+#include "test_red_black_tree.h"
+using namespace std;
 
-void PartitionSort::ConstructClassifier(const std::vector<Rule>& rules) {
+void PartitionSort::ConstructClassifier(const vector<Rule>& rules) {
+	rb_selftest0();
 	this->rules.reserve(rules.size());
 	for (const auto& r : rules) {
 		InsertRule(r);
@@ -15,7 +18,7 @@ int PartitionSort::ClassifyAPacket(const Packet& packet) {
 			break;
 		}
 		query++;
-		result = std::max(t->ClassifyAPacket(packet), result);
+		result = max(t->ClassifyAPacket(packet), result);
 	}
 	QueryCountersUpdate(query);
 	return result;
@@ -46,15 +49,15 @@ size_t PartitionSort::RulesInTable(size_t index) const {
 
 PartitionSort::~PartitionSort() {
 	for (auto x : mitrees) {
-		free(x);
+		delete x;
 	}
 }
 
 void PartitionSort::DeleteRule(size_t i) {
 	if (i < 0 || i >= rules.size()) {
-		std::cout << "Warning index delete rule out of bound: do nothing here"
-				<< std::endl;
-		std::cout << i << " vs. size: " << rules.size() << std::endl;
+		cout << "Warning index delete rule out of bound: do nothing here"
+				<< endl;
+		cout << i << " vs. size: " << rules.size() << endl;
 		return;
 	}
 	bool prioritychange = false;
@@ -72,7 +75,7 @@ void PartitionSort::DeleteRule(size_t i) {
 	}
 
 	if (i != rules.size() - 1) {
-		rules[i] = std::move(rules[rules.size() - 1]);
+		rules[i] = move(rules[rules.size() - 1]);
 	}
 	rules.pop_back();
 
@@ -88,7 +91,7 @@ void PartitionSort::InsertRule(const Rule& one_rule) {
 				InsertionSortMITrees();
 			}
 			mitree->ReconstructIfNumRulesLessThanOrEqualTo(10);
-			rules.push_back(std::make_pair(one_rule, mitree));
+			rules.push_back(make_pair(one_rule, mitree));
 			return;
 		}
 	}
@@ -96,7 +99,7 @@ void PartitionSort::InsertRule(const Rule& one_rule) {
 
 	auto tree_ptr = new OptimizedMITree(one_rule);
 	tree_ptr->TryInsertion(one_rule, priority_change);
-	rules.push_back(std::make_pair(one_rule, tree_ptr));
+	rules.push_back(make_pair(one_rule, tree_ptr));
 	mitrees.push_back(tree_ptr);
 	InsertionSortMITrees();
 }

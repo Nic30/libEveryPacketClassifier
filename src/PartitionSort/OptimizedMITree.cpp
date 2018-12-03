@@ -121,7 +121,7 @@ void OptimizedMITree::ReconstructIfNumRulesLessThanOrEqualTo(
 		isMature = true;
 		return;
 	}
-	//global_counter++;
+
 	std::vector<Rule> serialized_rules = SerializeIntoRules();
 	auto result =
 			SortableRulesetPartitioner::FastGreedyFieldSelectionForAdaptive(
