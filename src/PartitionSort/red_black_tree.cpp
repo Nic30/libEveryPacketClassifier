@@ -167,7 +167,7 @@ bool RedBlackTree::insertWithPathCompressionHelp(RedBlackTree_node* z,
 			}
 			return true;
 		} else { /* x.key || z.key */
-			// inserting coliding key
+			// inserting colliding key
 			printf("Warning TreeInsertPathcompressionHelp : x.key || z.key\n");
 		}
 	}
