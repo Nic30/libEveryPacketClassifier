@@ -49,7 +49,7 @@ size_t PartitionSort::RulesInTable(size_t index) const {
 
 PartitionSort::~PartitionSort() {
 	for (auto x : mitrees) {
-		free(x);
+		delete x;
 	}
 }
 
