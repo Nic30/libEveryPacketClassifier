@@ -8,6 +8,7 @@ RM := rm -rf
 
 # All of the sources participating in the build are defined here
 -include sources.mk
+-include src/far/subdir.mk
 -include src/Utilities/subdir.mk
 -include src/TupleMerge/subdir.mk
 -include src/Trees/subdir.mk
