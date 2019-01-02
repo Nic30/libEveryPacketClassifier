@@ -19,6 +19,9 @@ public:
 		Range1d key;
 		RedBlackTree_node* left;
 		RedBlackTree_node* right;
+		/*
+		 * Created if inserted node equals to this node
+		 * */
 		RedBlackTree* rb_tree_next_level;
 		//int priority; /*max_priority of all children*/
 		bool red; /* if red=0 then the node is black */
