@@ -481,7 +481,7 @@ HyperCutsNode* HyperCutsHelper::CreateTree(const list<Rule*>& classifier) {
 			if (n->classifier.size() > leafSize) {
 				bool areIdentical = true;
 				for (size_t d = 0; d < n->bounds.size(); d++) {
-					if (n->bounds[d].low != node->bounds[d].low || n->bounds[d].high != node->bounds[d].high) {
+					if (n->bounds[d] != n->bounds[d]) {
 						areIdentical = false;
 					}
 				}
