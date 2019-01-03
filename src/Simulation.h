@@ -97,7 +97,7 @@ enum RequestType{
 	Deletion
 };
 struct Request {
-	Request(RequestType request_type) : request_type(request_type) {}
+	Request(RequestType request_type) : request_type(request_type), random_index_trace(-1) {}
 	RequestType request_type;
 	int random_index_trace;
 };

@@ -58,6 +58,10 @@ public:
 		return low == other.low && high == other.high;
 	}
 
+	bool operator !=(const Range1d& other) const {
+		return low != other.low || high != other.high;
+	}
+
 	int cmp(const Range1d* other) const {
 		return cmp(*other);
 	}

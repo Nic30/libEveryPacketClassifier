@@ -35,4 +35,5 @@ src \
 src/Trees \
 src/TupleMerge \
 src/Utilities \
+src/far \
 
