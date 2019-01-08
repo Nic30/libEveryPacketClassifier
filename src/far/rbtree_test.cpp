@@ -15,9 +15,9 @@
 // https://github.com/boostorg/intrusive/blob/develop/example/doc_rbtree_algorithms.cpp
 // https://stackoverflow.com/questions/42182537/how-can-i-use-the-rtree-of-the-boost-library-in-c
 //____________________________________________________________________________//
-//using namespace boost::intrusive;
-//namespace bg = boost::geometry;
-//namespace bgi = boost::geometry::index;
+using namespace boost::intrusive;
+namespace bg = boost::geometry;
+namespace bgi = boost::geometry::index;
 //using point_t = bg::model::point<float, 2, bg::cs::cartesian>;
 //using point_t = unsigned;
 //using box = bg::model::box<point_t>;
@@ -56,33 +56,32 @@
 ////using Tree_t = rbtree<Node_t, Node_t::MemberOption>;
 //using Tree_t = bgi::rtree<RBNode<unsigned>, bgi::quadratic<16> >;
 //
-//// automatically registered test cases could be organized in test suites
-//BOOST_AUTO_TEST_SUITE( rbtree_testsuite )
+BOOST_AUTO_TEST_SUITE( rbtree_testsuite )
 //
-//BOOST_AUTO_TEST_CASE( simple_add_and_discard ) {
-//	Tree_t t;
-//
-//	// add some items
-//	for (unsigned i = 0; i < 10; i++) {
-//		t.insert(i);
-//		BOOST_CHECK(t.size() == i + 1);
-//	}
-//
-//	// discard items which are not present in tree
-//	for (unsigned i = 10; i < 20; i++) {
-//		bool was_discarded = t.discard(i);
-//		BOOST_CHECK(!was_discarded);
-//		BOOST_CHECK(t.size() == 10);
-//	}
-//
-//	// remove all items
-//	for (unsigned i = 0; i < 10; i++) {
-//		BOOST_CHECK(t.size() == 10 - i);
-//		bool was_discarded = t.discard(i);
-//		BOOST_CHECK(was_discarded);
-//	}
-//
-//}
+BOOST_AUTO_TEST_CASE( simple_add_and_discard ) {
+	Tree_t t;
+
+	// add some items
+	for (unsigned i = 0; i < 10; i++) {
+		t.insert(i);
+		BOOST_CHECK(t.size() == i + 1);
+	}
+
+	// discard items which are not present in tree
+	for (unsigned i = 10; i < 20; i++) {
+		bool was_discarded = t.discard(i);
+		BOOST_CHECK(!was_discarded);
+		BOOST_CHECK(t.size() == 10);
+	}
+
+	// remove all items
+	for (unsigned i = 0; i < 10; i++) {
+		BOOST_CHECK(t.size() == 10 - i);
+		bool was_discarded = t.discard(i);
+		BOOST_CHECK(was_discarded);
+	}
+
+}
 //
 //BOOST_AUTO_TEST_CASE( add_and_discard_rev_order ) {
 //	Tree_t t;
@@ -196,4 +195,4 @@
 
 //____________________________________________________________________________//
 
-//BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END()

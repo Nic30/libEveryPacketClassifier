@@ -9,7 +9,6 @@
 #include <boost/functional/hash.hpp>
 #include "exceptions.h"
 
-
 /*
  * :note: interval defined by low high is defined as closed interval <low, high>
  * :ivar value: prefix or low if this is range
@@ -27,7 +26,7 @@ public:
 	T value;
 
 	size_t prefix_len;
-	T prefixMask;
+	T prefix_mask;
 
 	int priority;
 
@@ -51,7 +50,7 @@ public:
 		return value;
 	}
 
-	static MaskedValue<T> from_range(T low, T high, int priority = -1) {
+	static MaskedValue from_range(T low, T high, int priority = -1) {
 		assert(low <= high);
 		size_t i;
 		for (i = 0; i < BIT_LEN; i++) {
@@ -61,7 +60,7 @@ public:
 				break;
 			}
 		}
-		MaskedValue<T> self(low, i, priority);
+		MaskedValue self(low, i, priority);
 		self.is_range = true;
 		// high will not fit exactly if range is not aligned
 		self._M_high = high;
@@ -73,8 +72,13 @@ public:
 	 * Get prefix mask by prefix length
 	 * */
 	static constexpr T getMask(size_t len) {
-		// get mask and shift it to msb area
-		return ((T(1) << len) - 1) << (BIT_LEN - len);
+		if (len == BIT_LEN) {
+			// can not shift too much because value would overflow
+			return T(0) - T(1);
+		} else {
+			// get mask and shift it to msb area
+			return ((T(1) << len) - 1) << (BIT_LEN - len);
+		}
 	}
 
 	static constexpr T getRange(size_t prefix_len) {
@@ -82,7 +86,7 @@ public:
 	}
 
 	MaskedValue(T prefix, size_t prefix_len = BIT_LEN, int prio = -1) :
-			value(prefix), prefix_len(prefix_len), prefixMask(
+			value(prefix), prefix_len(prefix_len), prefix_mask(
 					getMask(prefix_len)), priority(prio), is_range(false), _M_high(
 					prefix + getRange(prefix_len) - 1) {
 		assert(prefix_len <= BIT_LEN);
@@ -91,7 +95,7 @@ public:
 	/*
 	 * :return: true if this value is subinterval in other value
 	 **/
-	constexpr bool isContainedIn(const MaskedValue<T> & other) const {
+	constexpr bool isContainedIn(const MaskedValue & other) const {
 		//  l < > h
 		//  l < h >
 		//  l h < >
@@ -122,7 +126,7 @@ public:
 	 *      01xx and 00xx are not
 	 *
 	 **/
-	constexpr bool isOverlapping(const MaskedValue<T> & other) const {
+	constexpr bool isOverlapping(const MaskedValue & other) const {
 		//  l < > h
 		//  l < h >
 		//  l h < > -> false  1.
@@ -161,7 +165,7 @@ public:
 	//		}
 	//	}
 	//}
-	inline bool operator <(const MaskedValue<T> & other) const {
+	inline bool operator <(const MaskedValue & other) const {
 		if (isOverlapping(other)) {
 			if ((prefix_len == BIT_LEN && other.prefix_len == BIT_LEN)
 					&& (*this == other)) {
@@ -171,7 +175,7 @@ public:
 		}
 		return high() < other.low();
 	}
-	inline bool operator <=(const MaskedValue<T> & other) const {
+	inline bool operator <=(const MaskedValue & other) const {
 		if (isOverlapping(other)) {
 			if (*this == other)
 				return true;
@@ -203,11 +207,28 @@ public:
 		//}
 	}
 
-	inline bool operator ==(const MaskedValue<T> & other) const {
-		if (prefixMask != other.prefixMask)
+	inline bool operator ==(const MaskedValue & other) const {
+		if (prefix_mask != other.prefix_mask)
 			throw NonComparableErr();
 		else
 			return low() == other.low() && high() == other.high();
+	}
+
+	// serialize graph to string in dot format
+	friend std::ostream & operator<<(std::ostream & str,
+			const MaskedValue & t) {
+		if (t.is_range) {
+			str << t.low() << "-" << t.high();
+		} else {
+			str << t.low() << "/" << t.prefix_len;
+		}
+		return str;
+	}
+
+	operator std::string() const {
+		std::stringstream ss;
+		ss << *this;
+		return ss.str();
 	}
 };
 
@@ -232,7 +253,8 @@ public:
 	mask_t getMask() const {
 		mask_t m;
 		for (size_t i = 0; i < FRAGMENT_CNT; i++) {
-			m[i] = (*this)(i);
+			const auto & tmp = (*this)[i].prefix_mask;
+			m[i] = tmp;
 		}
 		return m;
 	}
@@ -260,6 +282,23 @@ public:
 
 	constexpr bool operator ==(const FragmentedValue & other) const {
 		return chained_bin_rel<std::equal_to<FRAGMENT_t>>(other);
+	}
+
+	// serialize graph to string in dot format
+	friend std::ostream & operator<<(std::ostream & str,
+			const FragmentedValue & t) {
+		str << "<";
+		for (auto const & item : t) {
+			str << item << ", ";
+		}
+		str << ">";
+		return str;
+	}
+
+	operator std::string() const {
+		std::stringstream ss;
+		ss << *this;
+		return ss.str();
 	}
 };
 
@@ -312,7 +351,7 @@ struct hash<MaskedValue<FRAGMENT_t>> {
 	typedef std::size_t result_type;
 	result_type operator()(argument_type const& v) const noexcept {
 		result_type h = boost::hash_combine(std::hash<FRAGMENT_t> { }(v.value),
-				std::hash<FRAGMENT_t> { }(v.prefixMask));
+				std::hash<FRAGMENT_t> { }(v.prefix_mask));
 		h = boost::hash_combine(h, std::hash<int> { }(v.priority));
 		return h;
 	}

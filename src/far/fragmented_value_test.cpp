@@ -22,6 +22,7 @@ BOOST_AUTO_TEST_CASE( constructors_and_compares ) {
 	BOOST_CHECK(val0[0].low() == 0);
 	BOOST_CHECK(val0[0].high() == 0);
 	BOOST_CHECK(val0[0].prefix_len == all);
+	BOOST_CHECK(val0[0].prefix_mask == std::numeric_limits<unsigned>::max());
 
 	BOOST_CHECK(val0[1].low() == 1);
 	BOOST_CHECK(val0[1].high() == 1);
