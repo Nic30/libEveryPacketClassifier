@@ -23,6 +23,7 @@ srcs = [
 	'Utilities/Tcam.cpp',
 	'Simulation.cpp',
 	'far/far.cpp',
+	'far/exceptions.cpp',
 	'OVS/TupleSpaceSearch.cpp',
 	'OVS/cmap.cpp',
 	'PartitionSort/test_red_black_tree.cpp',
@@ -32,12 +33,33 @@ srcs = [
 	'PartitionSort/SortableRulesetPartitioner.cpp',
 ]
 
+packetClassificatorsCommon = shared_library('packetClassificatorsCommon',
+                        srcs,
+                        #include_directories : inc,
+                        #dependencies : glib_dep,
+                        install : true)
+
 boost_unittest = dependency('boost', modules : ['unit_test_framework', ])
 
 
-main = executable('packetClassificators', srcs + [	'packetClassificators.cpp', ])
+main = executable('packetClassificators',
+	['packetClassificators.cpp', ],
+	link_with: [packetClassificatorsCommon, ])
+
+fragmented_value_test = executable('fragmented_value_test',
+	['far/fragmented_value_test.cpp'],
+	dependencies : [ boost_unittest, ],
+	link_with: [packetClassificatorsCommon, ])
+test('Fragmented value Tests', fragmented_value_test)
 
 rbtree_unittest = executable('rbtree_unittest',
-	srcs + ['far/rbtree_test.cpp'],
-	dependencies : [boost_unittest, ])
+	['far/rbtree_test.cpp'],
+	dependencies : [boost_unittest, ],
+	link_with: [packetClassificatorsCommon, ])
 test('Red black tree Tests', rbtree_unittest)
+
+rule_group_resolver_test = executable('rule_group_resolver_test',
+	srcs + ['far/rule_group_resolver_test.cpp'],
+	dependencies : [boost_unittest, ],
+	link_with: [packetClassificatorsCommon, ])
+test('Rule group resolver Tests', rule_group_resolver_test)
