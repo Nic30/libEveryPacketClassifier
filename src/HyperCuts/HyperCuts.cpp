@@ -148,11 +148,12 @@ void HyperCutsHelper::CalcDimensionsToCut(HyperCutsNode* node, vector<bool>& sel
 		list<Range1d> rangeList;
 		for (Rule* rule : node->classifier) {
 			bool found = false;
-			Range1d check;
-			check.low = max(rule->range[d].low, node->bounds[d].low);
-			check.high = min(rule->range[d].high, node->bounds[d].high);
+			Range1d check = {
+					max(rule->range[d].low, node->bounds[d].low),
+					min(rule->range[d].high, node->bounds[d].high)
+			};
 			for (Range1d range : rangeList) {
-				if (check.low == range.low && check.high == range.high) {
+				if (range  == check) {
 					found = true;
 					break;
 				}
