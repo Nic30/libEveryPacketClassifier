@@ -5,19 +5,19 @@
 #include <functional>
 //#include "RBTree.h"
 #include "fragmented_value.h"
-#include <boost/geometry.hpp>
-#include <boost/intrusive/options.hpp>
+//#include <boost/geometry.hpp>
+//#include <boost/intrusive/options.hpp>
 //#include <boost/geometry/geometries/point.hpp>
 //#include <boost/geometry/geometries/box.hpp>
-#include <boost/geometry/index/rtree.hpp>
-#include <boost/geometry/geometries/register/point.hpp>
+//#include <boost/geometry/index/rtree.hpp>
+//#include <boost/geometry/geometries/register/point.hpp>
 // https://www.boost.org/doc/libs/1_66_0/doc/html/intrusive/set_multiset.html
 // https://github.com/boostorg/intrusive/blob/develop/example/doc_rbtree_algorithms.cpp
 // https://stackoverflow.com/questions/42182537/how-can-i-use-the-rtree-of-the-boost-library-in-c
 //____________________________________________________________________________//
-using namespace boost::intrusive;
-namespace bg = boost::geometry;
-namespace bgi = boost::geometry::index;
+//using namespace boost::intrusive;
+//namespace bg = boost::geometry;
+//namespace bgi = boost::geometry::index;
 //using point_t = bg::model::point<float, 2, bg::cs::cartesian>;
 //using point_t = unsigned;
 //using box = bg::model::box<point_t>;
