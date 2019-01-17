@@ -3,8 +3,10 @@
 #define BOOST_TEST_MODULE rbtree_test
 #include <boost/test/unit_test.hpp>
 #include <functional>
-//#include "RBTree.h"
+#include "RBTree.h"
 #include "fragmented_value.h"
+#include <iostream>
+#include <fstream>
 //#include <boost/geometry.hpp>
 //#include <boost/intrusive/options.hpp>
 //#include <boost/geometry/geometries/point.hpp>
@@ -56,29 +58,27 @@
 ////using Tree_t = rbtree<Node_t, Node_t::MemberOption>;
 //using Tree_t = bgi::rtree<RBNode<unsigned>, bgi::quadratic<16> >;
 //
+using Tree_t = LLRBTree<unsigned>;
 BOOST_AUTO_TEST_SUITE( rbtree_testsuite )
 //
 BOOST_AUTO_TEST_CASE( simple_add_and_discard ) {
 	Tree_t t;
+	const unsigned N = 3;
 
 	// add some items
-	for (unsigned i = 0; i < 10; i++) {
+	for (unsigned i = 0; i < N; i++) {
 		t.insert(i);
 		BOOST_CHECK(t.size() == i + 1);
 	}
-
-	// discard items which are not present in tree
-	for (unsigned i = 10; i < 20; i++) {
-		bool was_discarded = t.discard(i);
-		BOOST_CHECK(!was_discarded);
-		BOOST_CHECK(t.size() == 10);
-	}
+	std::ofstream myfile("simple_add_and_discard.dot");
+	myfile  << t << std::endl;
+	myfile.close();
 
 	// remove all items
-	for (unsigned i = 0; i < 10; i++) {
-		BOOST_CHECK(t.size() == 10 - i);
-		bool was_discarded = t.discard(i);
-		BOOST_CHECK(was_discarded);
+	for (unsigned i = 0; i < N; i++) {
+		BOOST_CHECK(t.size() == N - i);
+		t.remove(i);
+		BOOST_CHECK(t.size() == N - i - 1);
 	}
 
 }

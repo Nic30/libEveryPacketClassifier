@@ -1,6 +1,3 @@
-
-List of red-black trees with with path compression
-
 # Red-black tree
 * approximately balanced binary tree
 * https://www.cs.usfca.edu/~galles/visualization/RedBlack.html
@@ -10,15 +7,23 @@ List of red-black trees with with path compression
 * If a node is red, then both its children are black.
 * The number of black nodes on every path are same.
 
+
+# Left Larning Red-black tree
+Left-Leaning Red-Black (LLRB) is an implementation of  2–3 balanced binary search tree.
+“Left-leaning Red-Black Trees” by Robert Sedgewick: http://www.cs.princeton.edu/~rs/talks/LLRB/LLRB.pdf
+python implementation: https://github.com/peterhil/leftrb
+
+
 ## properties
 * O(log n) max path len, insert/delete/lookup T.
+
 
 ## special operations
 * left/right rotation - restores properties of rb tree.
 ```
    B                                C
  |   |       ---left rot. -->     |   |
-A     C                           B   E
+A     C                           B    E
     |   |    <--right rot. --   |   |
     D   E                       A   D
 ```
