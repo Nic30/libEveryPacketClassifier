@@ -45,6 +45,13 @@ BOOST_AUTO_TEST_CASE( constructors_and_compares ) {
 	BOOST_CHECK(val1 <= val1);
 	BOOST_CHECK_THROW(val1 < val1, NonComparableErr);
 
+	{
+		using V = FragmentedValue<MaskedValue<unsigned>, 3>;
+		V a({0,1,0});
+		V b({1,0,1});
+		BOOST_CHECK(a < b);
+		BOOST_CHECK(a <= b);
+	}
 }
 
 //____________________________________________________________________________//

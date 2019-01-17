@@ -232,6 +232,11 @@ public:
 	}
 };
 
+/*
+ * Value composed of multiple parts
+ * Part with with index=0 has lower priority while comparing
+ *
+ * */
 template<typename FRAGMENT_t, size_t FRAGMENT_CNT>
 class FragmentedValue: public std::array<FRAGMENT_t, FRAGMENT_CNT> {
 public:
@@ -273,11 +278,37 @@ public:
 	}
 
 	constexpr bool operator <(const FragmentedValue & other) const {
-		return chained_bin_rel<std::less<FRAGMENT_t>>(other);
+		for (size_t i = 0; i < FRAGMENT_CNT; i++) {
+			size_t _i = FRAGMENT_CNT - i - 1;
+			// we have to check the rest of sequence because the item can be noncomparable
+			const auto & a = (*this)[_i];
+			const auto & b = other[_i];
+			if (a < b) {
+				return true;
+			} else if (a == b) {
+				continue;
+			} else {
+				return false;
+			}
+		}
+		return false;
 	}
 
 	constexpr bool operator <=(const FragmentedValue & other) const {
-		return chained_bin_rel<std::less_equal<FRAGMENT_t>>(other);
+		for (size_t i = 0; i < FRAGMENT_CNT; i++) {
+			size_t _i = FRAGMENT_CNT - i - 1;
+			// we have to check the rest of sequence because the item can be noncomparable
+			const auto & a = (*this)[_i];
+			const auto & b = other[_i];
+			if (a <= b) {
+				if (b <= a)
+					continue;
+				return true;
+			} else {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	constexpr bool operator ==(const FragmentedValue & other) const {
