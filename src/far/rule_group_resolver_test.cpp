@@ -57,7 +57,6 @@ BOOST_AUTO_TEST_CASE( many_groups ) {
 	res.add_rules(rules2);
 	BOOST_CHECK(res.rule_cnt == rules0.size() + rules1.size() +  rules2.size());
 	BOOST_CHECK(res.groups.size() == 3);
-
 }
 
 
