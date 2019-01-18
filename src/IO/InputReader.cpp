@@ -204,8 +204,7 @@ vector<Rule> InputReader::ReadFilterFileClassBench(const string&  filename)
 	ifstream input_file(filename);
 	if (!input_file.is_open() || !column_counter.is_open())
 	{
-		printf("Couldnt open filter set file \n");
-		exit(1);
+		throw ifstream("Couldnt open filter set file");
 	}
 
 
@@ -327,19 +326,18 @@ vector<Rule> InputReader::ReadFilterFile(const string&  filename) {
 
 	vector<Rule> res;
 	ifstream in(filename);
-	if (!in.is_open())
-	{
-		std::cerr << "[ERROR] Couldnt open filter set file \"" << filename << "\"" << std::endl;
-		exit(1);
-	} else {
-		std::cerr << "[INFO] Reading filter file \"" << filename << "\"" << std::endl;
+	if (!in.is_open()) {
+		throw ifstream::failure(string("Couldnt open filter set file \"") + filename + "\"");
 	}
 
 	string content;
 	getline(in, content);
 	istringstream iss(content);
 	vector<string> tokens{ istream_iterator < string > {iss}, istream_iterator < string > {} };
-	if (content[0] == '!') {
+	if (content.length() == 0) {
+		in.close();
+		throw ifstream::failure("File is empty");
+	} else if (content[0] == '!') {
 		// MSU FORMAT
 		vector<string> split_semi = split(tokens.back(), ';');
 		reps = (atoi(split_semi.back().c_str()) + 1) / 5;
@@ -357,9 +355,8 @@ vector<Rule> InputReader::ReadFilterFile(const string&  filename) {
 	    dim = reps * 5;
 	    res = ReadFilterFileClassBench(filename);
 	} else {
-		cout << "ERROR: unknown input format please use either MSU format or ClassBench format" << endl;
 		in.close();
-		exit(1);
+		throw ifstream::failure(string("unknown input format please use either MSU format or ClassBench format (content[0]=='") + content[0] + "')");
 	}
 	in.close();
 	return res;
