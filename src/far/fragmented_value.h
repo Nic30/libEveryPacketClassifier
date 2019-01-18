@@ -1,6 +1,5 @@
 #pragma once
 
-#include <limits>
 #include <array>
 #include <assert.h>
 #include <initializer_list>
@@ -8,6 +7,7 @@
 
 #include <boost/functional/hash.hpp>
 #include "exceptions.h"
+#include "bitUtils.h"
 
 using priority_t = int;
 
@@ -27,18 +27,19 @@ class MaskedValue {
 private:
 public:
 	using value_type = T;
-	T value;
+	static constexpr size_t BIT_LEN = BitUtils<T>::BIT_LEN;
+	;
+	static constexpr size_t ALL_MASK = BitUtils<T>::ALL_MASK;
 
-	size_t prefix_len;
-	T prefix_mask;
-
-	priority_t priority;
-
-	bool is_range;
+	T value; // or low if this is a range
+private:
 	T _M_high;
 
-	static constexpr size_t BIT_LEN = sizeof(T) * 8;
-	static constexpr size_t ALL_MASK = std::numeric_limits<T>::max();
+public:
+	T prefix_mask;
+	size_t prefix_len;
+	priority_t priority;
+	bool is_range;
 
 	constexpr T & high() {
 		return _M_high;
@@ -72,27 +73,14 @@ public:
 		return self;
 	}
 
-	/*
-	 * Get prefix mask by prefix length
-	 * */
-	static constexpr T getMask(size_t len) {
-		if (len == BIT_LEN) {
-			// can not shift too much because value would overflow
-			return T(0) - T(1);
-		} else {
-			// get mask and shift it to msb area
-			return ((T(1) << len) - 1) << (BIT_LEN - len);
-		}
-	}
-
 	static constexpr T getRange(size_t prefix_len) {
 		return (T(1) << (BIT_LEN - prefix_len));
 	}
 
 	MaskedValue(T prefix, size_t prefix_len = BIT_LEN, priority_t priority = -1) :
-			value(prefix), prefix_len(prefix_len), prefix_mask(
-					getMask(prefix_len)), priority(priority), is_range(false), _M_high(
-					prefix + getRange(prefix_len) - 1) {
+			value(prefix), _M_high(prefix + getRange(prefix_len) - 1), prefix_mask(
+					BitUtils<T>::mask(prefix_len)), prefix_len(prefix_len), priority(
+					priority), is_range(false) {
 		assert(prefix_len <= BIT_LEN);
 	}
 
