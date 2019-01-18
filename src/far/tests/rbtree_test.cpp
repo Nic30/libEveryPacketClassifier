@@ -3,8 +3,8 @@
 #define BOOST_TEST_MODULE rbtree_test
 #include <boost/test/unit_test.hpp>
 #include <functional>
-#include "RBTree.h"
-#include "fragmented_value.h"
+#include "../RBTree.h"
+#include "../fragmented_value.h"
 #include <iostream>
 #include <fstream>
 #include <stdint.h>
