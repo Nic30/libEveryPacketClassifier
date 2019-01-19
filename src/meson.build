@@ -47,19 +47,19 @@ main = executable('packetClassificators',
 	link_with: [packetClassificatorsCommon, ])
 
 fragmented_value_test = executable('fragmented_value_test',
-	['far/fragmented_value_test.cpp'],
+	['far/tests/fragmented_value_test.cpp'],
 	dependencies : [ boost_unittest, ],
 	link_with: [packetClassificatorsCommon, ])
 test('Fragmented value Tests', fragmented_value_test)
 
-rbtree_unittest = executable('rbtree_unittest',
-	['far/rbtree_test.cpp'],
+rbtree_test = executable('rbtree_test',
+	['far/tests/rbtree_test.cpp'],
 	dependencies : [boost_unittest, ],
 	link_with: [packetClassificatorsCommon, ])
-test('Red black tree Tests', rbtree_unittest)
+test('Red black tree Tests', rbtree_test)
 
 rule_group_resolver_test = executable('rule_group_resolver_test',
-	srcs + ['far/rule_group_resolver_test.cpp'],
+	srcs + ['far/tests/rule_group_resolver_test.cpp'],
 	dependencies : [boost_unittest, ],
 	link_with: [packetClassificatorsCommon, ])
-test('Rule group resolver Tests', rule_group_resolver_test)
+test('Rule group resolver Tests', rule_group_resolver_test, workdir : meson.source_root())

@@ -4,6 +4,7 @@
 #include <array>
 #include <vector>
 #include <unordered_map>
+#include "bitUtils.h"
 
 // templates for hashing of bit mask of rules
 template<typename mask_t>
@@ -39,7 +40,10 @@ struct hash_mask_eq {
 /*
  * Groups the rules with similar features to groups
  * :note: feature = prefix masks
- * */
+ *
+ * [TODO] exact values for rule_t (instead reference) seems to be faster,
+ *        but it is required to check it with more data
+ **/
 template<typename rule_t>
 class RuleGroupResolver {
 public:
@@ -53,7 +57,6 @@ public:
 			rule_cnt(0) {
 	}
 
-	// [TODO] exact values seems to be faster, but it is required to check it with more data
 	void add_rules(std::vector<rule_t> & rules) {
 		for (const rule_t & r : rules) {
 			auto m = r.getMask();
@@ -84,6 +87,46 @@ public:
 		other.rule_cnt = 0;
 	}
 
+	static void _expand_group(
+			mask_t & mask,
+			mask_t & expand_to,
+			std::list<rule_t> & rules) {
+		assert(not rules.empty());
+
+		// count how many bit is expanded per dimmension
+		std::array<size_t, mask.size()> expand_len;
+		mask_t expanding_mask;
+		const auto & r0  = rules.front();
+		for (size_t i = 0; i < mask.size(); i++) {
+			auto s = expand_to[i];
+			expand_len[i] = s > 0 ? BitUtils<typename mask_t::value_type>::countSetBits(s) : 0;
+			expanding_mask[i] = s ^ r0.prefix_mask;
+		}
+				// value can remain same as it is extended by 0
+				// high, prefix_mask has to be extended with 1
+
+				// user first rule to get mask length instead of complex computation
+	}
+
+	void merge_groups(const mask_t & mask0, const mask_t & mask1) {
+		bool need_expand0 = false, need_expand1=false;
+		mask_t exp0, exp1;
+		for(size_t i = 0; i < mask_t::SIZE; i++) {
+			auto a = mask0[i], b = mask1[i];
+			bool _need_expand0 = a < b;
+			bool _need_expand1 = b < a;
+			exp0[i] = _need_expand0 ? b ^ a: 0;
+			exp1[i] = _need_expand1 ? a ^ b: 0;
+			need_expand0 |= _need_expand0;
+			need_expand1 |= _need_expand1;
+		}
+
+		if (need_expand0) {
+			// remove group from groups because it's key has changed
+			_expand_group(mask0);
+		}
+	}
+
 	// serialize graph to string in dot format
 	friend std::ostream & operator<<(std::ostream & str,
 			const RuleGroupResolver & t) {
@@ -111,5 +154,4 @@ public:
 		ss << *this;
 		return ss.str();
 	}
-
 };

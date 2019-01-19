@@ -126,6 +126,8 @@ struct Bookkeeper {
 private:
 	std::vector<Rule> rules;
 };
+
+
 class Simulator{
 public:
 	Simulator(){}

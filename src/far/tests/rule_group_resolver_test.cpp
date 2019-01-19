@@ -7,8 +7,9 @@
 #include <vector>
 #include <limits>
 #include <iostream>
-#include "fragmented_value.h"
-#include "rule_group_resolver.h"
+#include "../fragmented_value.h"
+#include "../rule_group_resolver.h"
+#include "IO/InputReader.h"
 
 
 using fv_t = FragmentedValue<MaskedValue<unsigned>, 2>;
@@ -51,16 +52,54 @@ BOOST_AUTO_TEST_CASE( many_groups ) {
 	RuleGroupResolver<fv_t> res;
 	res.add_rules(rules0);
 	res.add_rules(rules1);
-	BOOST_CHECK(res.rule_cnt == rules0.size() + rules1.size());
-	BOOST_CHECK(res.groups.size() == 2);
+	BOOST_CHECK_EQUAL(res.rule_cnt, rules0.size() + rules1.size());
+	BOOST_CHECK_EQUAL(res.groups.size(), 2);
 
 	res.add_rules(rules2);
-	BOOST_CHECK(res.rule_cnt == rules0.size() + rules1.size() +  rules2.size());
-	BOOST_CHECK(res.groups.size() == 3);
+	size_t size_sum1 = rules0.size() + rules1.size() +  rules2.size();
+	BOOST_CHECK_EQUAL(res.rule_cnt, size_sum1);
+	BOOST_CHECK_EQUAL(res.groups.size(), 3);
 }
 
 
+BOOST_AUTO_TEST_CASE( real_rules0 ) {
+	auto fn = "tests/rulesets/acl1_100";
+	//auto fn =  "../classbench-ng/generated/fw1_2000";
+	//auto fn =  "../classbench-ng/generated/acl1_10000";
 
+	int groups = 12;
+
+	auto _rules =  InputReader::ReadFilterFile(fn);
+	BOOST_CHECK_EQUAL(_rules.size(), 91);
+	using R = FragmentedValue<MaskedValue<unsigned>, 5>;
+	using V = fv_t::value_type;
+	std::vector<R> rules;
+	for (const auto & _r: _rules) {
+		auto _0 = _r.range[0];
+		auto _1 = _r.range[1];
+		auto _2 = _r.range[2];
+		auto _3 = _r.range[3];
+		auto _4 = _r.range[4];
+
+		R r({
+			V::from_range(_0.low, _0.high),
+			V::from_range(_1.low, _1.high),
+			V::from_range(_2.low, _2.high),
+			V::from_range(_3.low, _3.high),
+			V::from_range(_4.low, _4.high),
+		});
+		rules.push_back(r);
+	}
+	RuleGroupResolver<R> res;
+	res.add_rules(rules);
+	BOOST_CHECK_EQUAL(res.groups.size(), groups);
+
+	//for (const auto & item: res.groups) {
+	//	for (auto k: item.first )
+	//		std::cout << std::hex << k << ", ";
+	//	std::cout << "    " << std::dec << item.second.size() << std::endl;
+	//}
+}
 //____________________________________________________________________________//
 
 BOOST_AUTO_TEST_SUITE_END()

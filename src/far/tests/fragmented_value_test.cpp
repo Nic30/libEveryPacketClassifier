@@ -7,7 +7,7 @@
 #include <vector>
 #include <limits>
 #include <iostream>
-#include "fragmented_value.h"
+#include "../fragmented_value.h"
 
 using fv_t = FragmentedValue<MaskedValue<unsigned>, 2>;
 using v_t = fv_t::value_type;

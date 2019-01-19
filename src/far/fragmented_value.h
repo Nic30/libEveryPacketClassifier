@@ -1,6 +1,5 @@
 #pragma once
 
-#include <limits>
 #include <array>
 #include <assert.h>
 #include <initializer_list>
@@ -8,8 +7,13 @@
 
 #include <boost/functional/hash.hpp>
 #include "exceptions.h"
+#include "bitUtils.h"
+
+using priority_t = int;
 
 /*
+ * Value with validity mask
+ *
  * :note: interval defined by low high is defined as closed interval <low, high>
  * :ivar value: prefix or low if this is range
  * :ivar prefix_len: length of prefix or length of common  prefix between low and high boundary
@@ -23,18 +27,19 @@ class MaskedValue {
 private:
 public:
 	using value_type = T;
-	T value;
+	static constexpr size_t BIT_LEN = BitUtils<T>::BIT_LEN;
+	;
+	static constexpr size_t ALL_MASK = BitUtils<T>::ALL_MASK;
 
-	size_t prefix_len;
-	T prefix_mask;
-
-	int priority;
-
-	bool is_range;
+	T value; // or low if this is a range
+private:
 	T _M_high;
 
-	static constexpr size_t BIT_LEN = sizeof(T) * 8;
-	static constexpr size_t ALL_MASK = std::numeric_limits<T>::max();
+public:
+	T prefix_mask;
+	size_t prefix_len;
+	priority_t priority;
+	bool is_range;
 
 	constexpr T & high() {
 		return _M_high;
@@ -50,7 +55,7 @@ public:
 		return value;
 	}
 
-	static MaskedValue from_range(T low, T high, int priority = -1) {
+	static MaskedValue from_range(T low, T high, priority_t priority = -1) {
 		assert(low <= high);
 		size_t i;
 		for (i = 0; i < BIT_LEN; i++) {
@@ -68,27 +73,14 @@ public:
 		return self;
 	}
 
-	/*
-	 * Get prefix mask by prefix length
-	 * */
-	static constexpr T getMask(size_t len) {
-		if (len == BIT_LEN) {
-			// can not shift too much because value would overflow
-			return T(0) - T(1);
-		} else {
-			// get mask and shift it to msb area
-			return ((T(1) << len) - 1) << (BIT_LEN - len);
-		}
-	}
-
 	static constexpr T getRange(size_t prefix_len) {
 		return (T(1) << (BIT_LEN - prefix_len));
 	}
 
-	MaskedValue(T prefix, size_t prefix_len = BIT_LEN, int prio = -1) :
-			value(prefix), prefix_len(prefix_len), prefix_mask(
-					getMask(prefix_len)), priority(prio), is_range(false), _M_high(
-					prefix + getRange(prefix_len) - 1) {
+	MaskedValue(T prefix, size_t prefix_len = BIT_LEN, priority_t priority = -1) :
+			value(prefix), _M_high(prefix + getRange(prefix_len) - 1), prefix_mask(
+					BitUtils<T>::mask(prefix_len)), prefix_len(prefix_len), priority(
+					priority), is_range(false) {
 		assert(prefix_len <= BIT_LEN);
 	}
 
@@ -139,32 +131,6 @@ public:
 		return true;
 	}
 
-	//bool operator <(const MaskedValue<T> & other) const {
-	//	if (vldMask == other.vldMask) {
-	//		// 00x < 01x -> true
-	//		return value <= other.value;
-	//	} else if (vldMask > other.vldMask) {
-	//		if (value < other.value) {
-	//			// 00x < 1xx -> false
-	//			return true;
-	//		} else {
-	//			// 00x < 0xx -> non-comparable
-	//			// 01x < 0xx -> non-comparable
-	//			throw NonComparableErr();
-	//		}
-	//	} else { // vldMask < other.vldMask
-	//		if (value == other.value) {
-	//			// 0xx < 00x -> false
-	//			return false;
-	//		} else if (value > other.value) {
-	//			// 1xx < 00x -> false
-	//			return false;
-	//		} else {
-	//			// 0xx < 01x -> non-comparable
-	//			throw NonComparableErr();
-	//		}
-	//	}
-	//}
 	inline bool operator <(const MaskedValue & other) const {
 		if (isOverlapping(other)) {
 			if ((prefix_len == BIT_LEN && other.prefix_len == BIT_LEN)
@@ -182,29 +148,6 @@ public:
 			throw NonComparableErr();
 		}
 		return high() <= other.low();
-		//if (vldMask == other.vldMask) {
-		//	// 00x < 01x -> true
-		//	return value <= other.value;
-		//} else if (vldMask > other.vldMask) {
-		//	if (value <= other.value) {
-		//		// 00x <= 0xx -> false
-		//		return true;
-		//	} else {
-		//		// 01x < 0xx -> non-comparable
-		//		throw NonComparableErr();
-		//	}
-		//} else { // vldMask < other.vldMask
-		//	if (value == other.value) {
-		//		// 0xx <= 00x -> true
-		//		return true;
-		//	} else if (value > other.value) {
-		//		// 1xx < 00x -> false
-		//		return false;
-		//	} else {
-		//		// 0xx < 01x -> non-comparable
-		//		throw NonComparableErr();
-		//	}
-		//}
 	}
 
 	inline bool operator ==(const MaskedValue & other) const {
@@ -235,7 +178,6 @@ public:
 /*
  * Value composed of multiple parts
  * Part with with index=0 has lower priority while comparing
- *
  * */
 template<typename FRAGMENT_t, size_t FRAGMENT_CNT>
 class FragmentedValue: public std::array<FRAGMENT_t, FRAGMENT_CNT> {
@@ -333,45 +275,6 @@ public:
 	}
 };
 
-/// Primary class template hash.
-//template<typename _Tp>
-//struct hash_mask;
-//
-//template<typename FRAGMENT_t>
-//struct hash_mask<MaskedValue<FRAGMENT_t>> {
-//	typedef MaskedValue<FRAGMENT_t> argument_type;
-//	typedef std::size_t result_type;
-//	result_type operator()(argument_type const& v) const noexcept {
-//		return std::hash<FRAGMENT_t> { }(v.vldMask);
-//	}
-//};
-
-//template<typename FRAGMENT_t, size_t FRAGMENT_CNT>
-//struct hash_mask<FragmentedValue<FRAGMENT_t, FRAGMENT_CNT>> {
-//	typedef FragmentedValue<FRAGMENT_t, FRAGMENT_CNT> argument_type;
-//	typedef std::size_t result_type;
-//	result_type operator()(argument_type const& fv) const noexcept {
-//		result_type h = 0;
-//		for (const auto & v : fv) {
-//			h = boost::hash_combine(v,
-//					hash_mask<MaskedValue<FRAGMENT_t>> { }(v));
-//		}
-//		return h;
-//	}
-//};
-//
-//template<typename FRAGMENT_t, size_t FRAGMENT_CNT>
-//struct hash_mask_eq {
-//	typedef FragmentedValue<FRAGMENT_t, FRAGMENT_CNT> argument_type;
-//	bool operator()(const argument_type& l, const argument_type& r) const {
-//		for (size_t i; i < l.size(); i++) {
-//			if (!((*this)[i].vldMask != r[i].vldMask))
-//				return false;
-//		}
-//		return true;
-//	}
-//};
-
 // inject serialization methods to std namespace so other object like unordered_set can use it
 // without an extra specification
 namespace std {
@@ -383,7 +286,7 @@ struct hash<MaskedValue<FRAGMENT_t>> {
 	result_type operator()(argument_type const& v) const noexcept {
 		result_type h = boost::hash_combine(std::hash<FRAGMENT_t> { }(v.value),
 				std::hash<FRAGMENT_t> { }(v.prefix_mask));
-		h = boost::hash_combine(h, std::hash<int> { }(v.priority));
+		h = boost::hash_combine(h, std::hash<priority_t>()(v.priority));
 		return h;
 	}
 };
