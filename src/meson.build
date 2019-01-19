@@ -1,5 +1,4 @@
 
-
 srcs = [
 	'BitVector/EqnMatcher.cpp',
 	'BitVector/LongestPrefixMatch.cpp',
@@ -33,33 +32,35 @@ srcs = [
 	'PartitionSort/SortableRulesetPartitioner.cpp',
 ]
 
+EXTRA_CXX_ARGS = ['-std=c++17']
+
 packetClassificatorsCommon = shared_library('packetClassificatorsCommon',
                         srcs,
                         #include_directories : inc,
                         #dependencies : glib_dep,
-                        install : true)
+                        install : true,
+                        cpp_args: EXTRA_CXX_ARGS)
 
 boost_unittest = dependency('boost', modules : ['unit_test_framework', ])
 
 
 main = executable('packetClassificators',
 	['packetClassificators.cpp', ],
-	link_with: [packetClassificatorsCommon, ])
+	link_with: [packetClassificatorsCommon, ],
+	cpp_args: EXTRA_CXX_ARGS)
 
-fragmented_value_test = executable('fragmented_value_test',
-	['far/tests/fragmented_value_test.cpp'],
-	dependencies : [ boost_unittest, ],
-	link_with: [packetClassificatorsCommon, ])
-test('Fragmented value Tests', fragmented_value_test)
+far_tests = [
+	['fragmentedValue_test', 'Fragmented value Tests'],
+	['llrbTree_test', 'Left Learning Red black tree Tests'], 
+	['ruleGroupResolver_test', 'Rule group resolver Tests'],
+	['compressedDecisionTree_test', 'Tests for Compressed decision tree and its compiler'],
+]
 
-rbtree_test = executable('rbtree_test',
-	['far/tests/rbtree_test.cpp'],
-	dependencies : [boost_unittest, ],
-	link_with: [packetClassificatorsCommon, ])
-test('Red black tree Tests', rbtree_test)
-
-rule_group_resolver_test = executable('rule_group_resolver_test',
-	srcs + ['far/tests/rule_group_resolver_test.cpp'],
-	dependencies : [boost_unittest, ],
-	link_with: [packetClassificatorsCommon, ])
-test('Rule group resolver Tests', rule_group_resolver_test, workdir : meson.source_root())
+foreach t : far_tests
+	test_exe = executable(t[0],
+		['far/tests/' + t[0] + '.cpp'],
+		dependencies : [ boost_unittest, ],
+		link_with: [packetClassificatorsCommon, ],
+		cpp_args: EXTRA_CXX_ARGS)
+	test(t[1], test_exe, workdir : meson.source_root())
+endforeach

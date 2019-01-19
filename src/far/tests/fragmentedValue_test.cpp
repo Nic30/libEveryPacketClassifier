@@ -1,3 +1,4 @@
+
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE fragmented_value_test
@@ -7,7 +8,7 @@
 #include <vector>
 #include <limits>
 #include <iostream>
-#include "../fragmented_value.h"
+#include "../fragmentedValue.h"
 
 using fv_t = FragmentedValue<MaskedValue<unsigned>, 2>;
 using v_t = fv_t::value_type;

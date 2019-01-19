@@ -79,7 +79,7 @@ public:
 
 	MaskedValue(T prefix, size_t prefix_len = BIT_LEN, priority_t priority = -1) :
 			value(prefix), _M_high(prefix + getRange(prefix_len) - 1), prefix_mask(
-					BitUtils<T>::mask(prefix_len)), prefix_len(prefix_len), priority(
+					BitUtils<T>::maskPrefix(prefix_len)), prefix_len(prefix_len), priority(
 					priority), is_range(false) {
 		assert(prefix_len <= BIT_LEN);
 	}
