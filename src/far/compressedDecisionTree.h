@@ -7,20 +7,20 @@
  * :param DIM_T: type to represent the dimension index
  * :param DIM_CNT: number of dimensions
  **/
-template<size_t DIM_CNT>
+template<size_t DIM_CNT, typename rule_t=uint16_t>
 class CompressedDecisionTree {
 public:
 	/*
 	 * Node of binary tree with range as a key and rule as a value
 	 * */
-	template<size_t DIM_CNT>
+	template<size_t _DIM_CNT>
 	struct Node {
-		uint16_t rule;
+		rule_t rule;
 		uint8_t dim_offset;
 		uint8_t dim_cnt;
 		// lower and upper constrain
 		// values ordered by specified field_order
-		uint16_t val[DIM_CNT * 2];
+		uint16_t val[_DIM_CNT * 2];
 	};
 	// __attribute__((PACKED))
 	using MaxNode = Node<DIM_CNT>;
@@ -37,7 +37,7 @@ public:
 	CompressedDecisionTree(size_t max_node_cnt,
 			std::array<uint8_t, DIM_CNT> field_order) :
 			field_order(field_order) {
-		static_assert(max_node_cnt <= std::numeric_limits<uint16_t>::max());
+		assert(max_node_cnt <= std::numeric_limits<uint16_t>::max());
 		static_assert(DIM_CNT <= std::numeric_limits<uint8_t>::max());
 
 		// check if permutation in field_order is correct
@@ -68,7 +68,7 @@ public:
 		return res;
 	}
 
-	static constexpr value_type apply_field_order(const value_type & val) {
+	constexpr value_type apply_field_order(const value_type & val) {
 		value_type res;
 		for (size_t i = 0; i < DIM_CNT; i++) {
 			res[i] = val[field_order[i]];
@@ -78,7 +78,7 @@ public:
 	/*
 	 * :return: rule index (0 is reserved for no rule)
 	 **/
-	constexpr uint16_t classify(const value_type & _value, uint16_t node_index =
+	constexpr rule_t classify(const value_type & _value, uint16_t node_index =
 			0) {
 		auto value = apply_field_order(_value);
 		while (true) {

@@ -1,3 +1,4 @@
+
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE rule_resolver_test
@@ -7,29 +8,32 @@
 #include <vector>
 #include <limits>
 #include <iostream>
-#include "../fragmented_value.h"
-#include "../rule_group_resolver.h"
+#include "../fragmentedValue.h"
+#include "../ruleGroupResolver.h"
 #include "IO/InputReader.h"
-
+#include "../llrbTree.h"
+#include "../compressedDecisionTreeCompiler.h"
 
 using fv_t = FragmentedValue<MaskedValue<unsigned>, 2>;
 using v_t = fv_t::value_type;
 
-BOOST_AUTO_TEST_SUITE( rule_group_resolver_testsuite )
+BOOST_AUTO_TEST_SUITE( compressed_decision_tree_testsuite )
 
 
 unsigned all = sizeof(unsigned) * 8;
 unsigned half = all / 2;
-BOOST_AUTO_TEST_CASE( many_per_group ) {
+BOOST_AUTO_TEST_CASE( just3_exact_matches ) {
+	using Compiler = CompressedDecisionTreeCompiler<fv_t>;
 	std::vector<fv_t> rules = {
 		fv_t({v_t(0, all), v_t(1, all)}),
 		fv_t({v_t(2, all), v_t(3, all)}),
 		fv_t({v_t(4, all), v_t(5, all)}),
 	};
-	RuleGroupResolver<fv_t> res;
-	res.add_rules(rules);
-	BOOST_CHECK(res.rule_cnt == rules.size());
-	BOOST_CHECK(res.groups.size() == 1);
+	LLRBTree<fv_t> rbtree;
+	Compiler comp;
+	Compiler::FieldOrder f_order = {0, 1};
+	auto c = comp.compile(rbtree, f_order);
+
 }
 
 BOOST_AUTO_TEST_CASE( many_groups ) {
