@@ -28,7 +28,6 @@ private:
 public:
 	using value_type = T;
 	static constexpr size_t BIT_LEN = BitUtils<T>::BIT_LEN;
-	;
 	static constexpr size_t ALL_MASK = BitUtils<T>::ALL_MASK;
 
 	T value; // or low if this is a range
@@ -185,14 +184,12 @@ public:
 	using mask_t = std::array<typename FRAGMENT_t::value_type, FRAGMENT_CNT>;
 	using self_t = FragmentedValue<FRAGMENT_t, FRAGMENT_CNT>;
 
-	FragmentedValue() {
-	}
 	FragmentedValue(std::array<FRAGMENT_t, FRAGMENT_CNT> a) :
 			std::array<FRAGMENT_t, FRAGMENT_CNT>(a) {
 	}
-	FragmentedValue(std::array<FRAGMENT_t, FRAGMENT_CNT>& a) :
-			std::array<FRAGMENT_t, FRAGMENT_CNT>(a) {
-	}
+	//FragmentedValue(std::array<FRAGMENT_t, FRAGMENT_CNT>& a) :
+	//		std::array<FRAGMENT_t, FRAGMENT_CNT>(a) {
+	//}
 
 	static constexpr size_t SIZE = FRAGMENT_CNT;
 

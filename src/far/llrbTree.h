@@ -372,6 +372,14 @@ public:
 			root(nullptr), heightBLACK(0) {
 	}
 
+	const constexpr Node_t * get_root() const {
+		return root;
+	}
+	void insert(const std::vector<KEY_t> & keys) {
+		for (const auto & k: keys) {
+			insert(k);
+		}
+	}
 	void insert(const KEY_t & key) {
 		root = &insert(root, key);
 		if (isRed(root))
@@ -417,6 +425,7 @@ public:
 		ss << *this;
 		return ss.str();
 	}
+
 	~LLRBTree() {
 		while(root)
 			root = removeMin(root);

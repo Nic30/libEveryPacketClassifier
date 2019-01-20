@@ -2,29 +2,105 @@
 #include <stdint.h>
 #include <array>
 #include <limits>
+#include <functional>
+
+class ArrayBinTreeUtils {
+public:
+	template<typename T>
+	static constexpr T get_left_index(T node_index) {
+		return 2 * node_index + 1;
+	}
+
+	template<typename T>
+	static constexpr T get_right_index(T node_index) {
+		return 2 * node_index + 2;
+	}
+};
+
+template<typename Node_t>
+class CompressedDecisionTree_nodeprint: ArrayBinTreeUtils {
+public:
+	static void printNodeName(std::ostream & str, size_t node_i) {
+		str << "node" << node_i;
+	}
+
+	static void printConnection(std::ostream & str, size_t node_a,
+			size_t node_b, const std::string & label) {
+		printNodeName(str, node_a);
+		str << " -- ";
+		printNodeName(str, node_b);
+		str << " [label=\"" << label << "\"]";
+		str << ";" << std::endl;
+	}
+
+	static void printNodeAttrs(std::ostream & str, size_t node_i,
+			Node_t * root) {
+		auto * node = &root[node_i];
+		printNodeName(str, node_i);
+		str << " [label=\"";
+		auto of = node->dim_offset;
+		uint8_t last_i = node->dim_cnt - 1;
+		str << "{" << size_t(node->rule) << "} ";
+		for (size_t i = 0; i < node->dim_cnt; i++) {
+			str << "[" << (i + of) << "]<=" << size_t(node->val[i]);
+			if (i != last_i)
+				str << ",";
+		}
+		str << "...";
+		for (size_t i = 0; i < node->dim_cnt; i++) {
+			str << "[" << (i + of) << "]<=" << size_t(node->val[i + of]);
+			if (i != last_i)
+				str << ",";
+		}
+		str << "\"];" << std::endl;
+		printNodeName(str, node_i);
+		str << " [shape=box];" << std::endl;
+	}
+
+	static void printNode(std::ostream & str, size_t node_i, Node_t * root) {
+		printNodeAttrs(str, node_i, root);
+		auto * node = &root[node_i];
+
+		if (node->left_vld) {
+			auto left_i = get_left_index(node_i);
+			printNode(str, left_i, root);
+			printConnection(str, node_i, left_i, "L");
+		}
+		if (node->right_vld) {
+			auto right_i = get_right_index(node_i);
+			printNode(str, right_i, root);
+			printConnection(str, node_i, right_i, "R");
+		}
+	}
+};
 
 /*
  * :param DIM_T: type to represent the dimension index
  * :param DIM_CNT: number of dimensions
  **/
-template<size_t DIM_CNT, typename rule_t=uint16_t>
-class CompressedDecisionTree {
+template<size_t DIM_CNT, typename rule_id_t = uint16_t,
+		typename node_value_t = uint16_t>
+class CompressedDecisionTree: public ArrayBinTreeUtils {
 public:
 	/*
 	 * Node of binary tree with range as a key and rule as a value
 	 * */
 	template<size_t _DIM_CNT>
 	struct Node {
-		rule_t rule;
-		uint8_t dim_offset;
-		uint8_t dim_cnt;
+		rule_id_t rule;
+		uint8_t dim_offset :7; // number of skipped dimensions from the beginning of value
+		uint8_t left_vld :1; // has left child flag
+		uint8_t dim_cnt :7; // number of dimension check in this node
+		uint8_t right_vld :1; // has right child flag
+
 		// lower and upper constrain
 		// values ordered by specified field_order
-		uint16_t val[_DIM_CNT * 2];
+		node_value_t val[_DIM_CNT * 2];
 	};
 	// __attribute__((PACKED))
+	static constexpr rule_id_t INVALID_RULE = 0;
 	using MaxNode = Node<DIM_CNT>;
-	using value_type = const std::array<uint16_t, DIM_CNT>;
+	using value_type = std::array<node_value_t, DIM_CNT>;
 
 	std::array<uint8_t, DIM_CNT> field_order;
 	MaxNode * root __attribute__((aligned(64)));
@@ -57,40 +133,55 @@ public:
 		root = new MaxNode[max_node_cnt];
 	}
 
-	template<typename cmp>
-	static constexpr bool array_cmp(const uint16_t * a, const uint16_t * b,
+	static bool array_less(const node_value_t * a, const node_value_t * b,
 			uint8_t size) {
 		// [TODO] AVX https://software.intel.com/en-us/node/534476
 		bool res = true;
-		for (uint8_t i = 0; i < size; i++)
-			res &= cmp()(a[i], b[i]);
+		for (unsigned i = 0; i < size; i++)
+			res &= a[i] < b[i];
 
 		return res;
 	}
 
-	constexpr value_type apply_field_order(const value_type & val) {
-		value_type res;
-		for (size_t i = 0; i < DIM_CNT; i++) {
+	static bool array_greater_equal(const node_value_t * a, const node_value_t * b,
+			uint8_t size) {
+		// [TODO] AVX https://software.intel.com/en-us/node/534476
+		bool res = false;
+		for (unsigned i = 0; i < size; i++)
+			res |= a[i] >= b[i];
+
+		return res;
+	}
+
+	constexpr void apply_field_order(const value_type & val, value_type & res) {
+		for (unsigned i = 0; i < DIM_CNT; i++) {
 			res[i] = val[field_order[i]];
 		}
-		return res;
 	}
 	/*
 	 * :return: rule index (0 is reserved for no rule)
 	 **/
-	constexpr rule_t classify(const value_type & _value, uint16_t node_index =
-			0) {
-		auto value = apply_field_order(_value);
+	rule_id_t classify(const value_type & _value) {
+		value_type value_tmp;
+		apply_field_order(_value, value_tmp);
+		auto value = reinterpret_cast<const node_value_t*>(&value_tmp);
+		uint16_t node_index = 0;
+
 		while (true) {
 			const auto & n = root[node_index];
-			if (array_cmp<std::less>(value, n.val, n.dim_cnt)) {
+			// [TODO] check validity before comparing
+			if (array_less(value, &n.val[0], n.dim_cnt)) {
+				if (not n.left_vld)
+					return INVALID_RULE;
 				// go left for lower values
-				node_index = 2 * node_index + 1;
+				node_index = get_left_index(node_index);
 				continue;
-			} else if (array_cmp<std::greater_equal>(value, n.val + n.dim_cnt,
+			} else if (array_greater_equal(value, &n.val[n.dim_cnt],
 					n.dim_cnt)) {
+				if (not n.right_vld)
+					return INVALID_RULE;
 				// go right for higher values
-				node_index = 2 * node_index + 2;
+				node_index = get_right_index(node_index);
 				continue;
 			} else {
 				// this is rule contains the result of classification
@@ -98,9 +189,27 @@ public:
 			}
 		}
 	}
+
+	// serialize graph to string in dot format
+	friend std::ostream & operator<<(std::ostream & str,
+			const CompressedDecisionTree & t) {
+		str << "graph rbtree {" << std::endl;
+		CompressedDecisionTree_nodeprint<MaxNode>::printNode(str, 0, t.root);
+		str << "}";
+
+		return str;
+	}
+
+	operator std::string() const {
+		std::stringstream ss;
+		ss << *this;
+		return ss.str();
+	}
+
 	~CompressedDecisionTree() {
 		if (root)
 			delete[] root;
 	}
+
 }__attribute__((aligned(64)));
 

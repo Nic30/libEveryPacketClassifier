@@ -32,7 +32,7 @@ srcs = [
 	'PartitionSort/SortableRulesetPartitioner.cpp',
 ]
 
-EXTRA_CXX_ARGS = ['-std=c++17']
+EXTRA_CXX_ARGS = ['-std=c++17', '-fopenmp']
 
 packetClassificatorsCommon = shared_library('packetClassificatorsCommon',
                         srcs,
@@ -41,12 +41,15 @@ packetClassificatorsCommon = shared_library('packetClassificatorsCommon',
                         install : true,
                         cpp_args: EXTRA_CXX_ARGS)
 
-boost_unittest = dependency('boost', modules : ['unit_test_framework', ])
+boost_unittest = dependency('boost', modules: ['unit_test_framework', ])
 
+cc = meson.get_compiler('c')
+libgomp = cc.find_library('gomp')
 
 main = executable('packetClassificators',
 	['packetClassificators.cpp', ],
-	link_with: [packetClassificatorsCommon, ],
+	link_with: [packetClassificatorsCommon],
+	dependencies: [libgomp, ],
 	cpp_args: EXTRA_CXX_ARGS)
 
 far_tests = [
@@ -59,8 +62,8 @@ far_tests = [
 foreach t : far_tests
 	test_exe = executable(t[0],
 		['far/tests/' + t[0] + '.cpp'],
-		dependencies : [ boost_unittest, ],
-		link_with: [packetClassificatorsCommon, ],
+		dependencies: [ boost_unittest, libgomp ],
+		link_with: [packetClassificatorsCommon],
 		cpp_args: EXTRA_CXX_ARGS)
 	test(t[1], test_exe, workdir : meson.source_root())
 endforeach
