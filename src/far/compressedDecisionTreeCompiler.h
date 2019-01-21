@@ -3,10 +3,11 @@
 #include "compressedDecisionTree.h"
 #include "llrbTree.h"
 
-template<typename rule_t>
+template<typename rule_t, typename rule_id_t = uint16_t,
+		typename node_value_t = uint16_t>
 class CompressedDecisionTreeCompiler {
 public:
-	using ComprTree = CompressedDecisionTree<rule_t::SIZE>;
+	using ComprTree = CompressedDecisionTree<rule_t::SIZE, rule_id_t, node_value_t>;
 	using FieldOrder = std::array<uint8_t, rule_t::SIZE>;
 	using Tree = LLRBTree<rule_t>;
 	using Boundary = typename ComprTree::value_type;
@@ -51,13 +52,11 @@ public:
 		cn.dim_cnt = rule_t::SIZE;
 		cn.dim_offset = 0;
 		cn.rule = n.key.id;
-		std::cout << "compression " << node_index << " " << cn.rule << std::endl;
 
-		#pragma omp parallel for
 		for (size_t i = 0; i < rule_t::SIZE; i++) {
 			const auto & k = n.key[i];
 			cn.val[i] = k.low();
-			cn.val[cn.dim_cnt + i - 1] = k.high();
+			cn.val[cn.dim_cnt + i] = k.high();
 		}
 
 		if (n.left) {

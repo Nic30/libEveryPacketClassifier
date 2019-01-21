@@ -20,6 +20,7 @@
 
 using fv_t = ClassificationRule<uint16_t, 2>;
 using v_t = fv_t::value_type;
+using Compiler = CompressedDecisionTreeCompiler<fv_t>;
 
 BOOST_AUTO_TEST_SUITE( compressed_decision_tree_testsuite )
 
@@ -27,7 +28,6 @@ BOOST_AUTO_TEST_SUITE( compressed_decision_tree_testsuite )
 unsigned all = sizeof(uint16_t) * 8;
 unsigned half = all / 2;
 BOOST_AUTO_TEST_CASE( just3_exact_matches ) {
-	using Compiler = CompressedDecisionTreeCompiler<fv_t>;
 	std::vector<fv_t> rules = {
 		fv_t({v_t(0, all), v_t(1, all)}, 1),
 		fv_t({v_t(2, all), v_t(3, all)}, 2),
@@ -41,14 +41,14 @@ BOOST_AUTO_TEST_CASE( just3_exact_matches ) {
 			r1 = { 2, 3 }, r2 = { 4, 5 },
 			r3 = { 0, 0 }, r4 = { 2, 5 };
 
-	std::ofstream f0("just3_exact_matches_llrb.dot");
-	f0  << rbtree << std::endl;
-	f0.close();
+	//std::ofstream f0("just3_exact_matches_llrb.dot");
+	//f0  << rbtree << std::endl;
+	//f0.close();
 
 	auto c = comp.compile(rbtree, f_order);
-	std::ofstream f1("just3_exact_matches.dot");
-	f1  << *c << std::endl;
-	f1.close();
+	//std::ofstream f1("just3_exact_matches.dot");
+	//f1  << *c << std::endl;
+	//f1.close();
 
 	BOOST_CHECK_EQUAL(c->classify(r0), 1);
 	BOOST_CHECK_EQUAL(c->classify(r1), 2);
@@ -56,6 +56,41 @@ BOOST_AUTO_TEST_CASE( just3_exact_matches ) {
 	auto inv = Compiler::ComprTree::INVALID_RULE;
 	BOOST_CHECK_EQUAL(c->classify(r3), inv);
 	BOOST_CHECK_EQUAL(c->classify(r4), inv);
+}
+
+BOOST_AUTO_TEST_CASE( utils ) {
+	constexpr size_t s = 5;
+	constexpr size_t cnt = 6;
+
+	unsigned all[cnt][s] = {
+		{0, 1, 2, 3, 4},
+		{0, 9, 0, 0, 0},
+		{0, 9, 9, 9, 9},
+		{1, 2, 3, 4, 5},
+		{1, 2, 3, 4, 6},
+		{9, 0, 0, 0, 0},
+	};
+	using co = CompressedDecisionTreeCompiler<ClassificationRule<unsigned, 2>, uint16_t, unsigned>::ComprTree;
+	auto gt = [s](const unsigned * _a, const unsigned * _b) {
+		return co::array_greater(_a, _b, s);
+	};
+	auto lt = [s](const unsigned * _a, const unsigned * _b) {
+		return co::array_less(_a, _b, s);
+	};
+	for (size_t y = 0; y < s; y++) {
+		auto b = all[y];
+		for (size_t x = 0; x < cnt; x++) {
+			auto a = all[x];
+			bool _gt = gt(a, b);
+			bool _gt_exp = x > y;
+			BOOST_CHECK_MESSAGE( _gt == _gt_exp, "[" << x << "," << y << "] gt:" << _gt);
+			auto _lt = lt(a, b);
+			auto _lt_exp = x < y;
+			BOOST_CHECK_MESSAGE(_lt == _lt_exp, "[" << x << "," << y << "] lt:" << _lt);
+
+		}
+	}
+
 }
 
 //BOOST_AUTO_TEST_CASE( many_groups ) {

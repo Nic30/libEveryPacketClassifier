@@ -48,7 +48,7 @@ public:
 		}
 		str << "...";
 		for (size_t i = 0; i < node->dim_cnt; i++) {
-			str << "[" << (i + of) << "]<=" << size_t(node->val[i + of]);
+			str << "[" << (i + of) << "]<=" << size_t(node->val[i + node->dim_cnt]);
 			if (i != last_i)
 				str << ",";
 		}
@@ -133,24 +133,32 @@ public:
 		root = new MaxNode[max_node_cnt];
 	}
 
+	// a < b
 	static bool array_less(const node_value_t * a, const node_value_t * b,
 			uint8_t size) {
 		// [TODO] AVX https://software.intel.com/en-us/node/534476
-		bool res = true;
 		for (unsigned i = 0; i < size; i++)
-			res &= a[i] < b[i];
+			if (a[i] == b[i])
+				continue;
+			else
+				return a[i] < b[i];
 
-		return res;
+		// equal
+		return false;
 	}
 
-	static bool array_greater_equal(const node_value_t * a, const node_value_t * b,
-			uint8_t size) {
+	// a > b
+	static bool array_greater(const node_value_t * a,
+			const node_value_t * b, uint8_t size) {
 		// [TODO] AVX https://software.intel.com/en-us/node/534476
-		bool res = false;
 		for (unsigned i = 0; i < size; i++)
-			res |= a[i] >= b[i];
+			if (a[i] == b[i])
+				continue;
+			else
+				return a[i] > b[i];
 
-		return res;
+		// equal
+		return false;
 	}
 
 	constexpr void apply_field_order(const value_type & val, value_type & res) {
@@ -158,6 +166,7 @@ public:
 			res[i] = val[field_order[i]];
 		}
 	}
+
 	/*
 	 * :return: rule index (0 is reserved for no rule)
 	 **/
@@ -175,14 +184,12 @@ public:
 					return INVALID_RULE;
 				// go left for lower values
 				node_index = get_left_index(node_index);
-				continue;
-			} else if (array_greater_equal(value, &n.val[n.dim_cnt],
+			} else if (array_greater(value, &n.val[n.dim_cnt],
 					n.dim_cnt)) {
 				if (not n.right_vld)
 					return INVALID_RULE;
 				// go right for higher values
 				node_index = get_right_index(node_index);
-				continue;
 			} else {
 				// this is rule contains the result of classification
 				return n.rule;
