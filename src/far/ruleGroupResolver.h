@@ -58,7 +58,7 @@ public:
 	}
 
 	RuleGroupResolver(std::vector<rule_t> & rules) :
-			RuleGroupResolver() {
+			RuleGroupResolver(), rule_cnt(0) {
 		add_rules(rules);
 	}
 
