@@ -54,9 +54,10 @@ main = executable('packetClassificators',
 
 far_tests = [
 	['fragmentedValue_test', 'Fragmented value Tests'],
-	['llrbTree_test', 'Left Learning Red black tree Tests'], 
+	#['llrbTree_test', 'Left Learning Red black tree Tests'], 
 	['ruleGroupResolver_test', 'Rule group resolver Tests'],
-	['compressedDecisionTree_test', 'Tests for Compressed decision tree and its compiler'],
+	# ['compressedDecisionTree_test', 'Tests for Compressed decision tree and its compiler'],
+	['partitinSortTree_test', 'Test for PartitionSort tree'],
 ]
 
 foreach t : far_tests
