@@ -11,6 +11,7 @@
 # Left Larning Red-black tree
 Left-Leaning Red-Black (LLRB) is an implementation of  2–3 balanced binary search tree.
 “Left-leaning Red-Black Trees” by Robert Sedgewick: http://www.cs.princeton.edu/~rs/talks/LLRB/LLRB.pdf
+(but the original implementation did not work) http://read.seas.harvard.edu/~kohler/notes/llrb.html
 python implementation: https://github.com/peterhil/leftrb
 http://www.cs.princeton.edu/~rs/talks/LLRB/Java/RedBlackBST.java
 
