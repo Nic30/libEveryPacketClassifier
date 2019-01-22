@@ -12,5 +12,5 @@ public:
 	virtual int Size(int ruleSize) const = 0;
 	virtual bool IsEmpty() const = 0;
 
-	virtual void SetBounds(const std::vector<Range1d>& bounds) = 0;
+	virtual void SetBounds(const std::vector<Range1d> & bounds) = 0;
 };

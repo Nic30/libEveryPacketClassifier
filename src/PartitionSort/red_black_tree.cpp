@@ -553,19 +553,19 @@ int RedBlackTree::exactQueryIterative(const Packet& q, FieldOrder_t fieldOrder,
 		size_t level) {
 	//check if singleton
 	if (level == fieldOrder.size()) {
-		return getMaxPriority();
-	} else if (count == 1) {
+		return getMaxPriority(); // default rule
+	} else if (count == 1) { // use chain boxes
 		//  auto chain_boxes = tree->chain_boxes;
 		for (size_t i = level; i < fieldOrder.size(); i++) {
 			if (q[fieldOrder[i]] < chain_boxes[i - level].low)
-				return -1;
+				return -1; // not found
 			if (q[fieldOrder[i]] > chain_boxes[i - level].high)
-				return -1;
+				return -1; // not found
 		}
 
 		return getMaxPriority();
 	}
-
+	// wal the RedBlack tree on current node
 	RedBlackTree_node* x = root;
 	if (x == nullptr)
 		return -1;
@@ -582,6 +582,7 @@ int RedBlackTree::exactQueryIterative(const Packet& q, FieldOrder_t fieldOrder,
 			return -1;
 		compVal = CompareQuery(x->key, q, level, fieldOrder);
 	}
+	// after the leaf of RedBlack tree on current level is fund use it to search further
 	return x->rb_tree_next_level->exactQueryIterative(q, fieldOrder, level + 1);
 }
 
