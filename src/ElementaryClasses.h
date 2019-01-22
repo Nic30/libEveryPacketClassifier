@@ -25,48 +25,51 @@ class PointNd: public std::array<Point1d, dimension_cnt> {
 
 using Packet = std::vector<Point1d>;
 
-class Range1d {
+template<typename Point = Point1d>
+class _Range1d {
 public:
 	static constexpr int UNCOMPARABLE = 2;
-	Range1d(): low(0), high(0) {}
-	Range1d(Point1d low, Point1d high) :
+	_Range1d() :
+			low(0), high(0) {
+	}
+	_Range1d(Point low, Point high) :
 			low(low), high(high) {
 	}
 
-	inline bool contains(Point1d x) const {
+	inline bool contains(Point x) const {
 		return low <= x && x <= high;
 	}
-	bool operator <(const Range1d& other) const {
+	bool operator <(const _Range1d& other) const {
 		if (low != other.low) {
 			return low < other.low;
 		} else
 			return high < other.high;
 	}
 
-	bool operator >(const Range1d& other) const {
+	bool operator >(const _Range1d& other) const {
 		if (high != other.high) {
 			return high > other.high;
 		} else
 			return low > other.low;
 	}
 
-	bool isIntersect(const Range1d & other) const {
+	bool isIntersect(const _Range1d & other) const {
 		return std::max(low, other.low) <= std::min(high, other.high);
 	}
 
-	bool operator ==(const Range1d& other) const {
+	bool operator ==(const _Range1d& other) const {
 		return low == other.low && high == other.high;
 	}
 
-	bool operator !=(const Range1d& other) const {
+	bool operator !=(const _Range1d& other) const {
 		return low != other.low || high != other.high;
 	}
 
-	int cmp(const Range1d* other) const {
+	int cmp(const _Range1d* other) const {
 		return cmp(*other);
 	}
 
-	int cmp(const Range1d& other) const {
+	int cmp(const _Range1d& other) const {
 		if (*this == other)
 			return 0;
 		else if (this->isIntersect(other))
@@ -79,7 +82,12 @@ public:
 		throw std::runtime_error("Something went wrong during compare");
 	}
 
-	friend std::ostream & operator<<(std::ostream & str, const Range1d & r) {
+	constexpr bool isWildcard() const {
+		return low == std::numeric_limits<Point>::min()
+				and high == std::numeric_limits<Point>::max();
+	}
+
+	friend std::ostream & operator<<(std::ostream & str, const _Range1d & r) {
 		str << "[" << r.low << "-" << r.high << "]";
 		return str;
 	}
@@ -93,6 +101,7 @@ public:
 	Point1d low;
 	Point1d high;
 };
+using Range1d = _Range1d<>;
 
 /**
  * Filter rule
@@ -109,8 +118,8 @@ public:
  * */
 struct Rule {
 	Rule(int dim = 5) :
-			dim(dim), priority(-1), id(-1), tag(-1), range(dim, { 0, 0 }),
-			prefix_length(dim, 0) {
+			dim(dim), priority(-1), id(-1), tag(-1), range(dim, { 0, 0 }), prefix_length(
+					dim, 0) {
 		markedDelete = 0;
 	}
 
@@ -134,7 +143,7 @@ struct Rule {
 	}
 
 	friend std::ostream & operator<<(std::ostream & str, const Rule & r) {
-		for (const auto& _r: r.range) {
+		for (const auto& _r : r.range) {
 			str << _r << '\t';
 		}
 		return str;
@@ -168,7 +177,8 @@ public:
 class EndPoint {
 public:
 	EndPoint(double val, bool isRightEnd, int id) :
-			val(val), isRightEnd(isRightEnd), id(id) {}
+			val(val), isRightEnd(isRightEnd), id(id) {
+	}
 
 	bool operator <(const EndPoint & rhs) const {
 		return val < rhs.val;
@@ -222,15 +232,13 @@ enum PSMode {
 };
 
 inline void SortRules(std::vector<Rule>& rules) {
-	sort(rules.begin(), rules.end(),
-			[](const Rule& rx, const Rule& ry) {
+	sort(rules.begin(), rules.end(), [](const Rule& rx, const Rule& ry) {
 		return rx.priority >= ry.priority;
 	});
 }
 
 inline void SortRules(std::vector<Rule*>& rules) {
-	sort(rules.begin(), rules.end(),
-			[](const Rule* rx, const Rule* ry) {
+	sort(rules.begin(), rules.end(), [](const Rule* rx, const Rule* ry) {
 		return rx->priority >= ry->priority;
 	});
 }

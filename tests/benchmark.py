@@ -5,6 +5,7 @@ import json
 from subprocess import check_call
 from os.path import basename, isfile
 import matplotlib.pyplot as plt
+from functools import lru_cache
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 BIN = os.path.join(ROOT, "Debug/packetClassificators")
@@ -12,12 +13,12 @@ BIN = os.path.join(ROOT, "Debug/packetClassificators")
 RULESET_ROOT = os.path.join(ROOT, "../classbench-ng/generated/")
 ACL1s = [os.path.join(RULESET_ROOT, "acl1_%d" % i)
         for i in [100, 500, 1000, 2000,
-                  5000, 10000, #65000
+                  5000, 10000,  # 65000
                   ]]
 
 FW1s = [os.path.join(RULESET_ROOT, "fw1_%d" % i)
         for i in [100, 500, 1000, 2000,
-                  5000, 10000, #65000
+                  5000, 10000,  # 65000
                   ]]
 
 ALGS = [
@@ -57,7 +58,13 @@ def run_classifications(rulesets, algs, result_dir):
         resutls = pool.map(run_benchmark, benchmarks)
 
 
-def generate_graphs(result_dir):
+# @lru_cache(maxsize=512)
+def get_real_rule_cnt(ruleset, rule_cnt):
+    with open(os.path.join(RULESET_ROOT, f'{ruleset}_{rule_cnt}')) as f:
+        return len([line for line in f])
+
+
+def generate_graphs(result_dir, key, title, filename, ylabel, xlabel):
     # {salg_name: {number_of_rule: sizes}}
     data = {}
     for f in listdir(result_dir):
@@ -65,7 +72,8 @@ def generate_graphs(result_dir):
         if not isfile(f_path) or f_path.endswith(".png"):
             continue
         alg, ruleset, rule_cnt = f.split("_")
-        rule_cnt = int(rule_cnt)
+        # rule_cnt = int(rule_cnt)
+        rule_cnt = get_real_rule_cnt(ruleset, rule_cnt)
 
         try:
             alg_d = data[alg]
@@ -76,26 +84,27 @@ def generate_graphs(result_dir):
         with open(f_path) as fp:
             results = json.load(fp)
         
-        mem_size = results["Size(bytes)"]
-        mem_size = int(mem_size)
+        val = results[key]
+        val = float(val)
         try:
-            sizes = alg_d[rule_cnt]
+            vals = alg_d[rule_cnt]
         except KeyError:
-            sizes = []
-            alg_d[rule_cnt] = sizes
+            vals = []
+            alg_d[rule_cnt] = vals
 
-        sizes.append(mem_size)
-    
+        vals.append(val)
 
     # for each alg plot dependency on rule count
     for alg, sizes in data.items():
         fig1, ax1 = plt.subplots()
         size_series = list(sorted(sizes.items(), key=lambda x: x[0]))
-        ax1.set_title(f'Memory consuptions for {alg}')
+        ax1.set_title(title.format(alg=alg))
         ax1.boxplot([x[1] for x in size_series])
         plt.xticks([i for i in range(1, len(size_series) + 1)],
-                   [x[0] for x in size_series])       
-        fig1.savefig(os.path.join(result_dir, f'{alg}.png'))
+                   [x[0] for x in size_series])
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        fig1.savefig(os.path.join(result_dir, filename.format(alg=alg)))
 
 
 if __name__ == "__main__":
@@ -103,5 +112,9 @@ if __name__ == "__main__":
                 *FW1s]
     result_dir = os.path.join(ROOT, "results")
     
-    #run_classifications(RULESETS, ALGS, result_dir)
-    generate_graphs(result_dir)
+    # run_classifications(RULESETS, ALGS, result_dir)
+    size_of_ruleset = "Number of rules"
+    generate_graphs(result_dir, "Size(bytes)", 'Memory consuptions for {alg}', '{alg}_mem.png',
+                     "Size [B]", size_of_ruleset)
+    generate_graphs(result_dir, "ConstructionTime(ms)", 'Construction time for {alg}', '{alg}_constr_time.png',
+                     "Construction time [s]", size_of_ruleset)
