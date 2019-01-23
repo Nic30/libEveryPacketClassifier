@@ -12,6 +12,7 @@
 #include <chrono> 
 #include <array>
 #include <sstream>
+#include <boost/functional/hash.hpp>
 
 enum Dimensions {
 	FieldSA = 0, FieldDA = 1, FieldSP = 2, FieldDP = 3, FieldProto = 4,
@@ -155,6 +156,34 @@ struct Rule {
 		return ss.str();
 	}
 };
+
+// inject serialization methods to std namespace so other object like unordered_set can use it
+// without an extra specification
+namespace std {
+
+template<typename FRAGMENT_t>
+struct hash<Rule> {
+	typedef Rule argument_type;
+	typedef std::size_t result_type;
+	result_type operator()(argument_type const& v) const noexcept {
+		using boost::hash_combine;
+		using hash = std::hash<>();
+		result_type h = hash_combine(
+				hash(v.dim),
+				hash(v.priority));
+		h = hash_combine(h, hash(v.priority));
+		h = hash_combine(h, hash(v.id));
+		h = hash_combine(h, hash(v.tag));
+		for (const auto &r: range) {
+			h = hash_combine(h, hash(r));
+		}
+
+		return h;
+	}
+};
+
+}
+
 
 class Range1dWeighted: public Range1d {
 public:
