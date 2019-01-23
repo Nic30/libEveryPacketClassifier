@@ -2,10 +2,7 @@
 
 #include "../Simulation.h"
 #include <functional>
-
-class FaRFilter {
-	std::vector<Rule> rules;
-};
+#include "farFilter.h"
 
 
 class FaRClassifier: public PacketClassifier {

@@ -1,6 +1,6 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
-#define BOOST_TEST_MODULE rbtree_test
+#define BOOST_TEST_MODULE partitionSortTree_test
 #include <boost/test/unit_test.hpp>
 #include <functional>
 #include <iostream>
@@ -10,7 +10,7 @@
 #include "../partitionSortTree.h"
 
 using Tree_t = PartitionSortTree<unsigned, unsigned, 2>;
-BOOST_AUTO_TEST_SUITE( rbtree_testsuite )
+BOOST_AUTO_TEST_SUITE( partitionSortTree_testsuite )
 
 BOOST_AUTO_TEST_CASE( simple_add_and_discard ) {
 	Tree_t t({0, 1});

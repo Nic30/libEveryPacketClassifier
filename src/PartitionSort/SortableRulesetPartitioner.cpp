@@ -277,7 +277,7 @@ vector<int> SortableRulesetPartitioner::GetFieldOrderByRule(const Rule& r) {
 					_r = 3;
 				break;
 			default:
-				throw std::runtime_error("Not implemented for this dimmension");
+				throw std::runtime_error("Not implemented for this dimension");
 		}
 		rank[i] = _r;
 	}

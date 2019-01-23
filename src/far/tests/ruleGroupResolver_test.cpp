@@ -1,7 +1,6 @@
-
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
-#define BOOST_TEST_MODULE rule_resolver_test
+#define BOOST_TEST_MODULE ruleGroupResolver_test
 
 #include <boost/test/unit_test.hpp>
 #include <functional>
@@ -16,7 +15,7 @@
 using fv_t = FragmentedValue<MaskedValue<unsigned>, 2>;
 using v_t = fv_t::value_type;
 
-BOOST_AUTO_TEST_SUITE( rule_group_resolver_testsuite )
+BOOST_AUTO_TEST_SUITE( ruleGroupResolver_testsuite )
 
 
 unsigned all = sizeof(unsigned) * 8;
