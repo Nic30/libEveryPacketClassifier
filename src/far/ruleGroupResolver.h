@@ -98,7 +98,7 @@ public:
 	//static void _expand_group(mask_t & mask, mask_t & expand_to,
 	//		std::vector<rule_t> & rules) {
 	//	assert(not rules.empty());
-    //
+	//
 	//	// count how many bit is expanded per dimmension
 	//	std::array<size_t, mask.size()> expand_len;
 	//	mask_t expanding_mask;
@@ -113,7 +113,7 @@ public:
 	//	}
 	//	// value can remain same as it is extended by 0
 	//	// high, prefix_mask has to be extended with 1
-    //
+	//
 	//	// user first rule to get mask length instead of complex computation
 	//}
 
@@ -129,7 +129,7 @@ public:
 	//		need_expand0 |= _need_expand0;
 	//		need_expand1 |= _need_expand1;
 	//	}
-    //
+	//
 	//	if (need_expand0) {
 	//		// remove group from groups because it's key has changed
 	//		_expand_group(mask0);
