@@ -30,8 +30,7 @@ public:
 	static constexpr size_t BIT_LEN = BitUtils<T>::BIT_LEN;
 	static constexpr size_t ALL_MASK = BitUtils<T>::ALL_MASK;
 
-	T value; // or low if this is a range
-private:
+	T _M_low; // or low if this is a range
 	T _M_high;
 
 public:
@@ -40,18 +39,20 @@ public:
 	priority_t priority;
 	bool is_range;
 
+	constexpr T & low() {
+		return _M_low;
+	}
+
 	constexpr T & high() {
 		return _M_high;
 	}
-	constexpr T & low() {
-		return value;
+
+	constexpr const T & low() const {
+		return _M_low;
 	}
 
 	constexpr const T & high() const {
 		return _M_high;
-	}
-	constexpr const T & low() const {
-		return value;
 	}
 
 	static MaskedValue from_range(T low, T high, priority_t priority = -1) {
@@ -67,7 +68,7 @@ public:
 		MaskedValue self(low, i, priority);
 		self.is_range = true;
 		// high will not fit exactly if range is not aligned
-		self._M_high = high;
+		self.high() = high;
 
 		return self;
 	}
@@ -77,9 +78,9 @@ public:
 	}
 
 	MaskedValue(T prefix, size_t prefix_len = BIT_LEN, priority_t priority = -1) :
-			value(prefix), _M_high(prefix + getRange(prefix_len) - 1), prefix_mask(
-					BitUtils<T>::maskPrefix(prefix_len)), prefix_len(prefix_len), priority(
-					priority), is_range(false) {
+			_M_low(prefix), _M_high(prefix + getRange(prefix_len) - 1), prefix_mask(
+					BitUtils<T>::maskPrefix(prefix_len)), prefix_len(
+					prefix_len), priority(priority), is_range(false) {
 		assert(prefix_len <= BIT_LEN);
 	}
 

@@ -29,7 +29,7 @@ using Packet = std::vector<Point1d>;
 template<typename Point = Point1d>
 class _Range1d {
 public:
-	static constexpr int UNCOMPARABLE = 2;
+	static constexpr int INCOMPARABLE = 2;
 	_Range1d() :
 			low(0), high(0) {
 	}
@@ -55,7 +55,7 @@ public:
 	}
 
 	bool isIntersect(const _Range1d & other) const {
-		return std::max(low, other.low) <= std::min(high, other.high);
+		return other.low < high and low < other.high;
 	}
 
 	bool operator ==(const _Range1d& other) const {
@@ -74,7 +74,7 @@ public:
 		if (*this == other)
 			return 0;
 		else if (this->isIntersect(other))
-			return UNCOMPARABLE;
+			return INCOMPARABLE;
 		else if (this->high < other.low)
 			return -1;
 		else if (this->low > other.high)
@@ -161,26 +161,49 @@ struct Rule {
 // without an extra specification
 namespace std {
 
-template<typename FRAGMENT_t>
+template<>
+struct hash<Range1d> {
+	typedef Range1d argument_type;
+	typedef std::size_t result_type;
+	result_type operator()(argument_type const& v) const noexcept {
+			using boost::hash_combine;
+			using namespace std;
+			result_type h = hash<unsigned>{}(v.low);
+			hash_combine(h, hash<unsigned>{}(v.high));
+			return h;
+	}
+
+};
+
+
+template<>
 struct hash<Rule> {
 	typedef Rule argument_type;
 	typedef std::size_t result_type;
 	result_type operator()(argument_type const& v) const noexcept {
 		using boost::hash_combine;
-		using hash = std::hash<>();
-		result_type h = hash_combine(
-				hash(v.dim),
-				hash(v.priority));
-		h = hash_combine(h, hash(v.priority));
-		h = hash_combine(h, hash(v.id));
-		h = hash_combine(h, hash(v.tag));
-		for (const auto &r: range) {
-			h = hash_combine(h, hash(r));
+		using namespace std;
+		result_type h = hash<int>{}(v.dim);
+		hash_combine(h, hash<int>{}(v.priority));
+		hash_combine(h, hash<int>{}(v.id));
+		for (const auto &r: v.range) {
+			hash_combine(h, hash<Range1d>{}(r));
 		}
 
 		return h;
 	}
 };
+
+
+inline bool operator==(const Rule & a, const Rule & b) {
+	if (a.dim != b.dim or a.priority != b.priority or a.id != b.id)
+		return false;
+	for (int i = 0; i < a.dim; i++) {
+		if (not (a.range[i] == b.range[i]))
+			return false;
+	}
+	return true;
+}
 
 }
 

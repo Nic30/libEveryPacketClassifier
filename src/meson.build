@@ -23,6 +23,7 @@ srcs = [
 	'Simulation.cpp',
 	'far/far.cpp',
 	'far/exceptions.cpp',
+	'far/threadPool.cpp',
 	'OVS/TupleSpaceSearch.cpp',
 	'OVS/cmap.cpp',
 	'PartitionSort/test_red_black_tree.cpp',
@@ -35,16 +36,27 @@ srcs = [
 EXTRA_CXX_ARGS = [
 	'-std=c++17',
  	'-fopenmp',
+ 	'-pg', '-no-pie'
  	#'-o3'
  ]
+EXTRA_C_ARGS = [
+ 	'-pg', '-no-pie'
+]
+EXTRA_LINK_ARGS = [
+    '-pg', '-no-pie'
+]
+
+boost_thread = dependency('boost', modules: ['thread', 'system' ])
 
 packetClassificatorsCommon = shared_library('packetClassificatorsCommon',
                         srcs,
                         #include_directories : inc,
-                        #dependencies : glib_dep,
+                        dependencies : [boost_thread],
                         install : true,
-                        cpp_args: EXTRA_CXX_ARGS)
-
+                        cpp_args: EXTRA_CXX_ARGS,
+                        c_args: EXTRA_C_ARGS,
+                        #link_args: EXTRA_LINK_ARGS
+                        )
 boost_unittest = dependency('boost', modules: ['unit_test_framework', ])
 thread_dep = dependency('threads')
 
@@ -55,8 +67,11 @@ libgomp = cc.find_library('gomp')
 main = executable('packetClassificators',
 	['packetClassificators.cpp', ],
 	link_with: [packetClassificatorsCommon],
-	dependencies: [libgomp, thread_dep],
-	cpp_args: EXTRA_CXX_ARGS)
+	dependencies: [libgomp, thread_dep, boost_thread],
+	cpp_args: EXTRA_CXX_ARGS,
+    c_args: EXTRA_C_ARGS,
+    link_args: EXTRA_LINK_ARGS
+    )
 
 far_tests = [
 	['fragmentedValue_test', 'Fragmented value Tests'],
@@ -65,13 +80,16 @@ far_tests = [
 	# ['compressedDecisionTree_test', 'Tests for Compressed decision tree and its compiler'],
 	['partitinSortTree_test', 'Test for PartitionSort tree'],
 	['mempool_test', 'Test for mempool'],
+	['farFilter_test', 'Test for FarFilter'],
 ]
 
 foreach t : far_tests
 	test_exe = executable(t[0],
 		['far/tests/' + t[0] + '.cpp'],
-		dependencies: [ boost_unittest, libgomp, thread_dep],
+		dependencies: [ boost_unittest, libgomp, thread_dep, boost_thread],
 		link_with: [packetClassificatorsCommon],
-		cpp_args: EXTRA_CXX_ARGS)
+		cpp_args: EXTRA_CXX_ARGS,
+        c_args: EXTRA_C_ARGS,
+        link_args: EXTRA_LINK_ARGS)
 	test(t[1], test_exe, workdir : meson.source_root())
 endforeach

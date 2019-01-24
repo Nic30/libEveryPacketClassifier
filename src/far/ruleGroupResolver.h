@@ -43,13 +43,10 @@ struct hash_mask_eq {
  * [TODO] exact values for rule_t (instead reference) seems to be faster,
  *        but it is required to check it with more data
  **/
-template<typename rule_t>
+template<typename rule_t, typename mask_t, typename get_mask>
 class RuleGroupResolver {
 public:
-	using mask_t = typename rule_t::mask_t;
-
-	std::unordered_map<mask_t, std::vector<rule_t>, hash_mask<mask_t>,
-			hash_mask_eq<mask_t>> groups;
+	std::unordered_map<mask_t, std::vector<rule_t>> groups;
 	size_t rule_cnt;
 
 	RuleGroupResolver(const RuleGroupResolver & other) = delete;
@@ -62,17 +59,20 @@ public:
 		add_rules(rules);
 	}
 
+	const mask_t & add_rule(const rule_t & rule) {
+		auto m = get_mask(r);
+		auto iter = groups.find(m);
+		if (iter == groups.end()) {
+			groups[m] = std::vector<rule_t>( { r, });
+			rule_cnt++;
+			continue;
+		}
+		iter->second.push_back(r);
+		rule_cnt++;
+	}
 	void add_rules(std::vector<rule_t> & rules) {
 		for (const rule_t & r : rules) {
-			auto m = r.getMask();
-			auto iter = groups.find(m);
-			if (iter == groups.end()) {
-				groups[m] = std::vector<rule_t>( { r, });
-				rule_cnt++;
-				continue;
-			}
-			iter->second.push_back(r);
-			rule_cnt++;
+
 		}
 	}
 

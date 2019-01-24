@@ -117,4 +117,4 @@ if __name__ == "__main__":
     generate_graphs(result_dir, "Size(bytes)", 'Memory consuptions for {alg}', '{alg}_mem.png',
                      "Size [B]", size_of_ruleset)
     generate_graphs(result_dir, "ConstructionTime(ms)", 'Construction time for {alg}', '{alg}_constr_time.png',
-                     "Construction time [s]", size_of_ruleset)
+                     "Construction time [ms]", size_of_ruleset)

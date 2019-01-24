@@ -2,6 +2,7 @@
 
 #include <array>
 #include <stdint.h>
+#include <stdexcept>
 
 /**
  * The template used override the new/delete operators to use statically callocated memory
@@ -24,7 +25,7 @@ class StaticMempool final {
 	// sentinel for the allocation
 	static constexpr auto END = mempool.end();
 
-	// spinlock for alocation and deallocation
+	// spinlock for allocation and deallocation
 	static __attribute__((aligned(64)))   std::atomic_flag lock;
 
 	// staic constructor of this mempool which initializes the pointers
@@ -85,7 +86,8 @@ public:
 			if (cnt == ITEM_CNT)
 				return;
 		}
-		throw std::bad_alloc("There are still items in the mempool");
+		assert(0 && "There are still items in the mempool");
+
 	}
 };
 
