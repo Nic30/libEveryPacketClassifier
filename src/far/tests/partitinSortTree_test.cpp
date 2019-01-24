@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE( simple_add_and_discard ) {
 		// add some items
 		for (unsigned i = 0; i < N; i++) {
 			Tree_t::rule_type r = { Range1d(i, i), Range1d(i, i) };
-			t.insert(r, i);
+			t.insert(r, i, 0);
 			BOOST_CHECK_EQUAL(t.size(), i + 1);
 		}
 		for (unsigned i = 0; i < N; i++) {
@@ -46,6 +46,19 @@ BOOST_AUTO_TEST_CASE( simple_add_and_discard ) {
 
 	}
 
+}
+
+BOOST_AUTO_TEST_CASE( simple_collision ) {
+	Tree_t t( { 0, 1 });
+	Tree_t::rule_type r0 = { Range1d(0, 10), Range1d(0, 0) };
+	t.insert(r0, 0, 0);
+	Rule r1(2);
+	r1.range = {Range1d(2, 5), Range1d(0, 0)};
+	BOOST_CHECK_EQUAL(t.check_collision(r1), true);
+	Rule r2(2);
+	r2.range[0] = Range1d(11, 15);
+	r2.range[1] = Range1d(0, 0);
+	BOOST_CHECK_EQUAL(t.check_collision(r2), false);
 }
 
 //____________________________________________________________________________//
