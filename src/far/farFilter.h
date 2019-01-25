@@ -3,11 +3,12 @@
 #include <vector>
 #include <unordered_map>
 #include <limits>
+#include <boost/range/adaptor/reversed.hpp>
+
 
 #include "../ElementaryClasses.h"
 #include "partitionSortTree.h"
 #include "bitUtils.h"
-#include "concurrent_queue.h"
 #include "threadPool.h"
 
 /**
@@ -20,8 +21,9 @@
  * @ivar UPDATE_THR_CNT number of update threads
  **/
 template<typename dim_t, typename rule_id_t, size_t DIM_CNT,
-		size_t UPDATE_THR_CNT = 0, size_t TREE_CNT = 8, size_t MAX_TREE_SIZE =
-				std::numeric_limits<uint16_t>::max()>
+		size_t UPDATE_THR_CNT = 0, size_t TREE_CNT = 16, size_t MAX_TREE_SIZE =
+				std::numeric_limits<uint16_t>::max(), size_t MAX_BATCH_SIZE =
+				32>
 class FaRFilter {
 	// type of the tree used for classification
 	using Tree = PartitionSortTree<dim_t, rule_id_t, DIM_CNT, MAX_TREE_SIZE>;
@@ -50,6 +52,9 @@ class FaRFilter {
 			return true;
 		}
 	};
+	static const constexpr size_t MAX_CMD_PER_TASK =
+			UPDATE_THR_CNT ? MAX_BATCH_SIZE / UPDATE_THR_CNT : 1;
+	static_assert(UPDATE_THR_CNT == 0 or (MAX_CMD_PER_TASK * UPDATE_THR_CNT >= MAX_BATCH_SIZE));
 
 	// multiple decision trees for classification
 	std::array<Tree *, TREE_CNT> trees;
@@ -57,42 +62,54 @@ class FaRFilter {
 	// dictionary to find tree for rule
 	std::unordered_map<Rule, Tree *> rule_to_tree;
 
+	// [TODO] use multiset
 	// dictionary to find the probably most suitable tree for the rule
-	std::unordered_map<mask_t, Tree *, mask_hasher, mask_eq> mask_to_tree;
+	using mask_to_tree_map_t = std::unordered_map<mask_t, Tree *, mask_hasher, mask_eq>;
+	mask_to_tree_map_t mask_to_tree;
 
 	ThreadPool thread_pool;
 
-	class CompatibilityCheckRequest {
+	class CompatibilityCheckTask {
 	public:
-		const Rule * rule;
-		const Tree * tree;
-		size_t tree_index;
-		bool colliding;
-		bool started;
-		__attribute__((aligned(64))) std::atomic<bool> done;
+		const mask_to_tree_map_t * mask_to_tree;
+		const Rule * rules;
+		Tree * trees[MAX_CMD_PER_TASK];
+		size_t tree_indexes[MAX_CMD_PER_TASK];
+		mask_t masks[MAX_CMD_PER_TASK];
+		bool colliding[MAX_CMD_PER_TASK];
+		size_t rules_cnt;
+		__attribute__((aligned(64)))  std::atomic<bool> done;
 
-		CompatibilityCheckRequest() :
-				rule(nullptr), tree(nullptr), tree_index(0), colliding(true), started(
-						false), done(false) {
-		}
-		CompatibilityCheckRequest(const Rule & rule, const Tree * tree) :
-				rule(&rule), tree(tree), tree_index(0), colliding(true), started(
-						false), done(false) {
+		CompatibilityCheckTask() :
+				mask_to_tree(nullptr), rules(nullptr), rules_cnt(0), done(false) {
 		}
 
-		void _start() {
-			started = true;
-			colliding = tree->check_collision(*rule);
+		void try_lookup_local() {
+			for (size_t i = 0; i < rules_cnt; i++) {
+				auto & mask = masks[i];
+				auto & rule = rules[i];
+				auto & tree = trees[i];
+
+				mask = get_mask(rule);
+				auto prioritized_tree = mask_to_tree->find(mask);
+				tree = prioritized_tree != mask_to_tree->end() ?
+						prioritized_tree->second : nullptr;
+				colliding[i] = tree ? tree->check_collision(rule) : false;
+			}
 			done = true;
 		}
 
-		void apply(std::array<bool, TREE_CNT> & insert_compatible) {
-			insert_compatible[tree_index] = not colliding;
+		constexpr void apply(std::array<bool, TREE_CNT> & insert_compatible) {
+			for (size_t i = 0; i < rules_cnt; i++)
+				insert_compatible[tree_indexes[i]] = not colliding[i];
 		}
 
-		bool start(ThreadPool & thread_pool) {
+		constexpr bool try_lookup(ThreadPool & thread_pool,
+				const mask_to_tree_map_t & _mask_to_tree) {
+			mask_to_tree = &_mask_to_tree;
 			boost::function<void()> job(
-					boost::bind(&CompatibilityCheckRequest::_start, this));
+					boost::bind(&CompatibilityCheckTask::try_lookup_local,
+							this));
 			return thread_pool.run_job(job);
 		}
 	};
@@ -100,7 +117,7 @@ class FaRFilter {
 	/*
 	 * Extract mask from the rule
 	 **/
-	mask_t get_mask(const Rule & rule) {
+	static mask_t get_mask(const Rule & rule) {
 		mask_t mask;
 		for (size_t i = 0; i < DIM_CNT; i++) {
 			auto dim_ramge = rule.range[i];
@@ -128,12 +145,12 @@ class FaRFilter {
 	 *
 	 * @return the best suitable tree for the rule
 	 ***/
-	Tree* _insert_get_best_tree(const Rule & rule, const mask_t & mask,
-			Tree * best_tree = nullptr) {
+	constexpr Tree* _insert_get_best_tree(const Rule & rule,
+			const mask_t & mask, Tree * best_tree = nullptr) {
 		Tree * checked_tree = best_tree;
 		if (not best_tree or best_tree->check_collision(rule)) {
 			Tree * smallest_tree = nullptr;
-			for (auto t : trees) {
+			for (auto t : boost::adaptors::reverse(trees)) {
 				if (t == checked_tree) {
 					continue; // it was already checked
 				}
@@ -160,7 +177,7 @@ class FaRFilter {
 	 *
 	 * @return the best suitable tree for the rule
 	 ***/
-	Tree* _insert_get_best_tree(
+	constexpr Tree* _insert_get_best_tree(
 			const std::array<bool, TREE_CNT> & insert_compatible,
 			Tree * prioritized_tree) {
 		Tree * smallest_compatible = nullptr;
@@ -183,125 +200,117 @@ class FaRFilter {
 		return smallest;
 	}
 
-	/*
-	 * Get the smallest most compatible tree
-	 * or the prioritized tree if is compatible
-	 * and optionally ask worker thread for some checks
-	 *
-	 **/
-	Tree* _insert_get_best_tree_distributed(const Rule & rule,
-			const mask_t & mask, Tree * prioritized_tree) {
-		constexpr size_t TREE_SIZE_TRESHOLD = 20;
-		std::array<bool, TREE_CNT> insert_compatible;
-
-		CompatibilityCheckRequest prioritized_tree_check(rule,
-				prioritized_tree);
-		if (prioritized_tree) {
-			if (prioritized_tree->size() < TREE_SIZE_TRESHOLD) {
-				if (not prioritized_tree->check_collision(rule))
-					return prioritized_tree;
-			}
-
-			// ask the worker as the tree is too large
-			// up to O(d * log n) (n-number of nodes in tree) on worker thread
-			while (not prioritized_tree_check.start(thread_pool))
-				;
-		}
-
-		// check if there is a small compatible tree
-		// the check is performed before as potential communication
-		// significantly degrades performance if the operation is too simple
-		for (auto t : trees) {
-			if (t != prioritized_tree and t->size() < TREE_SIZE_TRESHOLD
-					and not t->check_collision(rule)) {
-				return t;
-			}
-		}
-
-		std::array<CompatibilityCheckRequest, TREE_CNT> checks;
-		std::fill(insert_compatible.begin(), insert_compatible.end(), false);
-		// check if the worker has finished checking the prioritized tree
-		if (prioritized_tree_check.started) {
-			assert(prioritized_tree != nullptr);
-			while (not prioritized_tree_check.done)
-				;
-			if (not prioritized_tree_check.colliding)
-				return prioritized_tree;
-		}
-
-		// spot tree compatibility query because all trees are large or not compatible
-		size_t req_cnt = 0;
-		size_t i = 0;
-		for (auto t : trees) {
-			// skip the prioritized_tree  as we already checked it
-			if (t != prioritized_tree and t->size() >= TREE_SIZE_TRESHOLD) {
-				// up to O(d * log n) (n-number of nodes in tree) on worker thread
-				CompatibilityCheckRequest & check = checks[req_cnt];
-				check.rule = &rule;
-				check.tree = t;
-				check.tree_index = i;
-				while (not check.start(thread_pool))
-					;
-				req_cnt++;
-			}
-			i++;
-		}
-
-		// collect the tree compatibility results
-		for (size_t i = 0; i < req_cnt; i++) {
-			CompatibilityCheckRequest & check = checks[i];
-			while (not check.done)
-				;
-			check.apply(insert_compatible);
-		}
-		if (prioritized_tree_check.started) {
-			while (not prioritized_tree_check.done)
-				;
-			prioritized_tree_check.apply(insert_compatible);
-		}
-		// resolve the tree where rule should be stored
-		Tree * best_tree = _insert_get_best_tree(insert_compatible,
-				prioritized_tree);
-
-		assert(best_tree != nullptr);
-		//while (not thread_pool.empty()) {
-		//	std::cout << "waiting on children" << std::endl;
-		//}
-
-		return best_tree;
-	}
-
 	// register the tree for specified mask
 	void _insert_after(const Rule & rule, const mask_t & mask, Tree * tree) {
 		mask_to_tree[mask] = tree;
 		rule_to_tree[rule] = tree;
 	}
 
+	/*
+	 * Split
+	 *
+	 * @return number of tasks generated
+	 * */
+	constexpr size_t distribute_rule_to_tasks(const Rule * rule, int rules_cnt,
+			CompatibilityCheckTask task[MAX_BATCH_SIZE]) {
+		if (rules_cnt <= 0)
+			return 0;
+		int items_per_task = rules_cnt / UPDATE_THR_CNT;
+		int items_dept = rules_cnt - (items_per_task * UPDATE_THR_CNT);
+		if (items_dept) {
+			// to not miss anything and to make distribution more uniform
+			// it there is few of items
+			items_per_task++;
+		}
+		// [TODO] multiply the items_per_task to lower number of task if there is too few of items
+		int task_offset = 0;
+		int task_i = 0;
+		while (task_offset < rules_cnt) {
+			CompatibilityCheckTask & t = task[task_i];
+			t.rules = &rule[task_offset];
+			if (task_offset + items_per_task > rules_cnt)
+				t.rules_cnt = rules_cnt - task_offset;
+			else
+				t.rules_cnt = items_per_task;
+
+			task_offset += items_per_task;
+			task_i++;
+		}
+		return task_i;
+	}
+
 public:
+	void insert(const std::vector<Rule> & rules) {
+		for (size_t consumed = 0; consumed < rules.size();) {
+			size_t s = rules.size() - consumed;
+			if (s > MAX_BATCH_SIZE)
+				s = MAX_BATCH_SIZE;
+			insert(&rules[consumed], s);
+			consumed += s;
+		}
+
+	}
 	// [TODO] insert vs remove is not thread safe due rule_to_tree
 	//        rule can potentially stay in classifier
-	void insert(const Rule & rule) {
-		Tree * best_tree = nullptr;
-		mask_t mask = get_mask(rule);
-		auto prioritized_tree = mask_to_tree.find(mask);
-		if (prioritized_tree != mask_to_tree.end())
-			best_tree = prioritized_tree->second;
-
-		if (UPDATE_THR_CNT > 0) {
-			// O(d log n) on worker thread max(O(d log n), O(d w)) on main thread
-			best_tree = _insert_get_best_tree_distributed(rule, mask,
-					best_tree);
-			// O(d^2 log n) on worker thread
-			// confirmation is not required as the potential delete would wait on spinlocks in tree
-			// and the commands in queue are ordered
-			//while (not update_queue_req.push( { 0, &rule, UpdateRequest::INSERT,
-			//		best_tree, }))
-			//	;
+	// (delete, insert has to be performed from same thread)
+	void insert(const Rule * rules, size_t rules_cnt) {
+		assert(rules_cnt <= MAX_BATCH_SIZE);
+		if (UPDATE_THR_CNT == 0) {
+			// sequential
+			for (size_t i = 0; i < rules_cnt; i++) {
+				auto & rule = rules[i];
+				auto mask = get_mask(rule);
+				auto _best_tree = mask_to_tree.find(mask);
+				Tree * best_tree =
+						_best_tree != mask_to_tree.end() ?
+								_best_tree->second : nullptr;
+				best_tree = _insert_get_best_tree(rule, mask, best_tree);
+				best_tree->insert(rule);
+				_insert_after(rule, mask, best_tree);
+			}
 		} else {
-			best_tree = _insert_get_best_tree(rule, mask, best_tree);
+			// parallel
+			CompatibilityCheckTask task[MAX_BATCH_SIZE];
+			size_t task_cnt = distribute_rule_to_tasks(rules, rules_cnt, task);
+			for (size_t i = 0; i < task_cnt; i++) {
+				// O(d*w + 1 + d log n)
+				task[i].try_lookup(thread_pool, mask_to_tree);
+			}
+
+			// now we have found the best matching tree by heuristic if exists
+			for (size_t i = 0; i < task_cnt; i++) {
+				CompatibilityCheckTask & t = task[i];
+				while (not t.done)
+					;
+				// it the the tree for the rule was not found it is
+				// insert in to smallest compatible tree
+				for (size_t i = 0; i < t.rules_cnt; i++) {
+					auto & r = t.rules[i];
+					Tree * best_tree = nullptr;
+					if (t.trees[i] == nullptr) {
+						// tree was not found and we have to search the smallest compatible tree
+						// to insert the rule
+						for (int i2 = TREE_CNT - 1; i2 >= 0; i2--) {
+							Tree * tr = trees[i2];
+							if (not tr->check_collision(r) or i2 == 0) {
+								best_tree = tr;
+								break;
+							}
+						}
+					} else {
+						// insert to tree resolved by task
+						best_tree = t.trees[i];
+					}
+					// [TODO] problem is that rules can be separated to groups
+					//        for spefic trees and inserted in batches because
+					//        of the changes of trees
+					// O(d log n)
+					best_tree->insert(r);
+					_insert_after(r, t.masks[i], best_tree);
+				}
+			}
 		}
-		best_tree->insert(rule);
-		_insert_after(rule, mask, best_tree);
+
 	}
 
 	void remove(const Rule & rule) {
@@ -320,7 +329,6 @@ public:
 		for (size_t i = 0; i < TREE_CNT; i++) {
 			trees[i] = new Tree(natural_field_order);
 		}
-
 	}
 
 	std::vector<typename Tree::MemoryReport> get_memory_report() const {
@@ -339,7 +347,7 @@ public:
 		for (auto t : trees)
 			delete t;
 	}
-	// serialize graph to string in dot format
+// serialize graph to string in dot format
 	friend std::ostream & operator<<(std::ostream & str,
 			const FaRFilter & fil) {
 		str << "graph FaRFilter {" << std::endl;

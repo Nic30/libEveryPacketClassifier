@@ -8,11 +8,11 @@ ThreadPool::ThreadPool(size_t pool_size) :
 }
 
 ThreadPool::~ThreadPool() {
+	ios.stop();
 	try {
 		thread_grp.join_all();
 	} catch (const std::exception&) {
 	}
-	ios.stop();
 }
 
 bool ThreadPool::empty() {

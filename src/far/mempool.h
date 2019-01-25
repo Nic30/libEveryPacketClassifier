@@ -7,7 +7,7 @@
 /**
  * The template used override the new/delete operators to use statically callocated memory
  **/
-template<typename T, std::size_t ITEM_CNT>
+template<typename T, std::size_t ITEM_CNT, bool THREAD_SAFE>
 class StaticMempool final {
 
 	// Singly Linked List node
@@ -26,7 +26,7 @@ class StaticMempool final {
 	static constexpr auto END = mempool.end();
 
 	// spinlock for allocation and deallocation
-	static __attribute__((aligned(64)))   std::atomic_flag lock;
+	static __attribute__((aligned(64)))    std::atomic_flag lock;
 
 	// staic constructor of this mempool which initializes the pointers
 	// in the singly linked list
@@ -40,12 +40,15 @@ class StaticMempool final {
 	}
 
 	static constexpr void acquire_lock() {
-		while (lock.test_and_set(std::memory_order_acquire))
-			// acquire lock
-			;// spin
+		if (THREAD_SAFE) {
+			while (lock.test_and_set(std::memory_order_acquire))
+				// acquire lock
+				;// spin
+		}
 	}
 	static constexpr void release_lock() {
-		lock.clear(std::memory_order_release);
+		if (THREAD_SAFE)
+			lock.clear(std::memory_order_release);
 	}
 public:
 
@@ -92,26 +95,26 @@ public:
 };
 
 // static declarations for StaticMempool
-template<typename T, std::size_t ITEM_CNT>
-std::array<typename StaticMempool<T, ITEM_CNT>::Item, ITEM_CNT> StaticMempool<T,
-		ITEM_CNT>::mempool;
+template<typename T, std::size_t ITEM_CNT, bool THREAD_SAFE>
+std::array<typename StaticMempool<T, ITEM_CNT, THREAD_SAFE>::Item, ITEM_CNT> StaticMempool<T,
+		ITEM_CNT, THREAD_SAFE>::mempool;
 
-template<typename T, std::size_t ITEM_CNT>
-typename StaticMempool<T, ITEM_CNT>::Item * StaticMempool<T, ITEM_CNT>::m_first_free(
+template<typename T, std::size_t ITEM_CNT, bool THREAD_SAFE>
+typename StaticMempool<T, ITEM_CNT, THREAD_SAFE>::Item * StaticMempool<T, ITEM_CNT, THREAD_SAFE>::m_first_free(
 		nullptr);
 
-template<typename T, std::size_t ITEM_CNT>
-std::atomic_flag StaticMempool<T, ITEM_CNT>::lock = ATOMIC_FLAG_INIT;
+template<typename T, std::size_t ITEM_CNT, bool THREAD_SAFE>
+std::atomic_flag StaticMempool<T, ITEM_CNT, THREAD_SAFE>::lock = ATOMIC_FLAG_INIT;
 
-template<typename T, std::size_t object_cnt>
+template<typename T, std::size_t object_cnt, bool THREAD_SAFE=false>
 class ObjectWithStaticMempool {
 public:
-	static void* operator new(__attribute__((unused))         std::size_t sz) {
-		return StaticMempool<T, object_cnt>::get();
+	static void* operator new(__attribute__((unused))          std::size_t sz) {
+		return StaticMempool<T, object_cnt, THREAD_SAFE>::get();
 	}
 
 	static void operator delete(void* ptr) {
-		StaticMempool<T, object_cnt>::release(ptr);
+		StaticMempool<T, object_cnt, THREAD_SAFE>::release(ptr);
 	}
 	static void* operator new[](std::size_t count) = delete;
 };

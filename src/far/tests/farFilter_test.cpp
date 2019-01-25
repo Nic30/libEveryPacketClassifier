@@ -11,8 +11,8 @@
 #include "IO/InputReader.h"
 
 using Filter = FaRFilter<uint32_t, unsigned, 5>;
-using Filter8c = FaRFilter<uint32_t, unsigned, 5, 2>;
-const int N = 2;
+using Filter8c = FaRFilter<uint32_t, unsigned, 5, 16>;
+const int N = 1;
 
 BOOST_AUTO_TEST_SUITE( farFilter_testsuite )
 
@@ -20,16 +20,17 @@ BOOST_AUTO_TEST_CASE( add_100_rules ) {
 	Filter t;
 	//auto fn = "tests/rulesets/acl1_100";
 	//auto fn =  "../classbench-ng/generated/fw1_2000";
-	auto fn =  "../classbench-ng/generated/acl1_10000";
+	auto fn = "../classbench-ng/generated/acl1_10000";
 
 	auto rules = InputReader::ReadFilterFile(fn);
 
 	auto start_time = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < N; i++) {
 
-		for (auto & r : rules) {
-			t.insert(r);
-		}
+		t.insert(rules);
+		std::ofstream myfile("far_100_seq.dot");
+		myfile << t << std::endl;
+		myfile.close();
 		for (auto & r : rules) {
 			t.remove(r);
 		}
@@ -51,15 +52,16 @@ BOOST_AUTO_TEST_CASE( add_100_rules_8c ) {
 	Filter8c t;
 	//auto fn = "tests/rulesets/acl1_100";
 	//auto fn =  "../classbench-ng/generated/fw1_2000";
-	auto fn =  "../classbench-ng/generated/acl1_10000";
+	auto fn = "../classbench-ng/generated/acl1_10000";
 
 	auto rules = InputReader::ReadFilterFile(fn);
 
 	auto start_time = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < N; i++) {
-		for (auto & r : rules) {
-			t.insert(r);
-		}
+		t.insert(rules);
+		std::ofstream myfile("far_100_par.dot");
+		myfile << t << std::endl;
+		myfile.close();
 		for (auto & r : rules) {
 			t.remove(r);
 		}
