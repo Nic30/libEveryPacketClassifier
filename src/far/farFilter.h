@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <limits>
 #include <boost/range/adaptor/reversed.hpp>
-
+#include <boost/lockfree/queue.hpp>
 
 #include "../ElementaryClasses.h"
 #include "partitionSortTree.h"
@@ -22,8 +22,7 @@
  **/
 template<typename dim_t, typename rule_id_t, size_t DIM_CNT,
 		size_t UPDATE_THR_CNT = 0, size_t TREE_CNT = 16, size_t MAX_TREE_SIZE =
-				std::numeric_limits<uint16_t>::max(), size_t MAX_BATCH_SIZE =
-				32>
+				std::numeric_limits<uint16_t>::max(), size_t MAX_BATCH_SIZE = 32>
 class FaRFilter {
 	// type of the tree used for classification
 	using Tree = PartitionSortTree<dim_t, rule_id_t, DIM_CNT, MAX_TREE_SIZE>;
@@ -67,8 +66,6 @@ class FaRFilter {
 	using mask_to_tree_map_t = std::unordered_map<mask_t, Tree *, mask_hasher, mask_eq>;
 	mask_to_tree_map_t mask_to_tree;
 
-	ThreadPool thread_pool;
-
 	class CompatibilityCheckTask {
 	public:
 		const mask_to_tree_map_t * mask_to_tree;
@@ -78,7 +75,7 @@ class FaRFilter {
 		mask_t masks[MAX_CMD_PER_TASK];
 		bool colliding[MAX_CMD_PER_TASK];
 		size_t rules_cnt;
-		__attribute__((aligned(64)))  std::atomic<bool> done;
+		__attribute__((aligned(64)))    std::atomic<bool> done;
 
 		CompatibilityCheckTask() :
 				mask_to_tree(nullptr), rules(nullptr), rules_cnt(0), done(false) {
@@ -104,15 +101,24 @@ class FaRFilter {
 				insert_compatible[tree_indexes[i]] = not colliding[i];
 		}
 
-		constexpr bool try_lookup(ThreadPool & thread_pool,
-				const mask_to_tree_map_t & _mask_to_tree) {
-			mask_to_tree = &_mask_to_tree;
-			boost::function<void()> job(
-					boost::bind(&CompatibilityCheckTask::try_lookup_local,
-							this));
-			return thread_pool.run_job(job);
-		}
 	};
+
+	ThreadPool thread_pool;
+	boost::lockfree::queue<CompatibilityCheckTask*> task_queue;
+	//std::queue<CompatibilityCheckTask*> task_queue;
+
+	constexpr void schedule_lookup_task(CompatibilityCheckTask & t) {
+		t.mask_to_tree = &mask_to_tree;
+		task_queue.push(&t);
+	}
+	void update_thread_entrypoint() {
+		CompatibilityCheckTask * t;
+		while (true) {
+			while (not task_queue.pop(t))
+				;
+			t->try_lookup_local();
+		}
+	}
 
 	/*
 	 * Extract mask from the rule
@@ -274,7 +280,7 @@ public:
 			size_t task_cnt = distribute_rule_to_tasks(rules, rules_cnt, task);
 			for (size_t i = 0; i < task_cnt; i++) {
 				// O(d*w + 1 + d log n)
-				task[i].try_lookup(thread_pool, mask_to_tree);
+				schedule_lookup_task(task[i]);
 			}
 
 			// now we have found the best matching tree by heuristic if exists
@@ -321,13 +327,19 @@ public:
 	}
 
 	FaRFilter() :
-			thread_pool(UPDATE_THR_CNT) {
+			thread_pool(UPDATE_THR_CNT), task_queue(128 * UPDATE_THR_CNT) {
 		typename Tree::value_type natural_field_order;
 		for (size_t i = 0; i < DIM_CNT; i++)
 			natural_field_order[i] = i;
 
 		for (size_t i = 0; i < TREE_CNT; i++) {
 			trees[i] = new Tree(natural_field_order);
+		}
+		for (size_t i = 0; i < UPDATE_THR_CNT; i++) {
+			boost::function<void()> job(
+					boost::bind(&FaRFilter::update_thread_entrypoint, this));
+			while (not thread_pool.run_job(job))
+				;
 		}
 	}
 
@@ -341,7 +353,6 @@ public:
 		}
 		return res;
 	}
-	;
 
 	~FaRFilter() {
 		for (auto t : trees)
