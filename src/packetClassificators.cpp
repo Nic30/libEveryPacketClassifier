@@ -17,6 +17,7 @@
 #include "IO/OutputWriter.h"
 #include "OVS/TupleSpaceSearch.h"
 #include "PartitionSort/PartitionSort.h"
+#include "pcv/pcv.h"
 #include "Simulation.h"
 #include "TupleMerge/TupleMergeOffline.h"
 #include "Utilities/MapExtensions.h"
@@ -50,6 +51,8 @@ ClassifierSet ParseClassifierName(const string& line,
 			classifiers["TupleMergeOnline"] = new TupleMergeOnline(args);
 		} else if (c == "TupleMergeOffline") {
 			classifiers["TupleMergeOffline"] = new TupleMergeOffline(args);
+		} else if (c == "pcv") {
+			classifiers["pcv"] = new Pcv();
 		} else {
 			printf("Unknown ClassifierTests: %s\n", c.c_str());
 			exit(EINVAL);
