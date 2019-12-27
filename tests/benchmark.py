@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from functools import lru_cache
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
-BIN = os.path.join(ROOT, "Debug/packetClassificators")
+BIN = os.path.join(ROOT, "build/default/src/packetClassificators")
 
 RULESET_ROOT = os.path.join(ROOT, "../classbench-ng/generated/")
 ACL1s = [os.path.join(RULESET_ROOT, "acl1_%d" % i)
@@ -30,6 +30,7 @@ ALGS = [
     "BitVector",
     "TupleSpaceSearch",
     "TupleMergeOnline",
+    "pcv"
     # "TupleMergeOffline",
 ]
 
@@ -112,7 +113,7 @@ if __name__ == "__main__":
                 *FW1s]
     result_dir = os.path.join(ROOT, "results")
     
-    # run_classifications(RULESETS, ALGS, result_dir)
+    run_classifications(RULESETS, ALGS, result_dir)
     size_of_ruleset = "Number of rules"
     generate_graphs(result_dir, "Size(bytes)", 'Memory consuptions for {alg}', '{alg}_mem.png',
                      "Size [B]", size_of_ruleset)
