@@ -31,6 +31,8 @@
 #include <unordered_map>
 #include <algorithm>
 #include <fstream>
+
+
 struct TupleTable {
 public:
 	TupleTable(const std::vector<int>& dims, const std::vector<unsigned int>& lengths, const Rule& r) : dims(dims), lengths(lengths) {

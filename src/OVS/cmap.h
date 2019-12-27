@@ -14,8 +14,7 @@
 * limitations under the License.
 */
 
-#ifndef CMAP_H
-#define CMAP_H 1
+#pragma once
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -115,14 +114,14 @@ the STRUCT object. */
     ((OBJECT) = NULL, ASSIGN_CONTAINER(OBJECT, POINTER, MEMBER))
 
 
+
 /* A concurrent hash map node, to be embedded inside the data structure being
 * mapped.
 *
 * All nodes linked together on a chain have exactly the same hash value. */
 struct cmap_node {
-	
-	cmap_node(unsigned int key) : key(key), next(nullptr) {  }
-	cmap_node(const Rule& r) : priority(r.priority), rule_ptr(std::make_shared<Rule>(r)), next(nullptr){ }
+	cmap_node(unsigned int key): key(key), next(nullptr) {  }
+	cmap_node(const Rule& r): priority(r.priority), rule_ptr(std::make_shared<Rule>(r)), next(nullptr){ }
 	unsigned int key;
 	int priority;
 	std::shared_ptr<Rule> rule_ptr;
@@ -347,4 +346,3 @@ int cmap_largest_chain(const struct cmap* cmap);
 * Added by James Daly
 */
 int cmap_array_size(const struct cmap* cmap);
-#endif /* cmap.h */

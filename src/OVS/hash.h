@@ -13,17 +13,13 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#ifndef HASH_H
-#define HASH_H 1
+#pragma once
+
 
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 	typedef union {
 		uint32_t u32[4];
@@ -180,7 +176,7 @@ extern "C" {
 #else /* __SSE4_2__ && __x86_64__ */
 #include <smmintrin.h>
 
-	static inline uint32_t HashAdd(uint32_t hash, uint32_t data)
+	static inline uint32_t hash_add(uint32_t hash, uint32_t data)
 	{
 		return _mm_crc32_u32(hash, data);
 	}
@@ -207,7 +203,7 @@ extern "C" {
 	static inline uint32_t
 		hash_words_inline(const uint32_t p_[], size_t n_words, uint32_t basis)
 	{
-		const uint64_t *p = (const void *)p_;
+		const uint64_t *p = (const uint64_t *)p_;
 		uint64_t hash1 = basis;
 		uint64_t hash2 = 0;
 		uint64_t hash3 = n_words;
@@ -355,9 +351,3 @@ extern "C" {
 		const uint32_t P1 = 0xe90f1258;   /* This is hash_int(2, 0). */
 		return (x ? P0 : P1) ^ hash_rot(basis, 1);
 	}
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* hash.h */

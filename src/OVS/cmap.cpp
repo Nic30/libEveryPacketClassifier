@@ -188,8 +188,6 @@ size_t cache_line_size() {
 /* An entry is an int and a pointer: 8 bytes on 32-bit, 12 bytes on 64-bit. */
 
 
-
-
 //sorrachai's platform
 #define CACHE_LINE_SIZE 64
 
