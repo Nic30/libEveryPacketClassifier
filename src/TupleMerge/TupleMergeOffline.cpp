@@ -109,7 +109,7 @@ breakout:
 		Tuple tr;
 		PreferedTuple(r, tr);
 		if (table->CanInsert(tr)) {
-			if (table->NumCollisions(r) < collideLimit) {
+			if ((int)table->NumCollisions(r) < collideLimit) {
 				bool ignore;
 				table->Insertion(r, ignore);
 				assignments[r.priority] = table;

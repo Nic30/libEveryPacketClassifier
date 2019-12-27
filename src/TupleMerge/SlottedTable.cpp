@@ -251,7 +251,7 @@ namespace TupleMergeUtils {
 }
 
 inline Tuple AddressOfRule(const Rule& r) {
-	Tuple res = {r.prefix_length[0], r.prefix_length[1]};
+	Tuple res = {(int)r.prefix_length[0], (int)r.prefix_length[1]};
 	return res;
 }
 

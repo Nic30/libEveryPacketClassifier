@@ -88,7 +88,7 @@ public:
 	
 	bool CanInsert(const TupleMergeUtils::Tuple& tuple) const {
 		for (size_t i = 0; i < dims.size(); i++) {
-			if (lengths[i] > tuple[dims[i]])
+			if ((int)lengths[i] > tuple[dims[i]])
 				return false;
 		}
 		return true;
