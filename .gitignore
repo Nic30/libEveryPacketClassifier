@@ -10,3 +10,5 @@ results
 # eclise project
 /Debug/
 /build/
+.project
+.pydevproject
