@@ -11,7 +11,7 @@
 #include "IO/InputReader.h"
 
 using Filter = FaRFilter<uint32_t, unsigned, 5>;
-using Filter8c = FaRFilter<uint32_t, unsigned, 5, 16>;
+using Filter8c = FaRFilter<uint32_t, unsigned, 5, 4>;
 const int N = 1;
 
 BOOST_AUTO_TEST_SUITE( farFilter_testsuite )
