@@ -84,7 +84,8 @@ def generate_graphs(result_dir, algs, ruleset_files, key,
                     title, filename, ylabel, xlabel):
     # {salg_name: {number_of_rule: sizes}}
     data = {}
-    for alg, ruleset, nominal_rule_cnt, rule_cnt, results in load_data(result_dir, algs, ruleset_files):
+    for alg, ruleset, nominal_rule_cnt, rule_cnt, results in load_data(
+            result_dir, algs, ruleset_files):
         try:
             alg_d = data[alg]
         except KeyError:
@@ -110,7 +111,7 @@ def generate_graphs(result_dir, algs, ruleset_files, key,
         x = [get_rulset_name(s) for s in size_series]
         y = [s[1] for s in size_series]
         ax1.plot(x, y, 'o', label=alg, marker="X")
-        #ax1.boxplot([x[1] for x in size_series])
+        # ax1.boxplot([x[1] for x in size_series])
         # plt.xticks([i for i in range(1, len(size_series) + 1)],
         #           [x[0] for x in size_series])
         plt.xlabel(xlabel)
@@ -123,7 +124,8 @@ def generate_summary_graph(result_dir, algs, ruleset_files, key, title,
                            filename, ylabel, xlabel, y_map, y_log_scale, figsize):
     # {salg_name: {number_of_rule: sizes}}
     data = {}
-    for alg, ruleset, nominal_rule_cnt, rule_cnt, results in load_data(result_dir, algs, ruleset_files):
+    for alg, ruleset, nominal_rule_cnt, rule_cnt, results in load_data(
+            result_dir, algs, ruleset_files):
         try:
             alg_d = data[alg]
         except KeyError:
@@ -179,24 +181,26 @@ class GraphGen():
                         key, title, filename, ylabel, xlabel)
 
     def generate_summary_graph(self, key, title, filename, ylabel,
-                               xlabel, y_map=lambda y: y, y_log_scale=False, figsize=(8, 6)):
+                               xlabel, y_map=lambda y: y, y_log_scale=False,
+                               figsize=(8, 6)):
         generate_summary_graph(self.RESULT_DIR, self.ALGS, self.RULESET_FILES,
-                               key, title, filename, ylabel, xlabel, y_map, y_log_scale, figsize)
+                               key, title, filename, ylabel, xlabel, y_map,
+                               y_log_scale, figsize)
 
 
 def main():
 
     ALGS = [
-        #"PartitionSort",
+        # "PartitionSort",
         "PriorityTupleSpaceSearch",
         "HyperSplit",
         "HyperCuts",
-        #"ByteCuts",
-        #"BitVector",
-        #"TupleSpaceSearch",
-        #"TupleMergeOnline",
+        # "ByteCuts",
+        # "BitVector",
+        # "TupleSpaceSearch",
+        # "TupleMergeOnline",
         "pcv",
-        #"TupleMergeOffline",
+        # "TupleMergeOffline",
     ]
 
     RULESET_FILES = []
@@ -205,7 +209,7 @@ def main():
                       # 4, 5
                       ]:
         for size in [100,
-                     #500,
+                     # 500,
                      1000,
                      # 2000,
                      5000,
@@ -215,11 +219,12 @@ def main():
             f = os.path.join(RULESET_ROOT, f"acl{ruleset_i}_{size}")
             RULESET_FILES.append(f)
 
-    for ruleset_i in [#1, 
-                      2,
-                      # 3,
-                      # 4, 5
-                      ]:
+    for ruleset_i in [
+            # 1,
+            2,
+            # 3,
+            # 4, 5
+            ]:
         for size in [100,
                      500,
                      1000,
@@ -230,12 +235,13 @@ def main():
                      ]:
             f = os.path.join(RULESET_ROOT, f"fw{ruleset_i}_{size}")
             RULESET_FILES.append(f)
-    for size in [#100,
-                 #500,
-                 1000,
-                 #5000,
-                 10000,
-                 ]:
+    for size in [
+            # 100,
+            # 500,
+            1000,
+            # 5000,
+            10000,
+            ]:
         f = os.path.join(RULESET_ROOT, f"exact_{size}")
         RULESET_FILES.append(f)
 
@@ -243,8 +249,10 @@ def main():
 
     run_classifications(RULESET_FILES, ALGS, result_dir)
     gg_all = GraphGen(result_dir, RULESET_FILES, ALGS)
-    #gg_no_long_constr = GraphGen(result_dir, RULESET_FILES, [a for a in ALGS if a not in ["HyperSplit", "HyperCuts"]])
-    #gg_long_constr = GraphGen(result_dir, RULESET_FILES, ["HyperCuts", "HyperSplit",])
+    # gg_no_long_constr = GraphGen(result_dir, RULESET_FILES,
+    #                              [a for a in ALGS if a not in ["HyperSplit", "HyperCuts"]])
+    # gg_long_constr = GraphGen(result_dir, RULESET_FILES,
+    #                           ["HyperCuts", "HyperSplit",])
 
     gg_all.generate_graphs(
         "Size(bytes)",
@@ -267,7 +275,7 @@ def main():
     gg_all.generate_summary_graph(
         "ClassificationTime(s)",
         None,
-        #'Classification time (1M packets)',
+        # 'Classification time (1M packets)',
         'fig/summary_cls_time.png',
         'Classification time [s]',
         "Ruleset",
@@ -276,28 +284,28 @@ def main():
     gg_all.generate_summary_graph(
         "ConstructionTime(ms)",
         None,
-        #'Construction time',
+        # 'Construction time',
         'fig/summary_constr_time.png',
         "Construction time [ms]",
         "Ruleset",
         y_log_scale=True,
         figsize=(8, 4))
 
-    #gg_no_long_constr.generate_summary_graph(
-    #    "ConstructionTime(ms)",
-    #    'Construction time',
-    #    'fig/summary_constr_time_fast.png',
-    #    "Construction time [ms]",
-    #    "Ruleset",
-    #    y_log_scale=True)
-    #gg_long_constr.generate_summary_graph(
-    #    "ConstructionTime(ms)",
-    #    'Construction time',
-    #    'fig/summary_constr_time_slow.png',
-    #    "Construction time [s]",
-    #    "Ruleset",
-    #    y_map=lambda y: y/1000,
-    #    y_log_scale=True)
+    # gg_no_long_constr.generate_summary_graph(
+    #     "ConstructionTime(ms)",
+    #     'Construction time',
+    #     'fig/summary_constr_time_fast.png',
+    #     "Construction time [ms]",
+    #     "Ruleset",
+    #     y_log_scale=True)
+    # gg_long_constr.generate_summary_graph(
+    #     "ConstructionTime(ms)",
+    #     'Construction time',
+    #     'fig/summary_constr_time_slow.png',
+    #     "Construction time [s]",
+    #     "Ruleset",
+    #     y_map=lambda y: y/1000,
+    #     y_log_scale=True)
 
 
 if __name__ == "__main__":
