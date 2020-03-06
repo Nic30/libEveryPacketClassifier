@@ -17,7 +17,7 @@ using namespace std;
 
 
 class Pcv: public PacketClassifier {
-	using BTree = pcv::BTreeImp<pcv::_BTreeCfg<uint16_t, pcv::RuleValueInt, 7, 5000, 8>>;
+	using BTree = pcv::BTreeImp<pcv::_BTreeCfg<uint16_t, pcv::RuleValueInt, 7, 65535, 8>>;
 	using Classifier = pcv::PartitionSortClassifer<BTree, 64, 10>;
 	Classifier cls;
 
@@ -72,7 +72,10 @@ public:
 		};
 		cls.insert(r1);
 	}
-	Memory MemSizeBytes() const {}
+	Memory MemSizeBytes() const {
+		printf("warning unimplemented MemSizeBytes()\n");
+		return 0;
+	}
 
 	int MemoryAccess() const {
 		printf("warning unimplemented MemoryAccess()\n");
