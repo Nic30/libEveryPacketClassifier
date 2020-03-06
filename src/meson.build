@@ -36,6 +36,9 @@ srcs = [
 EXTRA_CXX_ARGS = [
 	'-std=c++17',
  	'-fopenmp',
+ 	'-m64',
+	'-march=haswell',
+	'-mavx2',
  	'-pg', '-no-pie'
  	#'-o3'
  ]
@@ -63,11 +66,10 @@ thread_dep = dependency('threads')
 cc = meson.get_compiler('c')
 libgomp = cc.find_library('gomp')
 
-
 main = executable('packetClassificators',
 	['packetClassificators.cpp', ],
 	link_with: [packetClassificatorsCommon],
-	dependencies: [libgomp, thread_dep, boost_thread],
+	dependencies: [libgomp, thread_dep, boost_thread, pcv_dep],
 	cpp_args: EXTRA_CXX_ARGS,
     c_args: EXTRA_C_ARGS,
     link_args: EXTRA_LINK_ARGS

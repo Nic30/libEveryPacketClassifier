@@ -14,8 +14,7 @@
 * limitations under the License.
 */
 
-#ifndef RANDOM_H
-#define RANDOM_H 1
+#pragma once
 
 #include <stddef.h>
 #include <stdint.h>
@@ -50,5 +49,3 @@ random_uint16(void)
 {
 	return Random::random_unsigned_int();
 }
-
-#endif /* random.h */

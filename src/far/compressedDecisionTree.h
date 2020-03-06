@@ -220,3 +220,7 @@ public:
 
 }__attribute__((aligned(64)));
 
+template<size_t DIM_CNT, typename rule_id_t = uint16_t,
+		typename node_value_t = uint16_t>
+constexpr rule_id_t CompressedDecisionTree<DIM_CNT, rule_id_t, node_value_t>::INVALID_RULE;
+
