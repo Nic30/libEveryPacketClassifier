@@ -39,14 +39,17 @@ EXTRA_CXX_ARGS = [
  	'-m64',
 	'-march=haswell',
 	'-mavx2',
- 	'-pg', '-no-pie'
- 	#'-o3'
- ]
+ 	#'-pg', '-no-pie',
+    #'-O3', '-DNDEBUG',
+	'-g',
+]
 EXTRA_C_ARGS = [
- 	'-pg', '-no-pie'
+ 	#'-pg', '-no-pie',
+    #'-O3', '-DNDEBUG',
+	'-g',
 ]
 EXTRA_LINK_ARGS = [
-    '-pg', '-no-pie'
+    #'-pg', '-no-pie'
 ]
 
 boost_thread = dependency('boost', modules: ['thread', 'system' ])
