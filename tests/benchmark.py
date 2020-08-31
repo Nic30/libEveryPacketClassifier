@@ -1,24 +1,26 @@
-import os
-from os import listdir
-from multiprocessing import Pool
-import json
-from subprocess import check_call
-from os.path import basename, isfile
-import matplotlib.pyplot as plt
 from functools import lru_cache
+import json
+from multiprocessing import Pool
+from os import listdir
+import os
+from os.path import basename, isfile
+from subprocess import check_call
+
+import matplotlib.pyplot as plt
+
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 BIN = os.path.join(ROOT, "build/default/src/packetClassificators")
-
 RULESET_ROOT = os.path.join(ROOT, "../classbench-ng/generated/")
-ACL1s = [os.path.join(RULESET_ROOT, "acl1_%d" % i)
-        for i in [100, 500, 1000, 2000,
-                  5000, 10000,  # 65000
+
+ACL1s = [os.path.join(RULESET_ROOT, "acl1_%d" % format_num(i))
+        for i in [100, 500, 1e3, 2e3,
+                  5e3, 10e3,  # 65e3
                   ]]
 
-FW1s = [os.path.join(RULESET_ROOT, "fw1_%d" % i)
+FW1s = [os.path.join(RULESET_ROOT, "fw1_%d" % format_num(i))
         for i in [100, 500, 1000, 2000,
-                  5000, 10000,  # 65000
+                  5e3, 10e3,  # 65e3
                   ]]
 
 ALGS = [
@@ -30,7 +32,7 @@ ALGS = [
     "BitVector",
     "TupleSpaceSearch",
     "TupleMergeOnline",
-    "pcv"
+    "pcv",
     # "TupleMergeOffline",
 ]
 
