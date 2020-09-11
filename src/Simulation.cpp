@@ -109,7 +109,7 @@ std::vector<Request> Simulator::SetupComputation(int num_packet, int num_insert,
 	
 	return sequence;
 }
-std::vector<int> Simulator::PerformOnlyPacketClassification(PacketClassifier& classifier, std::map<std::string, std::string>& summary) const {
+std::vector<int> Simulator::PerformOnlyPacketClassification(PacketClassifier& classifier, std::map<std::string, std::string>& summary, size_t trials) const {
 
 
 	std::chrono::time_point<std::chrono::steady_clock> start, end;
@@ -123,10 +123,9 @@ std::vector<int> Simulator::PerformOnlyPacketClassification(PacketClassifier& cl
 	printf("\tConstruction time: %f ms\n", elapsed_milliseconds.count());
 	summary["ConstructionTime(ms)"] = std::to_string(elapsed_milliseconds.count());
 
-	const int trials = 10;
 	std::chrono::duration<double> sum_time(0);
 	std::vector<int> results;
-	for (int t = 0; t < trials; t++) {
+	for (size_t t = 0; t < trials; t++) {
 		results.clear();
 		start = std::chrono::steady_clock::now();
 		for (auto const &p : packets) {

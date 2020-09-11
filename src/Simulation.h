@@ -138,7 +138,7 @@ public:
 	static int PerformPartitioning(PartitionPacketClassifier& ppc, const std::vector<Rule>& ruleset, std::map<std::string, std::string>& summary);
 
 	std::vector<Request> SetupComputation(int num_packet, int num_insert, int num_delete);
-	std::vector<int>  PerformOnlyPacketClassification(PacketClassifier& classifier, std::map<std::string, std::string>& summary) const;
+	std::vector<int>  PerformOnlyPacketClassification(PacketClassifier& classifier, std::map<std::string, std::string>& summary, size_t trials) const;
 	std::vector<int>  PerformPacketClassification( PacketClassifier& classifier, const std::vector<Request>& sequence, std::map<std::string, double>& trial) const;
 
 private:
