@@ -504,10 +504,7 @@ void RedBlackTree::destHelper(RedBlackTree_node* x) {
 
 RedBlackTree::~RedBlackTree() {
 	destHelper(root);
-	if (root) {
-		delete root;
-		root = nullptr;
-	}
+	root = nullptr;
 }
 
 void RedBlackTree::print() {
