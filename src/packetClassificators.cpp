@@ -62,10 +62,10 @@ ClassifierSet ParseClassifierName(const string& line,
 }
 
 vector<int> RunSimulatorClassificationTrial(Simulator& s, const string& name,
-		PacketClassifier& classifier, vector<map<string, string>>& data) {
+		PacketClassifier& classifier, vector<map<string, string>>& data, size_t trials) {
 	map<string, string> d = { { "Classifier", name } };
 	printf("%s\n", name.c_str());
-	auto r = s.PerformOnlyPacketClassification(classifier, d);
+	auto r = s.PerformOnlyPacketClassification(classifier, d, trials);
 	data.push_back(d);
 	return r;
 }
@@ -73,7 +73,8 @@ vector<int> RunSimulatorClassificationTrial(Simulator& s, const string& name,
 pair<vector<string>, vector<map<string, string>>> RunSimulatorOnlyClassification(
 		const unordered_map<string, string>& args,
 		const vector<Packet>& packets, const vector<Rule>& rules,
-		ClassifierSet classifiers, const string& outfile) {
+		ClassifierSet classifiers, const string& outfile,
+		size_t trials) {
 	std::cerr << "[INFO] Classification Simulation" << std::endl;
 	Simulator s(rules, packets);
 
@@ -84,7 +85,7 @@ pair<vector<string>, vector<map<string, string>>> RunSimulatorOnlyClassification
 
 	for (auto& pair : classifiers) {
 		RunSimulatorClassificationTrial(s, pair.first.c_str(), *pair.second,
-				data);
+				data, trials);
 	}
 
 	if (outfile != "") {
@@ -196,12 +197,13 @@ int main(int argc, char* argv[]) {
 	string filterFile = GetOrElse(args, "f", "");
 	string packetFile = GetOrElse(args, "p", "Auto");
 	string outputFile = GetOrElse(args, "o", "");
+	string trialsStr = GetOrElse(args, "r", "1");
 
 	string database = GetOrElse(args, "d", "");
 	bool doShuffle = GetBoolOrElse(args, "Shuffle", true);
 
 	//set by default
-	auto classifiers = ParseClassifierName(GetOrElse(args, "c", "HyperSplit"),
+	auto classifiers = ParseClassifierName(GetOrElse(args, "c", ""),
 			args);
 	string mode = GetOrElse(args, "m", "Classification");
 
@@ -212,6 +214,7 @@ int main(int argc, char* argv[]) {
 		std::cout << "\t-f <file> Filter File:" << std::endl;
 		std::cout << "\t-p <file> Packet File:" << std::endl;
 		std::cout << "\t-o <file> Output File:" << std::endl;
+		std::cout << "\t-r <num> number of repetitions for benchmark" << std::endl;
 		std::cout << "\t-c <classifier> Classifier:" << std::endl;
 		std::cout << "\t-m <mode> Classification Mode:" << std::endl;
 		return 0;
@@ -232,8 +235,9 @@ int main(int argc, char* argv[]) {
 	}
 
 	if (mode == "Classification") {
+		size_t trials = stoi(trialsStr);
 		RunSimulatorOnlyClassification(args, packets, rules, classifiers,
-				outputFile);
+				outputFile, trials);
 	} else if (mode == "Update") {
 		RunSimulatorUpdates(args, packets, rules, classifiers, outputFile, 1);
 	} else if (mode == "Validation") {
