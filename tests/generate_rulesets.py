@@ -71,7 +71,7 @@ def run_classbench(args):
 
 if __name__ == "__main__":
     counter = Value('i', 0)
-    with Pool(initializer=init, initargs=(counter,)) as pool:
+    with Pool(14, initializer=init, initargs=(counter,)) as pool:
         i = pool.map_async(run_classbench, tasks, chunksize=1)
         i.wait()
         print(i.get())
