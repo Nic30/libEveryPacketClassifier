@@ -19,7 +19,7 @@ select classifiers: c="PartitionSort,PriorityTuple". It is possible to run multi
 
 Try now (no space between = sign):
 
-./main f="fw1_seed_1.rules" c="PartitionSort,PriorityTuple" m="Classification" o="Output/64k_fw1_seed_1.csv"
+./main f="fw1_seed_1.rules" c="PartitionSort,PriorityTuple" m="Classification" o="Output/64k_fw1_seed_1.csv" r=10
 
 Note: 
 
