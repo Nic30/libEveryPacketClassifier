@@ -3,7 +3,7 @@
 using namespace std;
 
 void PartitionSort::ConstructClassifier(const vector<Rule>& rules) {
-	rb_selftest0();
+	//rb_selftest0();
 	this->rules.reserve(rules.size());
 	for (const auto& r : rules) {
 		InsertRule(r);
