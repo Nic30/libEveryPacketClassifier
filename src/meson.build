@@ -21,9 +21,6 @@ srcs = [
 	'Utilities/IntervalUtilities.cpp',
 	'Utilities/Tcam.cpp',
 	'Simulation.cpp',
-	'far/far.cpp',
-	'far/exceptions.cpp',
-	'far/threadPool.cpp',
 	'OVS/TupleSpaceSearch.cpp',
 	'OVS/cmap.cpp',
 	'PartitionSort/test_red_black_tree.cpp',
@@ -76,25 +73,4 @@ main = executable('packetClassificators',
 	cpp_args: EXTRA_CXX_ARGS,
     c_args: EXTRA_C_ARGS,
     link_args: EXTRA_LINK_ARGS
-    )
-
-far_tests = [
-	['fragmentedValue_test', 'Fragmented value Tests'],
-	#['llrbTree_test', 'Left Learning Red black tree Tests'], 
-	#['ruleGroupResolver_test', 'Rule group resolver Tests'],
-	# ['compressedDecisionTree_test', 'Tests for Compressed decision tree and its compiler'],
-	['partitinSortTree_test', 'Test for PartitionSort tree'],
-	['mempool_test', 'Test for mempool'],
-	['farFilter_test', 'Test for FarFilter'],
-]
-
-foreach t : far_tests
-	test_exe = executable(t[0],
-		['far/tests/' + t[0] + '.cpp'],
-		dependencies: [ boost_unittest, libgomp, thread_dep, boost_thread],
-		link_with: [packetClassificatorsCommon],
-		cpp_args: EXTRA_CXX_ARGS,
-        c_args: EXTRA_C_ARGS,
-        link_args: EXTRA_LINK_ARGS)
-	test(t[1], test_exe, workdir : meson.source_root())
-endforeach
+)
