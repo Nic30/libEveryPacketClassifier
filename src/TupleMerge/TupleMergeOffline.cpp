@@ -34,9 +34,7 @@ TupleMergeOffline::TupleMergeOffline(const unordered_map<string, string>& args) 
 }
 
 TupleMergeOffline::~TupleMergeOffline() {
-	for (auto table : tables) {
-		delete table;
-	}
+	// tables deleted in parent
 }
 
 void TupleMergeOffline::ConstructClassifier(const vector<Rule>& rules) {
