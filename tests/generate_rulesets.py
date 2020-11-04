@@ -18,27 +18,28 @@ def format_num(n):
 
 
 SIZES = [
-    100, 500,
-    1e3,
+    #100,
+    #500,
+    #1e3,
     2e3,
     5e3,
     10e3,
-    65e3,
-    100e3,
+    #65e3,
+    #100e3,
 ]
 SEEDS = [os.path.join(SEED_ROOT, s) for s in [
     "acl1_seed",
     "acl2_seed",
     "acl3_seed",
-    "acl4_seed",
-    "acl5_seed",
-    "fw1_seed",
-    "fw2_seed",
-    "fw3_seed",
-    "fw4_seed",
-    "fw5_seed",
-    "ipc1_seed",
-    "ipc2_seed",
+    #"acl4_seed",
+    #"acl5_seed",
+    #"fw1_seed",
+    #"fw2_seed",
+    #"fw3_seed",
+    #"fw4_seed",
+    #"fw5_seed",
+    #"ipc1_seed",
+    #"ipc2_seed",
 ]]
 
 counter = None
