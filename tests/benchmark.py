@@ -6,46 +6,16 @@ from multiprocessing import Pool, cpu_count
 from subprocess import check_call
 
 import matplotlib.pyplot as plt
-from generate_rulesets import format_num
-
-ROOT = os.path.join(os.path.dirname(__file__), "..")
-BIN = os.path.join(ROOT, "build/default/src/packetClassificators")
-RULESET_ROOT = os.path.join(ROOT, "../classbench-ng/generated/")
-
-ACL1s = [os.path.join(RULESET_ROOT, "acl1_%d" % format_num(i))
-        for i in [100, 500,
-                  1e3, 2e3,
-                  5e3, 10e3,
-                  # 65e3
-                  ]]
-
-FW1s = [os.path.join(RULESET_ROOT, "fw1_%d" % format_num(i))
-        for i in [100, 500,
-                  1e3, 2e3,
-                  5e3, 10e3,
-                  # 65e3
-                  ]]
-
-ALGS = [
-    "PartitionSort",
-    "PriorityTupleSpaceSearch",
-    "HyperSplit",
-    "HyperCuts",
-    "ByteCuts",
-    "BitVector",
-    "TupleSpaceSearch",
-    "TupleMergeOnline",
-    "pcv",
-    # "TupleMergeOffline",
-]
-
+from generate_rulesets import format_num, SEEDS, SIZES, OUT
 
 def run_benchmark(args):
     alg, ruleset, result_dir = args
     ruleset_name = basename(ruleset)
     result_file = os.path.join(result_dir, f"{alg}_{ruleset_name}")
     if os.path.isfile(result_file) and os.path.getsize(result_file) > 0:
+        print(f"+> {result_file} already generated")
         return result_file
+
     cmd = [BIN, f"c={alg}", f"f={ruleset}", f"o={result_file}"]
     print("+>" + " ".join(cmd))
     check_call(cmd)
@@ -56,17 +26,11 @@ def run_benchmark(args):
     # return res
 
 
-def run_classifications(rulesets, algs, result_dir):
+def run_classifications(benchmarks, result_dir):
     os.makedirs(result_dir, exist_ok=True)
 
-    benchmarks = [
-        (alg, ruleset, result_dir)
-        for alg in algs
-        for ruleset in rulesets
-    ]
-
     with Pool(cpu_count() // 2) as pool:
-        resutls = pool.map(run_benchmark, benchmarks)
+        pool.map(run_benchmark, benchmarks)
 
 
 # @lru_cache(maxsize=512)
@@ -89,7 +53,11 @@ def load_data(data_dir, algs, ruleset_files):
             continue
         # if not isfile(f_path) or f_path.endswith(".png"):
         #    continue
-        alg, ruleset, nominal_rule_cnt = f.split("_")
+        f_split =  f.split("_")
+        alg = f_split[0]
+        ruleset = "_".join(f_split[1:-1])
+        nominal_rule_cnt = f_split[-1]
+
         rule_cnt = get_real_rule_cnt(ruleset, nominal_rule_cnt)
 
         with open(f_path) as fp:
@@ -215,108 +183,98 @@ class GraphGen():
                                y_log_scale, figsize)
 
 
-def main():
+#ALGS = [
+#    # "PartitionSort",
+#    "PriorityTupleSpaceSearch",
+#    #"HyperSplit",
+#    #"HyperCuts",
+#    # "ByteCuts",
+#    # "BitVector",
+#    # "TupleSpaceSearch",
+#    # "TupleMergeOnline",
+#    "pcv",
+#    # "TupleMergeOffline",
+#]
 
-    ALGS = [
-        # "PartitionSort",
-        "PriorityTupleSpaceSearch",
-        "HyperSplit",
-        "HyperCuts",
-        # "ByteCuts",
-        # "BitVector",
-        # "TupleSpaceSearch",
-        # "TupleMergeOnline",
-        "pcv",
-        # "TupleMergeOffline",
-    ]
 
-    RULESET_FILES = []
-    for ruleset_i in [1, 2,
-                      # 3,
-                      # 4, 5
-                      ]:
-        for size in [100,
-                     # 500,
-                     1000,
-                     # 2000,
-                     5000,
-                     # 10000,
-                     # 65000
-                     ]:
-            f = os.path.join(RULESET_ROOT, f"acl{ruleset_i}_{size}")
-            RULESET_FILES.append(f)
+ROOT = os.path.join(os.path.dirname(__file__), "..")
+BIN = os.path.join(ROOT, "build/meson.debug.linux.x86_64/src/packetClassificators")
+RULESET_ROOT = os.path.join(ROOT, "../classbench-ng/generated/")
 
-    for ruleset_i in [
-            # 1,
-            2,
-            # 3,
-            # 4, 5
-            ]:
-        for size in [100,
-                     500,
-                     1000,
-                     # 2000,
-                     5000,
-                     # 10000,
-                     # 65000
-                     ]:
-            f = os.path.join(RULESET_ROOT, f"fw{ruleset_i}_{size}")
-            RULESET_FILES.append(f)
-    for size in [
-            # 100,
-            # 500,
-            1000,
-            # 5000,
-            10000,
-            ]:
-        f = os.path.join(RULESET_ROOT, f"exact_{size}")
+
+ALGS = [
+    #"PartitionSort",
+    "PriorityTupleSpaceSearch",
+    "HyperSplit",
+    #"HyperCuts",
+    "ByteCuts",
+    "BitVector",
+    "TupleSpaceSearch",
+    "TupleMergeOnline",
+    "pcv",
+    # "TupleMergeOffline",
+]
+
+
+result_dir = os.path.join(ROOT, "results")
+RULESET_FILES = []
+for seed in SEEDS:
+    for size in SIZES:
+        size_str = format_num(size)
+        f = os.path.join(OUT, os.path.basename(seed) + "_" + format_num(size))
         RULESET_FILES.append(f)
 
-    result_dir = os.path.join(ROOT, "results")
 
-    run_classifications(RULESET_FILES, ALGS, result_dir)
-    gg_all = GraphGen(result_dir, RULESET_FILES, ALGS)
+benchmarks = [
+    (alg, ruleset, result_dir)
+    for alg in ALGS
+    for ruleset in RULESET_FILES
+]
+
+def main():
+    run_classifications(benchmarks, result_dir)
+    #gg_all = GraphGen(result_dir, RULESET_FILES, ALGS)
     # gg_no_long_constr = GraphGen(result_dir, RULESET_FILES,
     #                              [a for a in ALGS if a not in ["HyperSplit", "HyperCuts"]])
     # gg_long_constr = GraphGen(result_dir, RULESET_FILES,
     #                           ["HyperCuts", "HyperSplit",])
 
-    gg_all.generate_graphs(
-        "Size(bytes)",
-        'Memory consuptions for {alg}',
-        'fig/{alg}_mem.png',
-        "Size [B]",
-        "Ruleset")
-    gg_all.generate_graphs(
-        "ConstructionTime(ms)",
-        'Construction time for {alg}',
-        'fig/{alg}_constr_time.png',
-        "Construction time [ms]",
-        "Ruleset")
-    gg_all.generate_graphs(
-        "ClassificationTime(s)",
-        'Classification time for {alg} (1M packets)',
-        'fig/{alg}_cls_time.png',
-        'Classification time [s]',
-        "Ruleset")
-    gg_all.generate_summary_graph(
-        "ClassificationTime(s)",
-        None,
-        # 'Classification time (1M packets)',
-        'fig/summary_cls_time.png',
-        'Classification time [s]',
-        "Ruleset",
-        y_log_scale=True,
-        figsize=(8, 4))
-    gg_all.generate_summary_graph(
-        "ConstructionTime(ms)",
-        None,
-        # 'Construction time',
-        'fig/summary_constr_time.png',
-        "Construction time [ms]",
-        "Ruleset",
-        y_log_scale=True,
-        figsize=(8, 4))
+    #gg_all.generate_graphs(
+    #    "Size(bytes)",
+    #    'Memory consuptions for {alg}',
+    #    'fig/{alg}_mem.png',
+    #    "Size [B]",
+    #    "Ruleset")
+    #gg_all.generate_graphs(
+    #    "ConstructionTime(ms)",
+    #    'Construction time for {alg}',
+    #    'fig/{alg}_constr_time.png',
+    #    "Construction time [ms]",
+    #    "Ruleset")
+    #gg_all.generate_graphs(
+    #    "ClassificationTime(s)",
+    #    'Classification time for {alg} (1M packets)',
+    #    'fig/{alg}_cls_time.png',
+    #    'Classification time [s]',
+    #    "Ruleset")
+    #gg_all.generate_summary_graph(
+    #    "ClassificationTime(s)",
+    #    None,
+    #    # 'Classification time (1M packets)',
+    #    'fig/summary_cls_time.png',
+    #    'Classification time [s]',
+    #    "Ruleset",
+    #    y_log_scale=True,
+    #    figsize=(8, 4))
+    #gg_all.generate_summary_graph(
+    #    "ConstructionTime(ms)",
+    #    None,
+    #    # 'Construction time',
+    #    'fig/summary_constr_time.png',
+    #    "Construction time [ms]",
+    #    "Ruleset",
+    #    y_log_scale=True,
+    #    figsize=(8, 4))
 
     # gg_no_long_constr.generate_summary_graph(
     #     "ConstructionTime(ms)",
