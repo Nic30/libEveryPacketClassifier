@@ -5,20 +5,21 @@ from pathlib import Path
 
 CLASSBENCH_ROOT = os.path.join(os.path.dirname(__file__), "..", "..", "classbench-ng")
 CLASSBENCH = os.path.join(os.path.dirname(__file__), "..", "..", "classbench-ng", "classbench")
+EXACT_MATCH_RULE_GEN = os.path.join(os.path.dirname(__file__), "..", "..", "pclass-vectorized/build/default/benchmarks/exact_match_rule_gen")
 RULESET_ROOT = os.path.join(CLASSBENCH_ROOT, "generated/")
 SEED_ROOT = os.path.join(CLASSBENCH_ROOT, "vendor", "parameter_files")
 OUT = os.path.join(CLASSBENCH_ROOT, "generated")
 
 
 def format_num(n):
-    for i, unit in [(1e3, "K"), (1e6, "M"), (1e9, "G")]:
+    for i, unit in reversed([(1e3, "K"), (1e6, "M"), (1e9, "G")]):
         if n >= int(i):
             return "%d%s" % (n // i, unit)
     return "%d" % (n)
 
 
 SIZES = [
-    #100,
+    # 100,
     #500,
     #1e3,
     2e3,
@@ -26,11 +27,13 @@ SIZES = [
     10e3,
     #65e3,
     #100e3,
+    #1e3, 10e3, 100e3, 1e6, 10e6
 ]
 SEEDS = [os.path.join(SEED_ROOT, s) for s in [
+    #"exact",
     "acl1_seed",
     "acl2_seed",
-    "acl3_seed",
+    #"acl3_seed",
     #"acl4_seed",
     #"acl5_seed",
     #"fw1_seed",
@@ -69,6 +72,23 @@ def run_classbench(args):
         with counter.get_lock():
             counter.value += 1
 
+def run_exact_gen(args):
+    global counter
+    (seed, size) = args
+    # += operation is not atomic, so we need to get a lock:
+
+    res_f = os.path.join(OUT, "exact_" + format_num(size))
+    res_f_path = Path(res_f)
+    if not res_f_path.is_file() or res_f_path.stat().st_size == 0:
+        with open(res_f, "w") as f:
+            check_call([EXACT_MATCH_RULE_GEN, str(seed), str(size)], stdout=f, cwd=CLASSBENCH_ROOT)
+            with counter.get_lock():
+                counter.value += 1
+            print("%.2f%% %r" % (counter.value / len(SIZES) * 100, args))
+    else:
+        with counter.get_lock():
+            counter.value += 1
+
 
 if __name__ == "__main__":
     counter = Value('i', 0)
@@ -76,3 +96,9 @@ if __name__ == "__main__":
         i = pool.map_async(run_classbench, tasks, chunksize=1)
         i.wait()
         print(i.get())
+
+    #_tasks = [(0, size) for size in SIZES]
+    #with Pool( initializer=init, initargs=(counter,)) as pool:
+    #    i = pool.map_async(run_exact_gen, _tasks, chunksize=1)
+    #    i.wait()
+    #    print(i.get())
