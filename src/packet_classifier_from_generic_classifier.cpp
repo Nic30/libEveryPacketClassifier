@@ -16,6 +16,7 @@ std::chrono::duration<double> PacketClassifierFromGenericClassifier::ConstructCl
 			static_assert(sizeof f.low == sizeof rew_ra.low);
 			ofr.fields.push_back(rew_ra);
 		}
+		rule_db.push_back(ofr);
 	}
 
 	cls->build(rule_db);
