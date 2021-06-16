@@ -6,6 +6,7 @@ from multiprocessing import Pool, Value
 import os
 from pathlib import Path
 from subprocess import check_call
+import sys
 
 
 CLASSBENCH_ROOT = os.path.join(os.path.dirname(__file__), "..", "..", "classbench-ng")
@@ -34,6 +35,7 @@ SIZES = [
     65e3,
     100e3,
     # 1e3, 10e3, 100e3, 1e6, 10e6
+    # 100e3, 200e3, 300e3, 400e3, 500e3,
 ]
 SEEDS = [os.path.join(SEED_ROOT, s) for s in [
     # "exact",
@@ -72,13 +74,17 @@ def run_classbench(args):
         with open(res_f, "w") as f:
             print(f"Calling classbench generator for {seed} {size}")
             t0 = datetime.now()
-            check_call([CLASSBENCH, "generate", "v4", "--count=%d" % (size), seed], stdout=f, cwd=CLASSBENCH_ROOT)
+            try:
+                check_call([CLASSBENCH, "generate", "v4", "--count=%d" % (size), seed], stdout=f, cwd=CLASSBENCH_ROOT)
+            except Exception as e:
+                print(f"[ERROR] exact {seed} {size}", e, file=sys.stderr)
+
             t1 = datetime.now()
         with counter.get_lock():
             counter.value += 1
         print("%.2f%% %r" % (counter.value / len(tasks) * 100, args))
         with open(OUT_TIME_LOG, 'a+') as f:
-            print(f"classbench {seed} {size} {str(t1-t0):s}")
+            f.write(f"classbench {seed} {size} {str(t1-t0):s}")
 
     else:
         print(f"classbench {seed} {size} already exits")
@@ -97,7 +103,11 @@ def run_exact_gen(args):
         with open(res_f, "w") as f:
             print(f"Calling exactmatch generator for {seed} {size}")
             t0 = datetime.now()
-            check_call([EXACT_MATCH_RULE_GEN, str(seed), str(size)], stdout=f, cwd=CLASSBENCH_ROOT)
+            try:
+                check_call([EXACT_MATCH_RULE_GEN, str(seed), str(size)], stdout=f, cwd=CLASSBENCH_ROOT)
+            except Exception as e:
+                print(f"[ERROR] exact {seed} {size}", e, file=sys.stderr)
+
             t1 = datetime.now()
 
         with counter.get_lock():
@@ -105,7 +115,7 @@ def run_exact_gen(args):
 
         print("%.2f%% %r" % (counter.value / len(SIZES) * 100, args))
         with open(OUT_TIME_LOG, 'a+') as f:
-            print(f"classbench {seed} {size} {str(t1-t0):s}")
+            f.write(f"exact {seed} {size} {str(t1-t0):s}")
 
     else:
         print(f"exactmatch {seed} {size} already exits")
