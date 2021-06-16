@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+
 from mesonbuild.mesonmain import main
 import os
 import re

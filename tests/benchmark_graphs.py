@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 # This import registers the 3D projection, but is otherwise unused.
 import json
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import

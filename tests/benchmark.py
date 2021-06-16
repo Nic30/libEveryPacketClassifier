@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import json
 from os import listdir
 import os
@@ -183,19 +186,6 @@ class GraphGen():
                                key, title, filename, ylabel, xlabel, y_map,
                                y_log_scale, figsize)
 
-# ALGS = [
-#   "PartitionSort",
-#    "PriorityTupleSpaceSearch",
-#    #"HyperSplit",
-#    #"HyperCuts",
-#    # "ByteCuts",
-#    # "BitVector",
-#    "TupleSpaceSearch",
-#    "TupleMergeOnline",
-#    "pcv",
-#    # "TupleMergeOffline",
-# ]
-
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 
@@ -230,7 +220,7 @@ ALGS = [
     "pcv",
     # "TupleMergeOffline",
     "CutSplit",
-    "EffiCuts",
+    # "EffiCuts",
 ]
 
 result_dir = os.path.join(ROOT, "results")
