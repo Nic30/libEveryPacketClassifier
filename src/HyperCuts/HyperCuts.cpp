@@ -510,7 +510,7 @@ HyperCutsNode* HyperCutsHelper::CreateTree(const list<Rule*>& classifier) {
 	return root;
 }
 
-void HyperCuts::ConstructClassifier(const vector<Rule>& rules) {
+void HyperCuts::_ConstructClassifier(const vector<Rule>& rules) {
 	this->rules = rules;
 	SortRules(this->rules);
 	list<Rule*> rl;

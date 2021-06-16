@@ -12,3 +12,5 @@ results
 /build/
 .project
 .pydevproject
+.cproject
+.settings

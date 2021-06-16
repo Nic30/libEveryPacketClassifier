@@ -34,7 +34,7 @@ public:
 	TupleMergeOffline(const std::unordered_map<std::string, std::string>& args);
 	~TupleMergeOffline();
 
-	void ConstructClassifier(const std::vector<Rule>& rules) override;
+	void _ConstructClassifier(const std::vector<Rule>& rules) override;
 	
 private:
 	std::vector<Rule> SelectTable(const std::vector<Rule>& rules);

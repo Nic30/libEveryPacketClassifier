@@ -38,7 +38,7 @@ private:
 
 class HyperCuts : public PacketClassifier {
 public:
-	virtual void ConstructClassifier(const std::vector<Rule>& rules);
+	virtual void _ConstructClassifier(const std::vector<Rule>& rules);
 	virtual int ClassifyAPacket(const Packet& packet);
 	virtual void DeleteRule(size_t index) { 
 		fprintf(stderr, "Can't delete rules.\n");

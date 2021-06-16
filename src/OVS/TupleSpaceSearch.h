@@ -101,7 +101,7 @@ public:
 		}
 	}
 
-	void ConstructClassifier(const std::vector<Rule>& r);
+	void _ConstructClassifier(const std::vector<Rule>& r);
 	int ClassifyAPacket(const Packet& one_packet);
 	void DeleteRule(size_t i);
 	void InsertRule(const Rule& one_rule);

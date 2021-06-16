@@ -29,7 +29,7 @@ public:
 	BitVector();
 	~BitVector();
 
-	virtual void ConstructClassifier(const std::vector<Rule>& rules);
+	virtual void _ConstructClassifier(const std::vector<Rule>& rules);
 	virtual int ClassifyAPacket(const Packet& packet);
 
 	virtual void DeleteRule(size_t index) {
@@ -65,7 +65,7 @@ public:
 	BitVector64();
 	~BitVector64();
 
-	virtual void ConstructClassifier(const std::vector<Rule>& rules);
+	virtual void _ConstructClassifier(const std::vector<Rule>& rules);
 	virtual int ClassifyAPacket(const Packet& packet);
 
 	virtual void DeleteRule(size_t index) {

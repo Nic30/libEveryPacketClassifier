@@ -2,7 +2,7 @@
 #include "test_red_black_tree.h"
 using namespace std;
 
-void PartitionSort::ConstructClassifier(const vector<Rule>& rules) {
+void PartitionSort::_ConstructClassifier(const vector<Rule>& rules) {
 	//rb_selftest0();
 	this->rules.reserve(rules.size());
 	for (const auto& r : rules) {

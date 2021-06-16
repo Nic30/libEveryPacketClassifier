@@ -35,7 +35,7 @@ public:
 	virtual ~Pcv() {
 	}
 
-	void ConstructClassifier(const std::vector<Rule>& rules) {
+	void _ConstructClassifier(const std::vector<Rule>& rules) {
 		for (auto & r: rules) {
 			InsertRule(r);
 		}

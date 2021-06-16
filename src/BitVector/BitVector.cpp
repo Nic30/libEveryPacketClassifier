@@ -80,7 +80,7 @@ BitVector::~BitVector() {
 	}
 }
 
-void BitVector::ConstructClassifier(const std::vector<Rule>& rules) {
+void BitVector::_ConstructClassifier(const std::vector<Rule>& rules) {
 	this->rules.insert(this->rules.end(), rules.begin(), rules.end());
 	SortRules(this->rules);
 
@@ -149,7 +149,7 @@ BitVector64::~BitVector64() {
 	}
 }
 
-void BitVector64::ConstructClassifier(const std::vector<Rule>& rules) {
+void BitVector64::_ConstructClassifier(const std::vector<Rule>& rules) {
 	this->rules.insert(this->rules.end(), rules.begin(), rules.end());
 	SortRules(this->rules);
 
