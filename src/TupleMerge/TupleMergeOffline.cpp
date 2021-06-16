@@ -37,7 +37,7 @@ TupleMergeOffline::~TupleMergeOffline() {
 	// tables deleted in parent
 }
 
-void TupleMergeOffline::ConstructClassifier(const vector<Rule>& rules) {
+void TupleMergeOffline::_ConstructClassifier(const vector<Rule>& rules) {
 	this->rules = rules;
 	
 	vector<Rule> remain = rules;

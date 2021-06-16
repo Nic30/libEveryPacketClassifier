@@ -6,7 +6,7 @@
 class BruteForce : public PacketClassifier {
 public:
 	BruteForce(){}
-	void ConstructClassifier(const std::vector<Rule>& r) {
+	void _ConstructClassifier(const std::vector<Rule>& r) {
 		rules = r;
 		rules.reserve(100000);
 	}

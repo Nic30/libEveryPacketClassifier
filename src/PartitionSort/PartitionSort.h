@@ -14,7 +14,7 @@
 class PartitionSort: public PacketClassifier {
 
 public:
-	void ConstructClassifier(const std::vector<Rule>& rules);
+	void _ConstructClassifier(const std::vector<Rule>& rules);
 	/**
 	 * Walk sub-tress and use them for classification.
 	 */

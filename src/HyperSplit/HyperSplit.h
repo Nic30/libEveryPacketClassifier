@@ -25,7 +25,7 @@ public:
 		delete root;
 	}
 
-	void ConstructClassifier(const std::vector<Rule>& rules);
+	void _ConstructClassifier(const std::vector<Rule>& rules);
 	int ClassifyAPacket(const Packet& p);
 	void DeleteRule(size_t index);
 	void InsertRule(const Rule& r);

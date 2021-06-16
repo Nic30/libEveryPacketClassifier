@@ -9,7 +9,7 @@
 
 using namespace std;
 
-void HyperSplit::ConstructClassifier(const vector<Rule>& rules) {
+void HyperSplit::_ConstructClassifier(const vector<Rule>& rules) {
 	this->rules = rules;
 	root = SplitRules(bounds, this->rules, leafSize);
 }

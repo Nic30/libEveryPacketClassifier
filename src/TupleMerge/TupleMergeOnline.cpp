@@ -88,7 +88,7 @@ TupleMergeOnline::~TupleMergeOnline() {
 	}
 }
 
-void TupleMergeOnline::ConstructClassifier(const std::vector<Rule>& rules) {
+void TupleMergeOnline::_ConstructClassifier(const std::vector<Rule>& rules) {
 	for (const Rule& r : rules) {
 		InsertRule(r);
 	}

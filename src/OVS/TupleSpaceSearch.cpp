@@ -9,10 +9,10 @@
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -62,7 +62,7 @@ int TupleTable::WorstAccesses() const {
 }
 
 int TupleTable::ClassifyAPacket(const Packet& p)  {
-	
+
 	cmap_node * found_node = cmap_find(&map_in_tuple, HashPacket(p));
 	int priority = -1;
 	while (found_node != nullptr) {
@@ -126,7 +126,7 @@ uint32_t inline TupleTable::HashPacket(const Packet& p) const {
 	return hash;*/
 }
 
-void TupleSpaceSearch::ConstructClassifier(const std::vector<Rule>& r){
+void TupleSpaceSearch::_ConstructClassifier(const std::vector<Rule>& r){
 	/*int multiples = 5;
 	for (int i = 0; i < r[0].dim / multiples; i++) {
 		dims.push_back(i * multiples);
@@ -255,7 +255,7 @@ void PriorityTupleSpaceSearch::DeleteRule(size_t i) {
 		hit->second->Deletion(rules[i], priority_change);
 		if (hit->second->IsEmpty()) {
 			//destroy tuple and erase from the map
-			
+
 			all_priority_tuples.erase(hit);
 			hit->second->Destroy();
 			RetainInvaraintOfPriorityVector();

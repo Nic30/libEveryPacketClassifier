@@ -31,7 +31,16 @@ public:
 
 class PacketClassifier {
 public:
-	virtual void ConstructClassifier(const std::vector<Rule>& rules) = 0;
+	virtual std::chrono::duration<double> ConstructClassifier(const std::vector<Rule>& rules) {
+		std::chrono::time_point<std::chrono::steady_clock> start, end;
+		std::chrono::duration<double> elapsed_seconds;
+		start = std::chrono::steady_clock::now();
+		_ConstructClassifier(rules);
+		end = std::chrono::steady_clock::now();
+		elapsed_seconds = end - start;
+		return elapsed_seconds;
+	}
+	virtual void _ConstructClassifier(const std::vector<Rule>& rules) = 0;
 	virtual int ClassifyAPacket(const Packet& packet) = 0;
 	virtual void DeleteRule(size_t index) = 0;
 	virtual void InsertRule(const Rule& rule) = 0;
@@ -48,7 +57,7 @@ protected:
 	/**
 	 * Update query counters for performance analysis
 	 */
-	void QueryCountersUpdate(int query) { 
+	void QueryCountersUpdate(int query) {
 		packetHistogram[query]++;
 		queryCount += query;
 	}
@@ -60,7 +69,7 @@ private:
 
 class ListClassifier : public PacketClassifier {
 public:
-	virtual void ConstructClassifier(const std::vector<Rule>& rules) {
+	virtual void _ConstructClassifier(const std::vector<Rule>& rules) {
 		this->rules = rules;
 	}
 	virtual int ClassifyAPacket(const Packet& packet) {

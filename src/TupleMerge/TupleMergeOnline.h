@@ -36,7 +36,7 @@ public:
 	TupleMergeOnline(const std::unordered_map<std::string, std::string>& args);
 	~TupleMergeOnline();
 	
-	virtual void ConstructClassifier(const std::vector<Rule>& rules);
+	virtual void _ConstructClassifier(const std::vector<Rule>& rules);
 	virtual int ClassifyAPacket(const Packet& p);
 	virtual void DeleteRule(size_t index);
 	virtual void InsertRule(const Rule& r);

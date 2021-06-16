@@ -34,7 +34,7 @@ public:
 	ByteCutsClassifier(double dredgeFraction = 0.02, double turningPoint = 0.01, double minFrac = 0.75);
 	~ByteCutsClassifier();
 
-	virtual void ConstructClassifier(const std::vector<Rule>& rules);
+	virtual void _ConstructClassifier(const std::vector<Rule>& rules);
 	virtual int ClassifyAPacket(const Packet& packet);
 	virtual void DeleteRule(size_t index) {
 		printf("Can't delete rules.\n");

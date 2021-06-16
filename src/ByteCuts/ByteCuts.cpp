@@ -123,7 +123,7 @@ vector<Rule> ByteCutsClassifier::Separate(const vector<Rule>& rules, vector<Rule
 	return results;
 }
 
-void ByteCutsClassifier::ConstructClassifier(const std::vector<Rule>& rules) {
+void ByteCutsClassifier::_ConstructClassifier(const std::vector<Rule>& rules) {
 	this->rules = rules;
 	SortRules(this->rules);
 	

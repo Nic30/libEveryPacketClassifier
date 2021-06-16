@@ -28,6 +28,7 @@ srcs = [
 	'PartitionSort/red_black_tree.cpp',
 	'PartitionSort/PartitionSort.cpp',
 	'PartitionSort/SortableRulesetPartitioner.cpp',
+
 ]
 
 EXTRA_CXX_ARGS = [
@@ -67,7 +68,10 @@ cc = meson.get_compiler('c')
 libgomp = cc.find_library('gomp')
 
 main = executable('packetClassificators',
-	['packetClassificators.cpp', ],
+	[
+		'packetClassificators.cpp',
+		'packet_classifier_from_generic_classifier.cpp',
+	],
 	link_with: [packetClassificatorsCommon],
 	dependencies: [libgomp, thread_dep, boost_thread, pcv_dep, nuevomatch_dep],
 	cpp_args: EXTRA_CXX_ARGS,
