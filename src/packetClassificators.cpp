@@ -260,6 +260,9 @@ int main(int argc, char *argv[]) {
 	}
 
 	std::cerr << "[INFO] Done" << std::endl;
+	for (auto cls: classifiers) {
+		delete cls.second;
+	}
 	return 0;
 }
 
