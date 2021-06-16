@@ -190,7 +190,7 @@ std::vector<int> Simulator::PerformPacketClassification(
 		std::map<std::string, double> &trial) const {
 	if (available_pool.size() == 0) {
 		printf(
-				"Warning no avilable pool left: need to generate computation first\n");
+				"Warning no available pool left: need to generate computation first\n");
 		return std::vector<int>();
 	}
 
