@@ -8,6 +8,7 @@ from subprocess import check_call
 import matplotlib.pyplot as plt
 from generate_rulesets import format_num, SEEDS, SIZES, OUT
 
+
 def run_benchmark(args):
     alg, ruleset, result_dir = args
     ruleset_name = basename(ruleset)
@@ -53,7 +54,7 @@ def load_data(data_dir, algs, ruleset_files):
             continue
         # if not isfile(f_path) or f_path.endswith(".png"):
         #    continue
-        f_split =  f.split("_")
+        f_split = f.split("_")
         alg = f_split[0]
         ruleset = "_".join(f_split[1:-1])
         nominal_rule_cnt = f_split[-1]
@@ -182,8 +183,7 @@ class GraphGen():
                                key, title, filename, ylabel, xlabel, y_map,
                                y_log_scale, figsize)
 
-
-#ALGS = [
+# ALGS = [
 #   "PartitionSort",
 #    "PriorityTupleSpaceSearch",
 #    #"HyperSplit",
@@ -194,30 +194,44 @@ class GraphGen():
 #    "TupleMergeOnline",
 #    "pcv",
 #    # "TupleMergeOffline",
-#]
+# ]
 
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
-#BIN = os.path.join(ROOT, "build/meson.debug.linux.x86_64/src/packetClassificators")
-BIN = os.path.join(ROOT, "build/default/src/packetClassificators")
+
+
+# BIN = os.path.join(ROOT, "build/meson.debug.linux.x86_64/src/packetClassificators")
+def get_latest_folder(root):
+    latest = None
+    latest_time = None
+    for d in os.listdir(root):
+        p = os.path.join(root, d)
+        if os.path.isdir(p):
+            mtime = os.stat(p).st_mtime
+            if latest is None or mtime > latest_time:
+                latest = p
+                latest_time = mtime
+    assert latest is not None, ("directory", root, "was empty")
+    return latest
+
+
+BIN = os.path.join(get_latest_folder(os.path.join(ROOT, "build")), "src/packetClassificators")
 RULESET_ROOT = os.path.join(ROOT, "../classbench-ng/generated/")
 
-
 ALGS = [
-    #"PartitionSort",
-    #"PriorityTupleSpaceSearch",
+    # "PartitionSort",
+    # "PriorityTupleSpaceSearch",
     "HyperSplit",
-    #"HyperCuts",
-    #"ByteCuts",
-    #"BitVector",
+    # "HyperCuts",
+    # "ByteCuts",
+    # "BitVector",
     "TupleSpaceSearch",
     "TupleMergeOnline",
     "pcv",
     # "TupleMergeOffline",
-    # "CutSplit",
-    # "EffiCuts",
+    "CutSplit",
+    "EffiCuts",
 ]
-
 
 result_dir = os.path.join(ROOT, "results")
 RULESET_FILES = []
@@ -227,40 +241,40 @@ for seed in SEEDS:
         f = os.path.join(OUT, os.path.basename(seed) + "_" + format_num(size))
         RULESET_FILES.append(f)
 
-
 benchmarks = [
     (alg, ruleset, result_dir)
     for alg in ALGS
     for ruleset in RULESET_FILES
 ]
 
+
 def main():
     run_classifications(benchmarks, result_dir)
-    #gg_all = GraphGen(result_dir, RULESET_FILES, ALGS)
+    # gg_all = GraphGen(result_dir, RULESET_FILES, ALGS)
     # gg_no_long_constr = GraphGen(result_dir, RULESET_FILES,
     #                              [a for a in ALGS if a not in ["HyperSplit", "HyperCuts"]])
     # gg_long_constr = GraphGen(result_dir, RULESET_FILES,
     #                           ["HyperCuts", "HyperSplit",])
 
-    #gg_all.generate_graphs(
+    # gg_all.generate_graphs(
     #    "Size(bytes)",
     #    'Memory consuptions for {alg}',
     #    'fig/{alg}_mem.png',
     #    "Size [B]",
     #    "Ruleset")
-    #gg_all.generate_graphs(
+    # gg_all.generate_graphs(
     #    "ConstructionTime(ms)",
     #    'Construction time for {alg}',
     #    'fig/{alg}_constr_time.png',
     #    "Construction time [ms]",
     #    "Ruleset")
-    #gg_all.generate_graphs(
+    # gg_all.generate_graphs(
     #    "ClassificationTime(s)",
     #    'Classification time for {alg} (1M packets)',
     #    'fig/{alg}_cls_time.png',
     #    'Classification time [s]',
     #    "Ruleset")
-    #gg_all.generate_summary_graph(
+    # gg_all.generate_summary_graph(
     #    "ClassificationTime(s)",
     #    None,
     #    # 'Classification time (1M packets)',
@@ -269,7 +283,7 @@ def main():
     #    "Ruleset",
     #    y_log_scale=True,
     #    figsize=(8, 4))
-    #gg_all.generate_summary_graph(
+    # gg_all.generate_summary_graph(
     #    "ConstructionTime(ms)",
     #    None,
     #    # 'Construction time',
