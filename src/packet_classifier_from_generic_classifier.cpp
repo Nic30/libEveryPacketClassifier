@@ -11,7 +11,9 @@ std::chrono::duration<double> PacketClassifierFromGenericClassifier::ConstructCl
 	for (auto &r : rules) {
 		openflow_rule ofr;
 		ofr.priority = r.priority;
+		assert(r.range.size() == cls->get_supported_number_of_fields());
 		for (auto &f : r.range) {
+			assert(f.low <= f.high);
 			range rew_ra(f.low, f.high);
 			static_assert(sizeof f.low == sizeof rew_ra.low);
 			ofr.fields.push_back(rew_ra);
