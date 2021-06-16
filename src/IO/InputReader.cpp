@@ -10,6 +10,8 @@
 #include <functional>
 #include "InputReader.h"
 #include <regex>
+#include <set>
+#include "ElementaryClasses.h"
 
 using namespace std;
 
@@ -78,7 +80,7 @@ void InputReader::ReadIPRange(Range1d& IPrange,  unsigned int& prefix_length, co
 	for (int i = 0; i < 4; i++)
 		ptrange[i] = atoui(split_ip[i]);
 	mask = atoui(split_slash[1]);
-	
+
 	prefix_length = mask;
 
 	mask = 32 - mask;
@@ -198,7 +200,6 @@ void InputReader::LoadFilters(ifstream& fp, vector<Rule>& ruleset)
 vector<Rule> InputReader::ReadFilterFileClassBench(const string&  filename)
 {
 	//assume 5*rep fields
-
 	vector<Rule> rules;
 	ifstream column_counter(filename);
 	ifstream input_file(filename);
@@ -216,7 +217,7 @@ vector<Rule> InputReader::ReadFilterFileClassBench(const string&  filename)
 
 	int max_pri = rules.size() - 1;
 	for (size_t i = 0; i < rules.size(); i++) {
-		rules[i].priority = max_pri - i; 
+		rules[i].priority = max_pri - i;
 	}
 	/*for (int i = 0; i < 5; i++) {
 	set<interval> iv;
@@ -323,11 +324,10 @@ vector<Rule> InputReader::ReadFilterFileMSU(const string&  filename)
 }
 
 vector<Rule> InputReader::ReadFilterFile(const string&  filename) {
-
 	vector<Rule> res;
 	ifstream in(filename);
 	if (!in.is_open()) {
-		throw ifstream::failure(string("Couldnt open filter set file \"") + filename + "\"");
+		throw ifstream::failure(string("Couldn't open filter set file \"") + filename + "\"");
 	}
 
 	string content;
@@ -351,7 +351,7 @@ vector<Rule> InputReader::ReadFilterFile(const string&  filename) {
 		if (tokens.size() % 9 == 0) {
 			reps = tokens.size() / 9;
 		}
-		
+
 	    dim = reps * 5;
 	    res = ReadFilterFileClassBench(filename);
 	} else {
@@ -359,5 +359,18 @@ vector<Rule> InputReader::ReadFilterFile(const string&  filename) {
 		throw ifstream::failure(string("unknown input format please use either MSU format or ClassBench format (content[0]=='") + content[0] + "')");
 	}
 	in.close();
-	return res;
+
+
+	set<vector<Range1d>> seen_rule_ranges; // to make all rules unique
+	vector<Rule> res_tmp;
+	for (auto & r: res) {
+		if (seen_rule_ranges.find(r.range) != seen_rule_ranges.end()) {
+			// duplicit rule
+			continue;
+		}
+		res_tmp.push_back(r);
+		seen_rule_ranges.insert(r.range);
+	}
+
+	return res_tmp;
 }
