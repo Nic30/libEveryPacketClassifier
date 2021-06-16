@@ -184,35 +184,38 @@ class GraphGen():
 
 
 #ALGS = [
-#    # "PartitionSort",
+#   "PartitionSort",
 #    "PriorityTupleSpaceSearch",
 #    #"HyperSplit",
 #    #"HyperCuts",
 #    # "ByteCuts",
 #    # "BitVector",
-#    # "TupleSpaceSearch",
-#    # "TupleMergeOnline",
+#    "TupleSpaceSearch",
+#    "TupleMergeOnline",
 #    "pcv",
 #    # "TupleMergeOffline",
 #]
 
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
-BIN = os.path.join(ROOT, "build/meson.debug.linux.x86_64/src/packetClassificators")
+#BIN = os.path.join(ROOT, "build/meson.debug.linux.x86_64/src/packetClassificators")
+BIN = os.path.join(ROOT, "build/default/src/packetClassificators")
 RULESET_ROOT = os.path.join(ROOT, "../classbench-ng/generated/")
 
 
 ALGS = [
     #"PartitionSort",
-    "PriorityTupleSpaceSearch",
+    #"PriorityTupleSpaceSearch",
     "HyperSplit",
     #"HyperCuts",
-    "ByteCuts",
-    "BitVector",
+    #"ByteCuts",
+    #"BitVector",
     "TupleSpaceSearch",
     "TupleMergeOnline",
     "pcv",
     # "TupleMergeOffline",
+    # "CutSplit",
+    # "EffiCuts",
 ]
 
 
