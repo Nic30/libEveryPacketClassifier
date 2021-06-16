@@ -69,7 +69,7 @@ libgomp = cc.find_library('gomp')
 main = executable('packetClassificators',
 	['packetClassificators.cpp', ],
 	link_with: [packetClassificatorsCommon],
-	dependencies: [libgomp, thread_dep, boost_thread, pcv_dep],
+	dependencies: [libgomp, thread_dep, boost_thread, pcv_dep, nuevomatch_dep],
 	cpp_args: EXTRA_CXX_ARGS,
     c_args: EXTRA_C_ARGS,
     link_args: EXTRA_LINK_ARGS
