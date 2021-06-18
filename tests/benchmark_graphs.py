@@ -5,12 +5,14 @@
 import json
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 import os
+import re
+import sys
 
 from benchmark import benchmarks
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib.cm as cm
-import re
+import pandas as pd
+import seaborn as sns
 
 
 def load_data(key:str):
@@ -30,10 +32,10 @@ def load_data(key:str):
             with open(f_path) as fp:
                 results = json.load(fp)
                 val = results[key]
-                print(ruleset_name, 1 / float(val))  # 1Mpkt/t
-        except FileNotFoundError:
-            raise
-            # val = None
+                print(ruleset_name, (1 / float(val)) if float(val) > 0 else 100.0)  # 1Mpkt/t
+        except FileNotFoundError as e:
+            print(e, file=sys.stderr)
+            val = 0.0
         z_throughput[(alg, ruleset)] = val
 
     z_throughput = {k: 0 if v is None else float(v) for k, v in z_throughput.items()}
@@ -92,19 +94,27 @@ def plot_3d(key:str):
 
 
 def plot_2d(key):
+    # histogram, sorted byt the mean
     x_algs, y_rulesets, z_throughput = load_data(key)
-
     # plot lines
     fig, ax1 = plt.subplots(figsize=(8, 4.5))
     ax1.set_ylabel(key)
-    ax1.set_xticks(range(len(y_rulesets)))
-    ax1.set_xticklabels([os.path.basename(r) for r in y_rulesets])
-    for a in x_algs:
-        xy = [(k, v) for k, v in z_throughput.items() if k[0] == a]
-        xy = sorted(xy, key=lambda i: y_rulesets.index(i[0][1]))
-        plt.plot([y_rulesets.index(k[1]) for k, v in xy], [v for k, v in xy], '+', label=a,)
+    # ax1.set_xticks(range(len(y_rulesets)))
+    # ax1.set_xticklabels([os.path.basename(r) for r in y_rulesets])
+    formated_data = []
+    for (alg, ruleset), v in z_throughput.items():
+        formated_data.append([alg, os.path.basename(ruleset), v])
+
+    df = pd.DataFrame(formated_data, columns=["alg", "ruleset", key])
+    ruleset_order = df.pivot_table(index='alg', columns='ruleset', values=key, fill_value=0, aggfunc='max')\
+            .reset_index()\
+            .median().sort_values().keys()
+    splot = sns.barplot(ax=ax1, x="ruleset", y=key, hue="alg", data=df, order=ruleset_order)
+    for item in splot.get_xticklabels():
+        item.set_rotation(90)
+
     ax1.set_yscale("log")
-    plt.xticks(rotation=45)
+    # plt.xticks(rotation=45)
     plt.legend()
     plt.show()
 
@@ -114,3 +124,4 @@ if __name__ == "__main__":
     # key = "ConstructionTime(ms)"  # classification per second
 
     plot_2d(key)
+    # plot_3d(key)
