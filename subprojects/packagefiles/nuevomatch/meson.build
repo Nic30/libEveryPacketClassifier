@@ -19,7 +19,7 @@ nuevomatch_lib_sources = [
 nuevomatch_lib_include = [include_directories('vendor'), include_directories('include')]
 nuevomatch_lib_static = static_library('nuevomatch',
     nuevomatch_lib_sources,
-	cpp_args: ['-DNDEBUG'],
+	cpp_args: ['-DNDEBUG', '-DLIKWID_PERFMON'],
     install : true,
 	include_directories : nuevomatch_lib_include,
 )

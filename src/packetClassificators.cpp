@@ -26,56 +26,83 @@
 #include <efficuts.h>
 
 using namespace std;
-using ClassifierSet = unordered_map<string, PacketClassifier*>;
+using ClassifierSet = unordered_map<string, std::vector<PacketClassifier*>>;
+using str_map = unordered_map<string, string>;
 
-ClassifierSet ParseClassifierName(const string &line,
-		const unordered_map<string, string> &args) {
+ClassifierSet ParseClassifierName(const string &line, const str_map &args,
+		size_t count) {
 	vector<string> tokens;
 	Split(line, ',', tokens);
 	ClassifierSet classifiers;
 
 	for (const string &c : tokens) {
+		std::function<PacketClassifier* ()> constructor;
 		if (c == "PartitionSort") {
-			classifiers["PartitionSort"] = new PartitionSort();
+			constructor = []() {
+				return new PartitionSort();
+			};
 		} else if (c == "PriorityTupleSpaceSearch") {
-			classifiers["PriorityTupleSpaceSearch"] =
-					new PriorityTupleSpaceSearch();
+			constructor = []() {
+				return new PriorityTupleSpaceSearch();
+			};
 		} else if (c == "HyperSplit") {
-			classifiers["HyperSplit"] = new HyperSplit(args);
+			constructor = [&args]() {
+				return new HyperSplit(args);
+			};
 		} else if (c == "HyperCuts") {
-			classifiers["HyperCuts"] = new HyperCuts();
+			constructor = []() {
+				return new HyperCuts();
+			};
 		} else if (c == "ByteCuts") {
-			classifiers["ByteCuts"] = new ByteCutsClassifier(args);
+			constructor = [&args]() {
+				return new ByteCutsClassifier(args);
+			};
 		} else if (c == "BitVector") {
-			classifiers["BitVector"] = new BitVector();
+			constructor = []() {
+				return new BitVector();
+			};
 		} else if (c == "TupleSpaceSearch") {
-			classifiers["TupleSpaceSearch"] = new TupleSpaceSearch();
+			constructor = []() {
+				return new TupleSpaceSearch();
+			};
 		} else if (c == "TupleMergeOnline") {
-			classifiers["TupleMergeOnline"] = new TupleMergeOnline(args);
+			constructor = [&args]() {
+				return new TupleMergeOnline(args);
+			};
 		} else if (c == "TupleMergeOffline") {
-			classifiers["TupleMergeOffline"] = new TupleMergeOffline(args);
+			constructor = [&args]() {
+				return new TupleMergeOffline(args);
+			};
 		} else if (c == "CutSplit") {
-			classifiers["CutSplit"] = new PacketClassifierFromGenericClassifier(
-					std::make_unique<CutSplit>(8, 8));
+			constructor = []() {
+				return new PacketClassifierFromGenericClassifier(
+						std::make_unique<CutSplit>(8, 8));
+			};
 		} else if (c == "EffiCuts") {
-			classifiers["EffiCuts"] = new PacketClassifierFromGenericClassifier(
-					std::make_unique<EffiCuts>(8));
+			constructor = []() {
+				return new PacketClassifierFromGenericClassifier(
+						std::make_unique<EffiCuts>(8));
+			};
 		} else if (c == "pcv") {
-			classifiers["pcv"] = new Pcv();
+			constructor = []() {
+				return new Pcv();
+			};
 		} else {
 			printf("Unknown ClassifierTests: %s\n", c.c_str());
 			exit(EINVAL);
+		}
+		for (size_t i = 0; i < count; i++) {
+			classifiers[c].push_back(constructor());
 		}
 	}
 	return classifiers;
 }
 
 vector<int> RunSimulatorClassificationTrial(Simulator &s, const string &name,
-		PacketClassifier &classifier, vector<map<string, string>> &data,
-		size_t trials) {
+		vector<map<string, string>> &data, size_t trials) {
 	map<string, string> d = { { "Classifier", name } };
 	printf("%s\n", name.c_str());
-	auto r = s.PerformOnlyPacketClassification(classifier, d, trials);
+	auto r = s.PerformOnlyPacketClassification(d, trials);
 	data.push_back(d);
 	return r;
 }
@@ -83,9 +110,9 @@ vector<int> RunSimulatorClassificationTrial(Simulator &s, const string &name,
 pair<vector<string>, vector<map<string, string>>> RunSimulatorOnlyClassification(
 		const unordered_map<string, string> &args,
 		const vector<Packet> &packets, const vector<Rule> &rules,
-		ClassifierSet classifiers, const string &outfile, size_t trials) {
+		ClassifierSet classifiers, const string &outfile, size_t trials,
+		size_t thread_cnt) {
 	std::cerr << "[INFO] Classification Simulation" << std::endl;
-	Simulator s(rules, packets);
 
 	vector<string> header = { "Classifier", "ConstructionTime(ms)",
 			"ClassificationTime(s)", "Size(bytes)", "MemoryAccess", "Tables",
@@ -93,8 +120,8 @@ pair<vector<string>, vector<map<string, string>>> RunSimulatorOnlyClassification
 	vector<map<string, string>> data;
 
 	for (auto &pair : classifiers) {
-		RunSimulatorClassificationTrial(s, pair.first.c_str(), *pair.second,
-				data, trials);
+		Simulator s(pair.second, rules, packets);
+		RunSimulatorClassificationTrial(s, pair.first.c_str(), data, trials);
 	}
 
 	if (outfile != "") {
@@ -103,18 +130,14 @@ pair<vector<string>, vector<map<string, string>>> RunSimulatorOnlyClassification
 	return make_pair(header, data);
 }
 
-void RunSimulatorUpdateTrial(const Simulator &s, const string &name,
-		PacketClassifier &classifier, const vector<Request> &req,
+void RunSimulatorUpdateTrial(Simulator &s, const string &name,
+		const vector<Request> &req,
 		vector<map<string, string>> &data, int reps) {
 
 	map<string, string> d = { { "Classifier", name } };
 	map<string, double> trial;
 
-	printf("%s\n", name.c_str());
-
-	for (int r = 0; r < reps; r++) {
-		s.PerformPacketClassification(classifier, req, trial);
-	}
+    s.PerformTaskSequnce(req, trial, reps);
 	for (auto pair : trial) {
 		d[pair.first] = to_string(pair.second / reps);
 	}
@@ -130,12 +153,10 @@ pair<vector<string>, vector<map<string, string>>> RunSimulatorUpdates(
 	vector<string> header = { "Classifier", "UpdateTime(s)" };
 	vector<map<string, string>> data;
 
-	Simulator s(rules, packets);
-	const auto req = s.SetupComputation(0, 500000, 500000);
-
 	for (const auto &pair : classifiers) {
-		RunSimulatorUpdateTrial(s, pair.first.c_str(), *pair.second, req, data,
-				repetitions);
+		Simulator s(pair.second, rules, packets);
+		const auto req = s.SetupComputation(0, 500000, 500000);
+		RunSimulatorUpdateTrial(s, pair.first.c_str(), req, data, repetitions);
 	}
 	if (outfile != "") {
 		OutputWriter::WriteCsvFile(outfile, header, data);
@@ -143,7 +164,7 @@ pair<vector<string>, vector<map<string, string>>> RunSimulatorUpdates(
 	return make_pair(header, data);
 }
 
-bool Validation(const unordered_map<string, PacketClassifier*> classifiers,
+bool Validation(const ClassifierSet classifiers,
 		const vector<Rule> &rules, const vector<Packet> &packets,
 		int threshold) {
 	int numWrong = 0;
@@ -155,7 +176,7 @@ bool Validation(const unordered_map<string, PacketClassifier*> classifiers,
 		unordered_map<string, int> results;
 		int result = -1;
 		for (const auto &pair : classifiers) {
-			result = pair.second->ClassifyAPacket(p);
+			result = pair.second[0]->ClassifyAPacket(p);
 			results[pair.first] = result;
 		}
 		if (!all_of(results.begin(), results.end(), [=](const auto &pair) {
@@ -190,16 +211,12 @@ void RunValidation(const unordered_map<string, string> &args,
 	std::cerr << "[INFO] Validation Simulation, Building..." << std::endl;
 	for (auto &pair : classifiers) {
 		std::cerr << "[INFO] building" << pair.first << std::endl;
-		pair.second->_ConstructClassifier(rules);
+		pair.second[0]->_ConstructClassifier(rules);
 	}
 
 	int threshold = GetIntOrElse(args, "Validate.Threshold", 10);
 	if (Validation(classifiers, rules, packets, threshold)) {
 		std::cerr << "[INFO] All classifiers are in accord" << std::endl;
-	}
-
-	for (auto &pair : classifiers) {
-		delete pair.second;
 	}
 }
 
@@ -212,13 +229,14 @@ int main(int argc, char *argv[]) {
 	string trialsStr = GetOrElse(args, "r", "1");
 
 	string database = GetOrElse(args, "d", "");
+	int thread_cnt = std::stoi(GetOrElse(args, "t", "1"));
 	bool doShuffle = GetBoolOrElse(args, "Shuffle", true);
 
 	//set by default
-	auto classifiers = ParseClassifierName(GetOrElse(args, "c", ""), args);
+	auto classifiers = ParseClassifierName(GetOrElse(args, "c", ""), args,
+			thread_cnt);
 	string mode = GetOrElse(args, "m", "Classification");
 
-	//int repeat = GetIntOrElse(args, "r", 1);
 
 	if (GetBoolOrElse(args, "?", false)) {
 		std::cout << "Arguments:" << std::endl;
@@ -246,10 +264,13 @@ int main(int argc, char *argv[]) {
 		rules = Random::shuffle_vector(rules);
 	}
 
+	LIKWID_MARKER_INIT;
+	LIKWID_MARKER_THREADINIT;
+
 	if (mode == "Classification") {
 		size_t trials = stoi(trialsStr);
 		RunSimulatorOnlyClassification(args, packets, rules, classifiers,
-				outputFile, trials);
+				outputFile, trials, thread_cnt);
 	} else if (mode == "Update") {
 		RunSimulatorUpdates(args, packets, rules, classifiers, outputFile, 1);
 	} else if (mode == "Validation") {
@@ -258,10 +279,13 @@ int main(int argc, char *argv[]) {
 		printf("Unknown mode: %s\n", mode.c_str());
 		exit(EINVAL);
 	}
+	LIKWID_MARKER_CLOSE;
 
 	std::cerr << "[INFO] Done" << std::endl;
-	for (auto cls: classifiers) {
-		delete cls.second;
+	for (auto &cls_vector : classifiers) {
+		for (auto cls : cls_vector.second) {
+			delete cls;
+		}
 	}
 	return 0;
 }

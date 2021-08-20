@@ -33,7 +33,7 @@ std::vector<Request> Simulator::SetupComputation(int num_packet, int num_insert,
 			std::begin(shuff_rules) + shuff_rules.size() / 2,
 			std::end(shuff_rules)));
 
-	//need to adjust the case hitting treshold where there is nothing to delete or elements are full but trying to add
+	//need to adjust the case hitting threshold where there is nothing to delete or elements are full but trying to add
 	int current_size = rules_in_use_temp.size();
 	double treshold = 0.2;
 	for (size_t i = 0; i < sequence.size(); i++) {
@@ -125,36 +125,84 @@ std::vector<Request> Simulator::SetupComputation(int num_packet, int num_insert,
 
 	return sequence;
 }
-std::vector<int> Simulator::PerformOnlyPacketClassification(
-		PacketClassifier &classifier,
-		std::map<std::string, std::string> &summary, size_t trials) const {
+Simulator::time_t Simulator::sumTime(
+		std::vector<std::future<time_t>> &times_of_execution) {
+	time_t res(0);
+	for (auto &t : times_of_execution) {
+		res += t.get();
+	}
+	return res / packet_classifiers.size();;
+}
 
-	std::chrono::time_point<std::chrono::steady_clock> start, end;
-	std::chrono::duration<double> elapsed_seconds;
-
-	elapsed_seconds = classifier.ConstructClassifier(ruleset);
-	printf("\tConstruction time: %f s\n", elapsed_seconds.count());
-	summary["ConstructionTime(ms)"] = std::to_string(
-			std::chrono::duration_cast<std::chrono::milliseconds>(
-					elapsed_seconds).count());
-
-	std::chrono::duration<double> sum_time(0);
-	std::vector<int> results;
-	for (size_t t = 0; t < trials; t++) {
-		results.clear();
-		start = std::chrono::steady_clock::now();
-		for (auto const &p : packets) {
-			results.push_back(classifier.ClassifyAPacket(p));
-		}
-		end = std::chrono::steady_clock::now();
-		elapsed_seconds = end - start;
-		sum_time += elapsed_seconds;
+void Simulator::PerformRuleLoad(std::map<std::string, std::string> &summary) {
+	std::vector<std::future<time_t>> elapsed_time;
+	// Submit a lambda object to the pool.
+	for (size_t i = 0; i < packet_classifiers.size(); i++) {
+		pool.enqueue([this, i]() {
+			return packet_classifiers[i]->ConstructClassifier(ruleset);
+		});
 	}
 
-	printf("\tClassification time: %f s\n", sum_time.count() / trials);
-	summary["ClassificationTime(s)"] = std::to_string(
-			sum_time.count() / trials);
+	auto res = sumTime(elapsed_time);
+	printf("\tConstruction time: %f s\n", res.count());
+	summary["ConstructionTime(ms)"] = std::to_string(
+			std::chrono::duration_cast<std::chrono::milliseconds>(res).count());
+}
 
+Simulator::time_t Simulator::PerformOnlyPacketClassificationTask(
+		const std::vector<Packet> &packets, PacketClassifier &classifier,
+		size_t trials, std::vector<int> *results) {
+
+	std::chrono::time_point<std::chrono::steady_clock> start, end;
+	time_t sum_time(0);
+
+	LIKWID_MARKER_START("classification");
+	assert(trials > 0);
+	for (size_t t = 0; t < trials; t++) {
+		if (results)
+			results->clear();
+		start = std::chrono::steady_clock::now();
+		for (auto const &p : packets) {
+			auto r = classifier.ClassifyAPacket(p);
+			if (results)
+				results->push_back(r);
+		}
+		end = std::chrono::steady_clock::now();
+		time_t elapsed_seconds = end - start;
+		sum_time += elapsed_seconds;
+	}
+	LIKWID_MARKER_STOP("classification");
+	return sum_time;
+}
+
+std::vector<int> Simulator::PerformOnlyPacketClassification(
+		std::map<std::string, std::string> &summary, size_t trials) {
+
+	std::vector<std::future<time_t>> elapsed_time;
+	PerformRuleLoad(summary);
+	std::vector<int> results;
+	results.reserve(packets.size());
+
+	// Submit a lambda object to the pool.
+	for (size_t i = 0; i < packet_classifiers.size(); i++) {
+		auto &cls = *packet_classifiers[i];
+		auto &_packets = packets;
+		auto t = pool.enqueue(
+				[&cls, &_packets, i, &results, trials]() {
+					return PerformOnlyPacketClassificationTask(_packets, cls,
+							trials, i == 0 ? &results : nullptr);
+				});
+		elapsed_time.push_back(std::move(t));
+	}
+
+	// Wait for all tasks in the pool to complete.
+
+	auto sum_time = sumTime(elapsed_time);
+	sum_time /= trials;
+	printf("\tClassification time: %f s\n", sum_time.count());
+	summary["ClassificationTime(s)"] = std::to_string(sum_time.count());
+
+	PacketClassifier &classifier = *packet_classifiers[0];
 	int memSize = classifier.MemSizeBytes();
 	printf("\tSize(bytes): %d \n", memSize);
 	summary["Size(bytes)"] = std::to_string(memSize);
@@ -185,112 +233,107 @@ std::vector<int> Simulator::PerformOnlyPacketClassification(
 
 	return results;
 }
-std::vector<int> Simulator::PerformPacketClassification(
-		PacketClassifier &classifier, const std::vector<Request> &sequence,
-		std::map<std::string, double> &trial) const {
+
+std::vector<int> Simulator::PerformTaskSequnce(
+		const std::vector<Request> &sequence,
+		std::map<std::string, double> &res, size_t trial_cnt) {
 	if (available_pool.size() == 0) {
-		printf(
+		throw std::runtime_error(
 				"Warning no available pool left: need to generate computation first\n");
-		return std::vector<int>();
 	}
 
-	Bookkeeper rules_in_use_temp = rules_in_use;
-	Bookkeeper available_pool_temp = available_pool;
+	std::vector<std::future<time_t>> elapsed_time_total(
+			packet_classifiers.size());
 
-	std::chrono::duration<double> elapsed_seconds =
-			classifier.ConstructClassifier(rules_in_use_temp.GetRules());
-	//printf("Construction time: %f \n", elapsed_seconds.count());
+	std::vector<int> _results;
+	for (size_t i = 0; i < packet_classifiers.size(); i++) {
+		auto t = pool.enqueue([this, i, &_results, trial_cnt, &sequence]() {
+			PacketClassifier &classifier = *packet_classifiers[i];
+			Bookkeeper rules_in_use_temp = rules_in_use;
+			Bookkeeper available_pool_temp = available_pool;
 
-	int num_trial = 10;
-	std::vector<int> results;
-	std::chrono::duration<double> sum_elapsed2(0);
-	for (int t = 0; t < num_trial; t++) {
+			time_t elapsed_seconds = classifier.ConstructClassifier(rules_in_use_temp.GetRules());
 
-		results.clear();
-		results.reserve(1000000);				//reserve 1m slots for packets
-
-		size_t packet_counter = 0;
-		std::chrono::time_point<std::chrono::steady_clock> start, end;
-		//invariant: at all time, DS.rules = rules_in_use.rules
-		std::chrono::duration<double> elapsed_seconds2(0);
-		for (Request n : sequence) {
-			Rule temp_rule;
-			int result = -1;
-			switch (n.request_type) {
-			case RequestType::ClassifyPacket:
-				/*if (packets.size() == 0) {
-				 printf("Warning packets.size() = 0 in packet request");
-				 break;
-				 }*/
-				start = std::chrono::steady_clock::now();
-				result = classifier.ClassifyAPacket(packets[packet_counter++]);
-				end = std::chrono::steady_clock::now();
-				elapsed_seconds2 += end - start;
-				if (packet_counter == packets.size())
-					packet_counter = 0;
-
-				results.push_back(result);
-				break;
-			case RequestType::Insertion:
-				if (available_pool.size() == 0) {
-					printf(
-							"Warning skipped perform insertion: no available pool\n");
-					break;
+			for (size_t t = 0; t < trial_cnt; t++) {
+				std::vector<int> *results = nullptr;
+				if (i == 0 && t == 0) {
+					results = &_results;
+					results->clear();
+					results->reserve(trial_cnt * sequence.size());
 				}
-				temp_rule = available_pool_temp.GetOneRuleAndPop(
-						n.random_index_trace);
-				rules_in_use_temp.InsertRule(temp_rule);
-				start = std::chrono::steady_clock::now();
-				classifier.InsertRule(temp_rule);
-				end = std::chrono::steady_clock::now();
-				elapsed_seconds2 += end - start;
 
-				break;
-			case RequestType::Deletion:
-				if (rules_in_use.size() == 0) {
-					printf(
-							"Warning skipped perform deletion: no avilable rules_in_use\n");
-					break;
+				size_t packet_counter = 0;
+				std::chrono::time_point<std::chrono::steady_clock> start, end;
+				//invariant: at all time, DS.rules = rules_in_use.rules
+				time_t elapsed_seconds_cnt2(0);
+				for (Request n : sequence) {
+					Rule temp_rule;
+					int result = -1;
+					switch (n.request_type) {
+					case RequestType::ClassifyPacket:
+						/*if (packets.size() == 0) {
+						 printf("Warning packets.size() = 0 in packet request");
+						 break;
+						 }*/
+						start = std::chrono::steady_clock::now();
+						result = classifier.ClassifyAPacket(
+								packets[packet_counter++]);
+						end = std::chrono::steady_clock::now();
+						elapsed_seconds_cnt2 += end - start;
+						if (packet_counter == packets.size())
+							packet_counter = 0;
+						if (results)
+							results->push_back(result);
+						break;
+					case RequestType::Insertion:
+						if (available_pool.size() == 0) {
+							printf(
+									"Warning skipped perform insertion: no available pool\n");
+							break;
+						}
+						temp_rule = available_pool_temp.GetOneRuleAndPop(
+								n.random_index_trace);
+						rules_in_use_temp.InsertRule(temp_rule);
+						start = std::chrono::steady_clock::now();
+						classifier.InsertRule(temp_rule);
+						end = std::chrono::steady_clock::now();
+						elapsed_seconds_cnt2 += end - start;
+
+						break;
+					case RequestType::Deletion:
+						if (rules_in_use.size() == 0) {
+							printf(
+									"Warning skipped perform deletion: no avilable rules_in_use\n");
+							break;
+						}
+						temp_rule = rules_in_use_temp.GetOneRuleAndPop(
+								n.random_index_trace);
+						available_pool_temp.InsertRule(temp_rule);
+
+						start = std::chrono::steady_clock::now();
+						classifier.DeleteRule(n.random_index_trace);
+						end = std::chrono::steady_clock::now();
+						elapsed_seconds_cnt2 += end - start;
+
+						break;
+					default:
+						break;
+					}
 				}
-				temp_rule = rules_in_use_temp.GetOneRuleAndPop(
-						n.random_index_trace);
-				available_pool_temp.InsertRule(temp_rule);
-
-				start = std::chrono::steady_clock::now();
-				classifier.DeleteRule(n.random_index_trace);
-				end = std::chrono::steady_clock::now();
-				elapsed_seconds2 += end - start;
-
-				break;
-			default:
-				break;
+				elapsed_seconds += elapsed_seconds_cnt2;
 			}
-		}
-		sum_elapsed2 += elapsed_seconds2;
+			return elapsed_seconds;
+		});
+		elapsed_time_total.push_back(std::move(t));
 	}
 
-	printf("\tUpdateTime time: %f \n", sum_elapsed2.count() / num_trial);
-	if (!trial.count("UpdateTime(s)")) {
-		trial["UpdateTime(s)"] = 0;
+	// Wait for all tasks in the pool to complete.
+	auto sum_elapsed2 = sumTime(elapsed_time_total);
+	printf("\tUpdateTime time: %f \n", sum_elapsed2.count() / trial_cnt);
+	if (!res.count("UpdateTime(s)")) {
+		res["UpdateTime(s)"] = 0;
 	}
-	trial["UpdateTime(s)"] += sum_elapsed2.count() / num_trial;
+	res["UpdateTime(s)"] += sum_elapsed2.count() / trial_cnt;
 
-	return results;
-}
-
-int Simulator::PerformPartitioning(PartitionPacketClassifier &ppc,
-		const std::vector<Rule> &ruleset,
-		std::map<std::string, std::string> &summary) {
-
-	std::chrono::time_point<std::chrono::system_clock> start, end;
-	std::chrono::duration<double> elapsed_seconds;
-	start = std::chrono::system_clock::now();
-	int b = ppc.ComputeNumberOfBuckets(ruleset);
-	end = std::chrono::system_clock::now();
-	elapsed_seconds = end - start;
-	//printf("\tConstruction time: %f \n", elapsed_seconds.count());
-
-	summary["ConstructionTime(s)"] = std::to_string(elapsed_seconds.count());
-	summary["NumberOfPartitions"] = std::to_string(b);
-	return b;
+	return _results;
 }

@@ -38,13 +38,14 @@ EXTRA_CXX_ARGS = [
 	'-march=haswell',
 	'-mavx2',
  	#'-pg', '-no-pie',
-    #'-O3', '-DNDEBUG',
-	'-g',
+    '-O3', '-DNDEBUG',
+	#'-g', '-O0',
+	'-DLIKWID_PERFMON'
 ]
 EXTRA_C_ARGS = [
  	#'-pg', '-no-pie',
-    #'-O3', '-DNDEBUG',
-	'-g',
+    '-O3', '-DNDEBUG',
+	# '-g',
 ]
 EXTRA_LINK_ARGS = [
     #'-pg', '-no-pie'
@@ -55,7 +56,7 @@ boost_thread = dependency('boost', modules: ['thread', 'system' ])
 packetClassificatorsCommon = shared_library('packetClassificatorsCommon',
                         srcs,
                         #include_directories : inc,
-                        dependencies : [boost_thread],
+                        dependencies : [boost_thread, likwid],
                         install : true,
                         cpp_args: EXTRA_CXX_ARGS,
                         c_args: EXTRA_C_ARGS,
@@ -73,7 +74,7 @@ main = executable('packetClassificators',
 		'packet_classifier_from_generic_classifier.cpp',
 	],
 	link_with: [packetClassificatorsCommon],
-	dependencies: [libgomp, thread_dep, boost_thread, pcv_dep, nuevomatch_dep],
+	dependencies: [libgomp, thread_dep, boost_thread, pcv_dep, nuevomatch_dep, likwid],
 	cpp_args: EXTRA_CXX_ARGS,
     c_args: EXTRA_C_ARGS,
     link_args: EXTRA_LINK_ARGS
