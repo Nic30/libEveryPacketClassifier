@@ -8,7 +8,7 @@ import os
 import re
 import sys
 
-from benchmark import benchmarks
+from tests.benchmark import make_tasks
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -21,7 +21,7 @@ def load_data(key:str):
 
     # cache misses
 
-    for (alg, ruleset, result_dir) in benchmarks:
+    for (alg, ruleset, result_dir) in make_tasks():
         ruleset_name = os.path.basename(ruleset)
         f_path = os.path.join(result_dir, f"{alg}_{ruleset_name}")
         # if not isfile(f_path) or f_path.endswith(".png"):

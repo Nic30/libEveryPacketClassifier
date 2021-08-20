@@ -8,50 +8,24 @@ from pathlib import Path
 from subprocess import check_call
 import sys
 
+from tests.constants import SEEDS, SIZES, CLASSBENCH, \
+    CLASSBENCH_ROOT, EXACT_MATCH_RULE_GEN
 
-CLASSBENCH_ROOT = os.path.join(os.path.dirname(__file__), "..", "..", "classbench-ng")
-CLASSBENCH = os.path.join(os.path.dirname(__file__), "..", "..", "classbench-ng", "classbench")
-EXACT_MATCH_RULE_GEN = os.path.join(os.path.dirname(__file__), "..", "..", "pclass-vectorized/build/default/benchmarks/exact_match_rule_gen")
-RULESET_ROOT = os.path.join(CLASSBENCH_ROOT, "generated/")
-SEED_ROOT = os.path.join(CLASSBENCH_ROOT, "vendor", "parameter_files")
 OUT = os.path.join(CLASSBENCH_ROOT, "generated")
 OUT_TIME_LOG = os.path.join(CLASSBENCH_ROOT, "generated", "time.log")
 
 
-def format_num(n):
+def format_num(n: int):
     for i, unit in reversed([(1e3, "K"), (1e6, "M"), (1e9, "G")]):
         if n >= int(i):
             return "%d%s" % (n // i, unit)
     return "%d" % (n)
 
 
-SIZES = [
-    # 100,
-    # 500,
-    # 1e3,
-    2e3,
-    5e3,
-    10e3,
-    65e3,
-    100e3,
-    # 1e3, 10e3, 100e3, 1e6, 10e6
-    # 100e3, 200e3, 300e3, 400e3, 500e3,
-]
-SEEDS = [os.path.join(SEED_ROOT, s) for s in [
-    # "exact",
-    "acl1_seed",
-    "acl2_seed",
-    # "acl3_seed",
-    # "acl4_seed",
-    # "acl5_seed",
-    # "fw1_seed",
-    # "fw2_seed",
-    # "fw3_seed",
-    # "fw4_seed",
-    # "fw5_seed",
-    # "ipc1_seed",
-    # "ipc2_seed",
-]]
+def unformat_num(n:str):
+    # [TODO]
+    return eval(n.replace("K", "*1e3").replace("M", "*1e6").replace("G", "*1e9"))
+
 
 counter = None
 tasks = [(seed, int(size)) for seed in SEEDS for size in SIZES]
