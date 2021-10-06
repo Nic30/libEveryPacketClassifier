@@ -371,14 +371,13 @@ vector<Rule> InputReader::ReadFilterFile(const string &filename) {
 			// duplicit rule
 			continue;
 		}
-		r.id = res_tmp.size();
 		res_tmp.push_back(r);
 		seen_rule_ranges.insert(r.range);
 	}
 	//need to rearrange the priority, first has the highest
 	int max_pri = res_tmp.size() - 1;
 	for (size_t i = 0; i < res_tmp.size(); i++) {
-		res_tmp[i].priority = max_pri - i;
+		res_tmp[i].id = res_tmp[i].priority = max_pri - i;
 	}
 
 	return res_tmp;
