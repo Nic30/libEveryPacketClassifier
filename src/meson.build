@@ -72,6 +72,7 @@ main = executable('packetClassificators',
 	[
 		'packetClassificators.cpp',
 		'packet_classifier_from_generic_classifier.cpp',
+		'construct_classifier_by_name.cpp',
 	],
 	link_with: [packetClassificatorsCommon],
 	dependencies: [libgomp, thread_dep, boost_thread, pcv_dep, nuevomatch_dep, likwid],

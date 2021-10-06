@@ -17,6 +17,7 @@ class PacketClassifierFromGenericClassifier: public PacketClassifier {
 
 private:
 	std::unique_ptr<GenericClassifier> cls;
+	int rule_id_to_priority_offset;
 
 public:
 	PacketClassifierFromGenericClassifier(

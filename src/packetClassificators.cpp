@@ -7,102 +7,24 @@
 #include <utility>
 #include <vector>
 
-#include "BitVector/BitVector.h"
-#include "ByteCuts/ByteCuts.h"
 #include "ClassBenchTraceGenerator/trace_tools.h"
 #include "ElementaryClasses.h"
-#include "HyperCuts/HyperCuts.h"
-#include "HyperSplit/HyperSplit.h"
+
 #include "IO/InputReader.h"
 #include "IO/OutputWriter.h"
-#include "OVS/TupleSpaceSearch.h"
-#include "PartitionSort/PartitionSort.h"
-#include "pcv/pcv.h"
+
 #include "Simulation.h"
-#include "TupleMerge/TupleMergeOffline.h"
+
 #include "Utilities/MapExtensions.h"
-#include "packet_classifier_from_generic_classifier.h"
-#include <cut_split.h>
-#include <efficuts.h>
+#include "construct_classifier_by_name.h"
 
 using namespace std;
-using ClassifierSet = unordered_map<string, std::vector<PacketClassifier*>>;
-using str_map = unordered_map<string, string>;
 
-ClassifierSet ParseClassifierName(const string &line, const str_map &args,
-		size_t count) {
-	vector<string> tokens;
-	Split(line, ',', tokens);
-	ClassifierSet classifiers;
-
-	for (const string &c : tokens) {
-		std::function<PacketClassifier* ()> constructor;
-		if (c == "PartitionSort") {
-			constructor = []() {
-				return new PartitionSort();
-			};
-		} else if (c == "PriorityTupleSpaceSearch") {
-			constructor = []() {
-				return new PriorityTupleSpaceSearch();
-			};
-		} else if (c == "HyperSplit") {
-			constructor = [&args]() {
-				return new HyperSplit(args);
-			};
-		} else if (c == "HyperCuts") {
-			constructor = []() {
-				return new HyperCuts();
-			};
-		} else if (c == "ByteCuts") {
-			constructor = [&args]() {
-				return new ByteCutsClassifier(args);
-			};
-		} else if (c == "BitVector") {
-			constructor = []() {
-				return new BitVector();
-			};
-		} else if (c == "TupleSpaceSearch") {
-			constructor = []() {
-				return new TupleSpaceSearch();
-			};
-		} else if (c == "TupleMergeOnline") {
-			constructor = [&args]() {
-				return new TupleMergeOnline(args);
-			};
-		} else if (c == "TupleMergeOffline") {
-			constructor = [&args]() {
-				return new TupleMergeOffline(args);
-			};
-		} else if (c == "CutSplit") {
-			constructor = []() {
-				return new PacketClassifierFromGenericClassifier(
-						std::make_unique<CutSplit>(8, 8));
-			};
-		} else if (c == "EffiCuts") {
-			constructor = []() {
-				return new PacketClassifierFromGenericClassifier(
-						std::make_unique<EffiCuts>(8));
-			};
-		} else if (c == "pcv") {
-			constructor = []() {
-				return new Pcv();
-			};
-		} else {
-			printf("Unknown ClassifierTests: %s\n", c.c_str());
-			exit(EINVAL);
-		}
-		for (size_t i = 0; i < count; i++) {
-			classifiers[c].push_back(constructor());
-		}
-	}
-	return classifiers;
-}
-
-vector<int> RunSimulatorClassificationTrial(Simulator &s, const string &name,
-		vector<map<string, string>> &data, size_t trials) {
+vector<int> RunSimulatorClassificationTrial(PacketClassficationSimulator &s,
+		const string &name, vector<map<string, string>> &data, size_t trials) {
 	map<string, string> d = { { "Classifier", name } };
-	printf("%s\n", name.c_str());
-	auto r = s.PerformOnlyPacketClassification(d, trials);
+	std::cout << "[INFO]" << name << std::endl;
+	auto r = s.ruhn_only_packet_classification(d, trials);
 	data.push_back(d);
 	return r;
 }
@@ -120,7 +42,7 @@ pair<vector<string>, vector<map<string, string>>> RunSimulatorOnlyClassification
 	vector<map<string, string>> data;
 
 	for (auto &pair : classifiers) {
-		Simulator s(pair.second, rules, packets);
+		PacketClassficationSimulator s(pair.second, rules, packets);
 		RunSimulatorClassificationTrial(s, pair.first.c_str(), data, trials);
 	}
 
@@ -130,14 +52,14 @@ pair<vector<string>, vector<map<string, string>>> RunSimulatorOnlyClassification
 	return make_pair(header, data);
 }
 
-void RunSimulatorUpdateTrial(Simulator &s, const string &name,
-		const vector<Request> &req,
+void RunSimulatorUpdateTrial(PacketClassficationSimulator &s,
+		const string &name, const vector<Request> &req,
 		vector<map<string, string>> &data, int reps) {
 
 	map<string, string> d = { { "Classifier", name } };
 	map<string, double> trial;
 
-    s.PerformTaskSequnce(req, trial, reps);
+	s.run_task_sequnce(req, trial, reps);
 	for (auto pair : trial) {
 		d[pair.first] = to_string(pair.second / reps);
 	}
@@ -154,7 +76,7 @@ pair<vector<string>, vector<map<string, string>>> RunSimulatorUpdates(
 	vector<map<string, string>> data;
 
 	for (const auto &pair : classifiers) {
-		Simulator s(pair.second, rules, packets);
+		PacketClassficationSimulator s(pair.second, rules, packets);
 		const auto req = s.SetupComputation(0, 500000, 500000);
 		RunSimulatorUpdateTrial(s, pair.first.c_str(), req, data, repetitions);
 	}
@@ -164,59 +86,90 @@ pair<vector<string>, vector<map<string, string>>> RunSimulatorUpdates(
 	return make_pair(header, data);
 }
 
-bool Validation(const ClassifierSet classifiers,
-		const vector<Rule> &rules, const vector<Packet> &packets,
-		int threshold) {
+bool validation_run(const ClassifierSet classifiers, const vector<Rule> &rules,
+		const vector<Packet> &packets, int error_threshold) {
+
 	int numWrong = 0;
-	vector<Rule> sorted = rules;
-	sort(sorted.begin(), sorted.end(), [](const Rule &rx, const Rule &ry) {
-		return rx.priority >= ry.priority;
-	});
+
+	vector<Rule> rules_sorted = rules;
+	// highest priority first
+	sort(rules_sorted.begin(), rules_sorted.end(),
+			[](const Rule &r0, const Rule &r1) {
+				return r0.priority >= r1.priority;
+			});
+	bool all_matched_rule0_or_not_found = true;
 	for (const Packet &p : packets) {
-		unordered_map<string, int> results;
 		int result = -1;
+		bool first = true;
+		bool error_seen = false;
+		// [todo] use index to store store value, instead of name
 		for (const auto &pair : classifiers) {
-			result = pair.second[0]->ClassifyAPacket(p);
-			results[pair.first] = result;
+			int result_tmp = pair.second[0]->ClassifyAPacket(p);
+			if (result_tmp != 0 && result_tmp != -1) {
+				all_matched_rule0_or_not_found = false;
+			}
+			if (first) {
+				result = result_tmp;
+			} else if (result != result_tmp) {
+				error_seen = true;
+			}
+			first = false;
 		}
-		if (!all_of(results.begin(), results.end(), [=](const auto &pair) {
-			return pair.second == result;
-		})) {
+		if (error_seen) {
 			numWrong++;
-			for (auto x : p) {
-				std::cout << x << " ";
-			}
-			std::cout << std::endl;
-			for (const auto &pair : results) {
-				std::cout << "\t" << pair.first << ": " << pair.second
-						<< std::endl;
-			}
-			for (const Rule &r : sorted) {
-				if (r.MatchesPacket(p)) {
-					std::cout << "\tTruth: " << r.priority << std::endl;
-					break;
+			std::cout << Packet_to_string(p) << std::endl;
+			for (const auto &pair : classifiers) {
+				int res = pair.second[0]->ClassifyAPacket(p);
+				std::cout << "\t" << pair.first << ": " << res;
+				if (res != -1) {
+					if ((size_t) res >= rules.size()) {
+						std::cout << " <out of range>";
+					} else {
+						std::cout << " " << rules.at(res);
+					}
 				}
+				std::cout << std::endl;
+			}
+			int i = 0;
+			for (const Rule &r : rules_sorted) {
+				if (r.MatchesPacket(p)) {
+					std::cout << "\tmatch " << "(index: " << i << ", id: "
+							<< r.id << ", prio:" << r.priority << ")" << " r:"
+							<< r << std::endl;
+					//break;
+				}
+				i++;
 			}
 		}
-		if (numWrong >= threshold) {
+		if (numWrong >= error_threshold) {
 			break;
 		}
 	}
+	if (all_matched_rule0_or_not_found)
+		throw std::runtime_error(
+				"all packets matched rule0 or were not found: this is a sign of missconfiguration");
 	return numWrong == 0;
 }
 
-void RunValidation(const unordered_map<string, string> &args,
+void validation_prepare_and_run(const unordered_map<string, string> &args,
 		const vector<Packet> &packets, const vector<Rule> &rules,
 		ClassifierSet classifiers) {
 	std::cerr << "[INFO] Validation Simulation, Building..." << std::endl;
-	for (auto &pair : classifiers) {
-		std::cerr << "[INFO] building" << pair.first << std::endl;
-		pair.second[0]->_ConstructClassifier(rules);
+	int error_threshold = GetIntOrElse(args, "Validate.Threshold", 10);
+	if (classifiers.size() < 2) {
+		throw std::runtime_error(
+				"requires at least 2 classifiers for verification");
 	}
-
-	int threshold = GetIntOrElse(args, "Validate.Threshold", 10);
-	if (Validation(classifiers, rules, packets, threshold)) {
+	for (auto &pair : classifiers) {
+		std::cerr << "[INFO] building " << pair.first << std::endl;
+		//pair.second[0]->_ConstructClassifier(rules);
+		pair.second[0]->ConstructClassifier(rules);
+	}
+	if (validation_run(classifiers, rules, packets, error_threshold)) {
 		std::cerr << "[INFO] All classifiers are in accord" << std::endl;
+	} else {
+		std::cerr << "[ERROR] There were difference in classifier outputs"
+				<< std::endl;
 	}
 }
 
@@ -227,16 +180,16 @@ int main(int argc, char *argv[]) {
 	string packetFile = GetOrElse(args, "p", "Auto");
 	string outputFile = GetOrElse(args, "o", "");
 	string trialsStr = GetOrElse(args, "r", "1");
+	size_t trials = stoi(trialsStr);
 
 	string database = GetOrElse(args, "d", "");
 	int thread_cnt = std::stoi(GetOrElse(args, "t", "1"));
-	bool doShuffle = GetBoolOrElse(args, "Shuffle", true);
+	//bool doShuffle = GetBoolOrElse(args, "Shuffle", true);
 
 	//set by default
 	auto classifiers = ParseClassifierName(GetOrElse(args, "c", ""), args,
 			thread_cnt);
 	string mode = GetOrElse(args, "m", "Classification");
-
 
 	if (GetBoolOrElse(args, "?", false)) {
 		std::cout << "Arguments:" << std::endl;
@@ -260,21 +213,21 @@ int main(int argc, char *argv[]) {
 	else if (packetFile != "")
 		packets = InputReader::ReadPackets(packetFile);
 
-	if (doShuffle) {
-		rules = Random::shuffle_vector(rules);
-	}
+	//if (doShuffle) {
+	//	Random rand;
+	//	rules = rand.shuffle_vector(rules);
+	//}
 
 	LIKWID_MARKER_INIT;
 	LIKWID_MARKER_THREADINIT;
 
 	if (mode == "Classification") {
-		size_t trials = stoi(trialsStr);
 		RunSimulatorOnlyClassification(args, packets, rules, classifiers,
 				outputFile, trials, thread_cnt);
 	} else if (mode == "Update") {
 		RunSimulatorUpdates(args, packets, rules, classifiers, outputFile, 1);
 	} else if (mode == "Validation") {
-		RunValidation(args, packets, rules, classifiers);
+		validation_prepare_and_run(args, packets, rules, classifiers);
 	} else {
 		printf("Unknown mode: %s\n", mode.c_str());
 		exit(EINVAL);

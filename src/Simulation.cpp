@@ -2,10 +2,9 @@
 #include <string>
 #include <sstream>
 
-std::mt19937 Random::generator(0);
-
-std::vector<Request> Simulator::GenerateRequests(size_t num_packet,
-		size_t num_insert, size_t num_delete) const {
+std::vector<Request> PacketClassficationSimulator::GenerateRequests(
+		Random &rand, size_t num_packet, size_t num_insert,
+		size_t num_delete) const {
 	if (num_packet > packets.size()) {
 		printf(
 				"Warning in Simulator::GenerateRequests : too much request for num_packet--setting num to available size\n");
@@ -18,15 +17,17 @@ std::vector<Request> Simulator::GenerateRequests(size_t num_packet,
 		vr.push_back(Request(RequestType::Insertion));
 	for (size_t i = 0; i < num_delete; i++)
 		vr.push_back(Request(RequestType::Deletion));
-	return Random::shuffle_vector(vr);
+	return rand.shuffle_vector(vr);
 }
 
-std::vector<Request> Simulator::SetupComputation(int num_packet, int num_insert,
-		int num_delete) {
-	std::vector<Request> sequence = GenerateRequests(num_packet, num_insert,
-			num_delete);
+std::vector<Request> PacketClassficationSimulator::SetupComputation(
+		int num_packet, int num_insert, int num_delete) {
+	Random rand;
+	std::vector<Request> sequence = GenerateRequests(rand, num_packet,
+			num_insert, num_delete);
 	std::vector<Rule> shuff_rules = ruleset;
-	shuff_rules = Random::shuffle_vector(shuff_rules);
+
+	shuff_rules = rand.shuffle_vector(shuff_rules);
 	Bookkeeper rules_in_use_temp = (std::vector<Rule>(std::begin(shuff_rules),
 			std::begin(shuff_rules) + shuff_rules.size() / 2));
 	Bookkeeper available_pool_temp = (std::vector<Rule>(
@@ -61,7 +62,7 @@ std::vector<Request> Simulator::SetupComputation(int num_packet, int num_insert,
 			break;
 		case RequestType::Deletion:
 			if (current_size <= treshold * ruleset.size()) {
-				///find furthest insertion and swap
+				///find farthest insertion and swap
 				for (size_t j = sequence.size() - 1; j > i; j--) {
 					if (sequence[j].request_type == RequestType::Insertion) {
 						sequence[j].request_type = RequestType::Deletion;
@@ -80,7 +81,6 @@ std::vector<Request> Simulator::SetupComputation(int num_packet, int num_insert,
 			break;
 		}
 	}
-
 	for (Request &n : sequence) {
 		Rule temp_rule;
 		// int result = -1;
@@ -95,8 +95,7 @@ std::vector<Request> Simulator::SetupComputation(int num_packet, int num_insert,
 						"Warning skipped perform insertion: no available pool\n");
 				break;
 			}
-			index_insert = Random::random_int(0,
-					available_pool_temp.size() - 1);
+			index_insert = rand.random_int(0, available_pool_temp.size() - 1);
 			temp_rule = available_pool_temp.GetOneRuleAndPop(index_insert);
 			rules_in_use_temp.InsertRule(temp_rule);
 			n.random_index_trace = index_insert;
@@ -107,7 +106,7 @@ std::vector<Request> Simulator::SetupComputation(int num_packet, int num_insert,
 						"Warning skipped perform deletion: no avilable rules_in_use\n");
 				break;
 			}
-			index_delete = Random::random_int(0, rules_in_use_temp.size() - 1);
+			index_delete = rand.random_int(0, rules_in_use_temp.size() - 1);
 			temp_rule = rules_in_use_temp.GetOneRuleAndPop(index_delete);
 			available_pool_temp.InsertRule(temp_rule);
 			n.random_index_trace = index_delete;
@@ -125,7 +124,7 @@ std::vector<Request> Simulator::SetupComputation(int num_packet, int num_insert,
 
 	return sequence;
 }
-Simulator::time_t Simulator::sumTime(
+PacketClassficationSimulator::time_t PacketClassficationSimulator::sumTime(
 		std::vector<std::future<time_t>> &times_of_execution) {
 	time_t res(0);
 	for (auto &t : times_of_execution) {
@@ -134,7 +133,8 @@ Simulator::time_t Simulator::sumTime(
 	return res / packet_classifiers.size();;
 }
 
-void Simulator::PerformRuleLoad(std::map<std::string, std::string> &summary) {
+void PacketClassficationSimulator::load_ruleset_into_classifier(
+		std::map<std::string, std::string> &summary) {
 	std::vector<std::future<time_t>> elapsed_time;
 	// Submit a lambda object to the pool.
 	for (size_t i = 0; i < packet_classifiers.size(); i++) {
@@ -144,12 +144,12 @@ void Simulator::PerformRuleLoad(std::map<std::string, std::string> &summary) {
 	}
 
 	auto res = sumTime(elapsed_time);
-	printf("\tConstruction time: %f s\n", res.count());
+	std::cout << "\tConstruction time: " << res.count() << " s" << std::endl;
 	summary["ConstructionTime(ms)"] = std::to_string(
 			std::chrono::duration_cast<std::chrono::milliseconds>(res).count());
 }
 
-Simulator::time_t Simulator::PerformOnlyPacketClassificationTask(
+PacketClassficationSimulator::time_t PacketClassficationSimulator::run_only_packet_classification(
 		const std::vector<Packet> &packets, PacketClassifier &classifier,
 		size_t trials, std::vector<int> *results) {
 
@@ -175,11 +175,11 @@ Simulator::time_t Simulator::PerformOnlyPacketClassificationTask(
 	return sum_time;
 }
 
-std::vector<int> Simulator::PerformOnlyPacketClassification(
+std::vector<int> PacketClassficationSimulator::ruhn_only_packet_classification(
 		std::map<std::string, std::string> &summary, size_t trials) {
 
 	std::vector<std::future<time_t>> elapsed_time;
-	PerformRuleLoad(summary);
+	load_ruleset_into_classifier(summary);
 	std::vector<int> results;
 	results.reserve(packets.size());
 
@@ -189,8 +189,8 @@ std::vector<int> Simulator::PerformOnlyPacketClassification(
 		auto &_packets = packets;
 		auto t = pool.enqueue(
 				[&cls, &_packets, i, &results, trials]() {
-					return PerformOnlyPacketClassificationTask(_packets, cls,
-							trials, i == 0 ? &results : nullptr);
+					return run_only_packet_classification(_packets, cls, trials,
+							i == 0 ? &results : nullptr);
 				});
 		elapsed_time.push_back(std::move(t));
 	}
@@ -199,18 +199,19 @@ std::vector<int> Simulator::PerformOnlyPacketClassification(
 
 	auto sum_time = sumTime(elapsed_time);
 	sum_time /= trials;
-	printf("\tClassification time: %f s\n", sum_time.count());
+	std::cout << "\tClassification time: " << sum_time.count() << " s"
+			<< std::endl;
 	summary["ClassificationTime(s)"] = std::to_string(sum_time.count());
 
 	PacketClassifier &classifier = *packet_classifiers[0];
 	int memSize = classifier.MemSizeBytes();
-	printf("\tSize(bytes): %d \n", memSize);
+	std::cout << "\tSize(bytes): " << memSize << std::endl;
 	summary["Size(bytes)"] = std::to_string(memSize);
 	int memAccess = classifier.MemoryAccess();
-	printf("\tMemoryAccess: %d \n", memAccess);
+	std::cout << "\tMemoryAccess: " << memAccess << std::endl;
 	summary["MemoryAccess"] = std::to_string(memAccess);
 	int numTables = classifier.NumTables();
-	printf("\tTables: %d \n", numTables);
+	std::cout << "\tTables: " << numTables << std::endl;
 	summary["Tables"] = std::to_string(numTables);
 
 	std::stringstream ssTableSize, ssTableQuery;
@@ -234,7 +235,7 @@ std::vector<int> Simulator::PerformOnlyPacketClassification(
 	return results;
 }
 
-std::vector<int> Simulator::PerformTaskSequnce(
+std::vector<int> PacketClassficationSimulator::run_task_sequnce(
 		const std::vector<Request> &sequence,
 		std::map<std::string, double> &res, size_t trial_cnt) {
 	if (available_pool.size() == 0) {
