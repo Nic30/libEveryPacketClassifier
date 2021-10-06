@@ -138,9 +138,10 @@ void PacketClassficationSimulator::load_ruleset_into_classifier(
 	std::vector<std::future<time_t>> elapsed_time;
 	// Submit a lambda object to the pool.
 	for (size_t i = 0; i < packet_classifiers.size(); i++) {
-		pool.enqueue([this, i]() {
+		auto t = pool.enqueue([this, i]() {
 			return packet_classifiers[i]->ConstructClassifier(ruleset);
 		});
+		elapsed_time.push_back(std::move(t));
 	}
 
 	auto res = sumTime(elapsed_time);
