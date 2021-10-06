@@ -7,6 +7,7 @@ class SortableRuleset;
 class SortableRulesetPartitioner {
 
 	typedef std::vector<Rule> part;
+	Random rand;
 public:
 	static bool IsBucketReallySortable(const SortableRuleset & b);
 
@@ -35,7 +36,7 @@ public:
 	 * */
 	static std::vector<int> GetFieldOrderByRule(const Rule& r);
 
-	static std::vector<SortableRuleset> AdaptiveIncrementalInsertion(
+	std::vector<SortableRuleset> AdaptiveIncrementalInsertion(
 			const std::vector<Rule>& rules, int);
 
 	/*For MISF*/

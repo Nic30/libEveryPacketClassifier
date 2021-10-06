@@ -203,8 +203,9 @@ vector<SortableRuleset> SortableRulesetPartitioner::AdaptiveIncrementalInsertion
 		const vector<Rule>& rules, int threshold) {
 	vector<SortableRuleset> all_buckets;
 
+
 	auto InsertRuleIntoAllBucket =
-			[threshold](const Rule& r, vector<SortableRuleset>& b) {
+			[threshold, this](const Rule& r, vector<SortableRuleset>& b) {
 				for (auto& bucket : b) {
 					if (bucket.InsertRule(r)) {
 						if (bucket.size() < threshold) {
@@ -219,7 +220,7 @@ vector<SortableRuleset> SortableRulesetPartitioner::AdaptiveIncrementalInsertion
 				vector<int> field_order0(r.dim);
 				if (threshold == 0) {
 					iota(field_order0.begin(), field_order0.end(), 0);
-					field_order0 = Random::shuffle_vector(field_order0);
+					field_order0 = this->rand.shuffle_vector(field_order0);
 				}
 				else {
 					field_order0 = SortableRulesetPartitioner::GetFieldOrderByRule(r);
