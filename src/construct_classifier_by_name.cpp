@@ -30,7 +30,7 @@ ClassifierSet ParseClassifierName(const string &line, const str_map &args,
 			constructor = []() {
 				return new PartitionSort();
 			};
-		} else if (c == "PriorityTupleSpaceSearch") {
+		} else if (c == "PTSS") {
 			constructor = []() {
 				return new PriorityTupleSpaceSearch();
 			};

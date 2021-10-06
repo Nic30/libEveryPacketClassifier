@@ -6,7 +6,6 @@ from subprocess import check_call, CalledProcessError
 import unittest
 from unittest.runner import TextTestRunner
 
-
 ROOT = os.path.join(os.path.dirname(__file__), "..")
 BIN = os.path.join(ROOT, "build/meson.debug.linux.x86_64/src/packetClassificators")
 
@@ -27,9 +26,6 @@ class SimpleFunctionalityTC(unittest.TestCase):
     def test_PartitionSort(self):
         self.run_bin("PartitionSort")
 
-    def test_PriorityTupleSpaceSearch(self):
-        self.run_bin("PriorityTupleSpaceSearch")
-
     def test_HyperSplit(self):
         self.run_bin("HyperSplit")
 
@@ -41,6 +37,9 @@ class SimpleFunctionalityTC(unittest.TestCase):
 
     def test_BitVector(self):
         self.run_bin("BitVector")
+
+    def test_PTSS(self):
+        self.run_bin("PTSS")
 
     def test_TSS(self):
         self.run_bin("TSS")
