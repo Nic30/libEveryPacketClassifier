@@ -12,17 +12,18 @@ from tests.constants import BIN, ROOT, ALGS
 from tests.generate_rulesets import format_num, SEEDS, SIZES, OUT
 
 RESULT_DIR = os.path.join(ROOT, "results")
+TRIALS = 1
 
 
 def run_benchmark(args):
-    alg, ruleset, result_dir = args
+    alg, ruleset, result_dir, cores = args
     ruleset_name = basename(ruleset)
-    result_file = os.path.join(result_dir, f"{alg}_{ruleset_name}")
+    result_file = os.path.join(result_dir, f"{alg}_{ruleset_name}_t{len(cores)}")
     if os.path.isfile(result_file) and os.path.getsize(result_file) > 0:
         print(f"+> {result_file} already generated")
         return result_file
 
-    cmd = [BIN, f"c={alg}", f"f={ruleset}", f"o={result_file}"]
+    cmd = [BIN, f"c={alg}", f"f={ruleset}", f"o={result_file}", f'r={TRIALS:d}', f't={len(cores)}']
     print("+>" + " ".join(cmd))
     try:
         check_call(cmd)
@@ -36,13 +37,13 @@ def run_benchmark(args):
 
 
 def run_likwid_benchmark(args):
-    alg, ruleset, result_dir = args
+    alg, ruleset, result_dir, cores = args
     modules = check_output(["lsmod"]).decode()
     if "msr                    " not in modules:
         check_call(["modprobe", "msr"])
 
     ruleset_name = basename(ruleset)
-    result_file = os.path.join(result_dir, f"{alg}_{ruleset_name}")
+    result_file = os.path.join(result_dir, f"{alg}_{ruleset_name}_t{len(cores)}")
     counter_groups = [
         # "CYCLE_ACTIVITY",
         "CYCLE_STALLS",
@@ -58,8 +59,8 @@ def run_likwid_benchmark(args):
             print(f"+> {result_file} {likwid_report_file:s} already generated")
             continue
 
-        cmd = ['likwid-perfctr', '-C', '1', '-g', counter_group, '-O', '-o', likwid_report_file,
-               '-m', BIN, f"c={alg}", f"f={ruleset}", f"o={result_file}",
+        cmd = ['likwid-perfctr', '-C', ','.join([str(c) for c in cores]), '-g', counter_group, '-O', '-o', likwid_report_file,
+               '-m', BIN, f"c={alg}", f"f={ruleset}", f"o={result_file}", f'r={TRIALS:d}', f't={len(cores)}'
                 ]
         print("+>" + " ".join(cmd))
         try:
@@ -67,14 +68,19 @@ def run_likwid_benchmark(args):
             print("->" + " ".join(cmd))
         except Exception as e:
             print("->" + Fore.RED + "[ERROR]" + Style.RESET_ALL + " ".join(cmd), e, file=sys.stderr)
+
     return result_file
 
 
-def run_classifications(benchmarks, result_dir, run_benchmark_fn):
+def run_classifications(benchmarks, result_dir, run_benchmark_fn, thread_pool_size:int):
     os.makedirs(result_dir, exist_ok=True)
 
-    with Pool(cpu_count() // 2) as pool:
-        pool.map(run_benchmark_fn, benchmarks)
+    if thread_pool_size == 1:
+        for b in benchmarks:
+            run_benchmark_fn(b)
+    else:
+        with Pool(cpu_count() // 2) as pool:
+            pool.map(run_benchmark_fn, benchmarks)
 
 
 def make_tasks():
@@ -85,17 +91,18 @@ def make_tasks():
             RULESET_FILES.append(f)
 
     benchmarks = [
-        (alg, ruleset, RESULT_DIR)
+        (alg, ruleset, RESULT_DIR, cores)
         for alg in ALGS
         for ruleset in RULESET_FILES
+        for cores in [[0], [0, 1], list(range(4))]
     ]
     return benchmarks
 
 
 def main():
     benchmarks = make_tasks()
-    # run_classifications(benchmarks, result_dir, run_benchmark)
-    run_classifications(benchmarks, RESULT_DIR, run_likwid_benchmark)
+    #run_classifications(benchmarks, RESULT_DIR, run_benchmark, 1)
+    run_classifications(benchmarks, RESULT_DIR, run_likwid_benchmark, 1)
 
 
 if __name__ == "__main__":
