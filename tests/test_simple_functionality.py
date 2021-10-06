@@ -42,8 +42,8 @@ class SimpleFunctionalityTC(unittest.TestCase):
     def test_BitVector(self):
         self.run_bin("BitVector")
 
-    def test_TupleSpaceSearch(self):
-        self.run_bin("TupleSpaceSearch")
+    def test_TSS(self):
+        self.run_bin("TSS")
 
     def test_TupleMergeOnline(self):
         self.run_bin("TupleMergeOnline")
