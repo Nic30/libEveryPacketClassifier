@@ -18,14 +18,15 @@ using namespace std;
 int InputReader::dim = 5;
 int InputReader::reps = 1;
 
-unsigned int inline InputReader::atoui(const string& in) {
+unsigned int inline InputReader::atoui(const string &in) {
 	std::istringstream reader(in);
 	unsigned int val;
 	reader >> val;
 	return val;
 }
 //CREDITS: http://stackoverflow.com/questions/236129/split-a-string-in-c
-std::vector<std::string> & InputReader::split(const std::string &s, char delim, std::vector<std::string> &elems) {
+std::vector<std::string>& InputReader::split(const std::string &s, char delim,
+		std::vector<std::string> &elems) {
 	std::stringstream ss(s);
 	std::string item;
 	while (std::getline(ss, item, delim)) {
@@ -40,21 +41,21 @@ std::vector<std::string> InputReader::split(const std::string &s, char delim) {
 	return elems;
 }
 
-vector<vector<unsigned int>> InputReader::ReadPackets(const string& filename) {
+vector<vector<unsigned int>> InputReader::ReadPackets(const string &filename) {
 	vector<vector<unsigned int>> packets;
 	ifstream input_file(filename);
-	if (!input_file.is_open())
-	{
-		printf("Couldnt open packet set file \n");
+	if (!input_file.is_open()) {
+		std::cout << "Couldn't open packet set file" << std::endl;
 		exit(1);
 	} else {
-		printf("Reading packet file %s\n", filename.c_str());
+		std::cout << "Reading packet file " << filename << std::endl;
 	}
 	int line_number = 1;
 	string content;
 	while (getline(input_file, content)) {
 		istringstream iss(content);
-		vector<string> tokens{ istream_iterator < string > {iss}, istream_iterator < string > {} };
+		vector<string> tokens { istream_iterator<string> { iss },
+				istream_iterator<string> { } };
 		vector<unsigned int> one_packet;
 		for (int i = 0; i < dim; i++) {
 			one_packet.push_back(atoui(tokens[i]));
@@ -66,8 +67,8 @@ vector<vector<unsigned int>> InputReader::ReadPackets(const string& filename) {
 	return packets;
 }
 
-void InputReader::ReadIPRange(Range1d& IPrange,  unsigned int& prefix_length, const string& token)
-{
+void InputReader::ReadIPRange(Range1d &IPrange, unsigned int &prefix_length,
+		const string &token) {
 	//split slash
 	vector<string> split_slash = split(token, '/');
 	vector<string> split_ip = split(split_slash[0], '.');
@@ -88,9 +89,9 @@ void InputReader::ReadIPRange(Range1d& IPrange,  unsigned int& prefix_length, co
 	masklit2 = mask % 8;
 
 	/*count the start IP */
-	for (int i = 3; i>3 - masklit1; i--)
+	for (int i = 3; i > 3 - masklit1; i--)
 		ptrange[i] = 0;
-	if (masklit2 != 0){
+	if (masklit2 != 0) {
 		masklit3 = 1;
 		masklit3 <<= masklit2;
 		masklit3 -= 1;
@@ -108,9 +109,9 @@ void InputReader::ReadIPRange(Range1d& IPrange,  unsigned int& prefix_length, co
 
 	//key += std::bitset<32>(IPrange[0] >> prefix_length).to_string().substr(32 - prefix_length);
 	/*count the end IP*/
-	for (int i = 3; i>3 - masklit1; i--)
+	for (int i = 3; i > 3 - masklit1; i--)
 		ptrange[i] = 255;
-	if (masklit2 != 0){
+	if (masklit2 != 0) {
 		masklit3 = 1;
 		masklit3 <<= masklit2;
 		masklit3 -= 1;
@@ -125,14 +126,13 @@ void InputReader::ReadIPRange(Range1d& IPrange,  unsigned int& prefix_length, co
 	IPrange.high <<= 8;
 	IPrange.high += ptrange[3];
 }
-void InputReader::ReadPort(Range1d& Portrange, const string& from, const string& to)
-{
+void InputReader::ReadPort(Range1d &Portrange, const string &from,
+		const string &to) {
 	Portrange.low = atoui(from);
 	Portrange.high = atoui(to);
 }
 
-void InputReader::ReadProtocol(Range1d& Protocol, const string& last_token)
-{
+void InputReader::ReadProtocol(Range1d &Protocol, const string &last_token) {
 	// Example : 0x06/0xFF
 	vector<string> split_slash = split(last_token, '/');
 
@@ -144,15 +144,17 @@ void InputReader::ReadProtocol(Range1d& Protocol, const string& last_token)
 	}
 }
 
-
-int InputReader::ReadFilter(vector<string>& tokens, vector<Rule>& ruleset, unsigned int cost)
-{
+int InputReader::ReadFilter(vector<string> &tokens, vector<Rule> &ruleset,
+		unsigned int cost) {
 	// 5 fields: sip, dip, sport, dport, proto = 0 (with@), 1, 2 : 4, 5 : 7, 8
 
 	/*allocate a few more bytes just to be on the safe side to avoid overflow etc*/
 	Rule temp_rule(dim);
 	string key;
-	if (tokens[0].at(0) != '@')  {
+	if (tokens[0].at(0) == '#') {
+		return 0; // comment skip
+	}
+	if (tokens[0].at(0) != '@') {
 		/* each rule should begin with an '@' */
 		printf("ERROR: NOT A VALID RULE FORMAT\n");
 		exit(1);
@@ -160,23 +162,25 @@ int InputReader::ReadFilter(vector<string>& tokens, vector<Rule>& ruleset, unsig
 
 	int index_token = 0;
 	int i = 0;
-	for (int rep = 0; rep < reps; rep++)
-	{
+	for (int rep = 0; rep < reps; rep++) {
 		/* reading SIP range */
 		if (i == 0) {
-
-			ReadIPRange(temp_rule.range[i], temp_rule.prefix_length[i], tokens[index_token++].substr(1));
-			i++;
+			ReadIPRange(temp_rule.range[i], temp_rule.prefix_length[i],
+					tokens[index_token++].substr(1));
 		} else {
-			ReadIPRange(temp_rule.range[i], temp_rule.prefix_length[i], tokens[index_token++]);
-			i++;
+			ReadIPRange(temp_rule.range[i], temp_rule.prefix_length[i],
+					tokens[index_token++]);
 		}
-		/* reading DIP range */
-		ReadIPRange(temp_rule.range[i], temp_rule.prefix_length[i], tokens[index_token++]);
 		i++;
-		ReadPort(temp_rule.range[i++], tokens[index_token], tokens[index_token + 2]);
+		/* reading DIP range */
+		ReadIPRange(temp_rule.range[i], temp_rule.prefix_length[i],
+				tokens[index_token++]);
+		i++;
+		ReadPort(temp_rule.range[i++], tokens[index_token],
+				tokens[index_token + 2]);
 		index_token += 3;
-		ReadPort(temp_rule.range[i++], tokens[index_token], tokens[index_token + 2]);
+		ReadPort(temp_rule.range[i++], tokens[index_token],
+				tokens[index_token + 2]);
 		index_token += 3;
 		ReadProtocol(temp_rule.range[i++], tokens[index_token++]);
 	}
@@ -187,54 +191,45 @@ int InputReader::ReadFilter(vector<string>& tokens, vector<Rule>& ruleset, unsig
 
 	return 0;
 }
-void InputReader::LoadFilters(ifstream& fp, vector<Rule>& ruleset)
-{
+void InputReader::LoadFilters(ifstream &fp, vector<Rule> &ruleset) {
 	int line_number = 0;
 	string content;
 	while (getline(fp, content)) {
 		istringstream iss(content);
-		vector<string> tokens{ istream_iterator < string > {iss}, istream_iterator < string > {} };
+		vector<string> tokens { istream_iterator<string> { iss },
+				istream_iterator<string> { } };
 		ReadFilter(tokens, ruleset, line_number++);
 	}
 }
-vector<Rule> InputReader::ReadFilterFileClassBench(const string&  filename)
-{
+vector<Rule> InputReader::ReadFilterFileClassBench(const string &filename) {
 	//assume 5*rep fields
 	vector<Rule> rules;
 	ifstream column_counter(filename);
 	ifstream input_file(filename);
-	if (!input_file.is_open() || !column_counter.is_open())
-	{
-		throw ifstream("Couldnt open filter set file");
+	if (!input_file.is_open() || !column_counter.is_open()) {
+		throw ifstream("Couldn't open filter set file");
 	}
-
 
 	LoadFilters(input_file, rules);
 	input_file.close();
 	column_counter.close();
 
-	//need to rearrange the priority
-
-	int max_pri = rules.size() - 1;
-	for (size_t i = 0; i < rules.size(); i++) {
-		rules[i].priority = max_pri - i;
-	}
 	/*for (int i = 0; i < 5; i++) {
-	set<interval> iv;
-	for (rule& r : ruleset) {
-	iv.insert(interval(r.range[i][0], r.range[i][1], 0));
-	}
-	cout << "field " << i << " has " << iv.size() << " unique intervals" << endl;
-	}*/
+	 set<interval> iv;
+	 for (rule& r : ruleset) {
+	 iv.insert(interval(r.range[i][0], r.range[i][1], 0));
+	 }
+	 cout << "field " << i << " has " << iv.size() << " unique intervals" << endl;
+	 }*/
 	/*for (auto& r : rules) {
-	for (auto &p : r.range) {
-	cout << p[0] << ":" << p[1] << " ";
-	}
-	cout << endl;
-	}
-	exit(0);*/
+	 for (auto &p : r.range) {
+	 cout << p[0] << ":" << p[1] << " ";
+	 }
+	 cout << endl;
+	 }
+	 exit(0);*/
 
-	return	rules;
+	return rules;
 }
 
 bool IsPower2(unsigned int x) {
@@ -249,11 +244,12 @@ bool IsPrefix(unsigned int low, unsigned int high) {
 unsigned int PrefixLength(unsigned int low, unsigned int high) {
 	unsigned int x = high - low;
 	int lg = 0;
-	for (; x; x >>= 1) lg++;
+	for (; x; x >>= 1)
+		lg++;
 	return 32 - lg;
 }
 
-void InputReader::ParseRange(Range1d& range, const string& text) {
+void InputReader::ParseRange(Range1d &range, const string &text) {
 	vector<string> split_colon = split(text, ':');
 	// to obtain interval
 	range.low = atoui(split_colon[0]);
@@ -263,12 +259,10 @@ void InputReader::ParseRange(Range1d& range, const string& text) {
 	}
 }
 
-vector<Rule> InputReader::ReadFilterFileMSU(const string&  filename)
-{
+vector<Rule> InputReader::ReadFilterFileMSU(const string &filename) {
 	vector<Rule> rules;
 	ifstream input_file(filename);
-	if (!input_file.is_open())
-	{
+	if (!input_file.is_open()) {
 		printf("Couldnt open filter set file \n");
 		exit(1);
 	}
@@ -292,16 +286,17 @@ vector<Rule> InputReader::ReadFilterFileMSU(const string&  filename)
 		Rule temp_rule(dim);
 		vector<string> split_comma = split(content, ',');
 		// ignore priority at the end
-		for (size_t i = 0; i < split_comma.size() - 1; i++)
-		{
+		for (size_t i = 0; i < split_comma.size() - 1; i++) {
 			ParseRange(temp_rule.range[i], split_comma[i]);
 			if (IsPrefix(temp_rule.range[i].low, temp_rule.range[i].high)) {
-				temp_rule.prefix_length[i] = PrefixLength(temp_rule.range[i].low, temp_rule.range[i].high);
+				temp_rule.prefix_length[i] = PrefixLength(
+						temp_rule.range[i].low, temp_rule.range[i].high);
 			}
 			//if ((i == FieldSA || i == FieldDA) & !IsPrefix(temp_rule.range[i].low, temp_rule.range[i].high)) {
 			//	printf("Field is not a prefix!\n");
 			//}
-			if (temp_rule.range[i].low < bounds[i].low || temp_rule.range[i].high > bounds[i].high) {
+			if (temp_rule.range[i].low < bounds[i].low
+					|| temp_rule.range[i].high > bounds[i].high) {
 				printf("rule out of bounds!\n");
 			}
 		}
@@ -309,31 +304,36 @@ vector<Rule> InputReader::ReadFilterFileMSU(const string&  filename)
 		temp_rule.tag = atoi(split_comma[split_comma.size() - 1].c_str());
 		rules.push_back(temp_rule);
 	}
-	for (auto & r : rules) {
+	for (auto &r : rules) {
 		r.priority = rules.size() - r.priority;
 	}
 
 	/*for (auto& r : rules) {
-	for (auto &p : r.range) {
-	cout << p[0] << ":" << p[1] << " ";
-	}
-	cout << endl;
-	}
-	exit(0);*/
+	 for (auto &p : r.range) {
+	 cout << p[0] << ":" << p[1] << " ";
+	 }
+	 cout << endl;
+	 }
+	 exit(0);*/
 	return rules;
 }
 
-vector<Rule> InputReader::ReadFilterFile(const string&  filename) {
+/*
+ * First rule has the highest priority
+ * */
+vector<Rule> InputReader::ReadFilterFile(const string &filename) {
 	vector<Rule> res;
 	ifstream in(filename);
 	if (!in.is_open()) {
-		throw ifstream::failure(string("Couldn't open filter set file \"") + filename + "\"");
+		throw ifstream::failure(
+				string("Couldn't open filter set file \"") + filename + "\"");
 	}
 
 	string content;
 	getline(in, content);
 	istringstream iss(content);
-	vector<string> tokens{ istream_iterator < string > {iss}, istream_iterator < string > {} };
+	vector<string> tokens { istream_iterator<string> { iss }, istream_iterator<
+			string> { } };
 	if (content.length() == 0) {
 		in.close();
 		throw ifstream::failure("File is empty");
@@ -343,7 +343,7 @@ vector<Rule> InputReader::ReadFilterFile(const string&  filename) {
 		reps = (atoi(split_semi.back().c_str()) + 1) / 5;
 		dim = reps * 5;
 
-		res= ReadFilterFileMSU(filename);
+		res = ReadFilterFileMSU(filename);
 	} else if (content[0] == '@') {
 		// CLassBench Format
 		/* COUNT COLUMN */
@@ -352,24 +352,33 @@ vector<Rule> InputReader::ReadFilterFile(const string&  filename) {
 			reps = tokens.size() / 9;
 		}
 
-	    dim = reps * 5;
-	    res = ReadFilterFileClassBench(filename);
+		dim = reps * 5;
+		res = ReadFilterFileClassBench(filename);
 	} else {
 		in.close();
-		throw ifstream::failure(string("unknown input format please use either MSU format or ClassBench format (content[0]=='") + content[0] + "')");
+		throw ifstream::failure(
+				string(
+						"unknown input format please use either MSU format or ClassBench format (content[0]=='")
+						+ content[0] + "')");
 	}
 	in.close();
 
-
 	set<vector<Range1d>> seen_rule_ranges; // to make all rules unique
 	vector<Rule> res_tmp;
-	for (auto & r: res) {
+
+	for (auto &r : res) {
 		if (seen_rule_ranges.find(r.range) != seen_rule_ranges.end()) {
 			// duplicit rule
 			continue;
 		}
+		r.id = res_tmp.size();
 		res_tmp.push_back(r);
 		seen_rule_ranges.insert(r.range);
+	}
+	//need to rearrange the priority, first has the highest
+	int max_pri = res_tmp.size() - 1;
+	for (size_t i = 0; i < res_tmp.size(); i++) {
+		res_tmp[i].priority = max_pri - i;
 	}
 
 	return res_tmp;
