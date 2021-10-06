@@ -1,5 +1,5 @@
-#ifndef  INPUTREADER_H
-#define  INPUTREADER_H 
+#pragma once
+
 #include "../ElementaryClasses.h"
 
 //CREDIT:: REUSE INPUT READER FROM Hypersplit's original code//
@@ -31,4 +31,3 @@ private:
 	static const int HIGH = 1;
 };
 
-#endif
