@@ -30,16 +30,16 @@ SEED_ROOT = os.path.join(CLASSBENCH_ROOT, "vendor", "parameter_files")
 ALGS = [
     #"PartitionSort",
     # "PriorityTupleSpaceSearch",
-    "HyperSplit",
+    #"HyperSplit",
     # "HyperCuts",
     # "ByteCuts",
     # "BitVector",
-    "TupleSpaceSearch",
+    "TSS",
     # "TupleMergeOnline",
-    "pcv",
-    # "TupleMergeOffline",
-    "CutSplit",
-    "EffiCuts",
+    #"pcv",
+    #"TupleMergeOffline",
+    #"CutSplit",
+    #"EffiCuts",
 ]
 
 SIZES = [
@@ -47,7 +47,7 @@ SIZES = [
     # 500,
      #1e3,
      #2e3,
-     5e3,
+     #5e3,
      10e3,
      65e3,
      100e3,
@@ -58,8 +58,8 @@ SIZES = [
     # 1e6,
 ]
 SEEDS = [os.path.join(SEED_ROOT, s) for s in [
-    #"exact",
-    #"acl1_seed",
+    "exact",
+    "acl1_seed",
     #"acl2_seed",
     # "acl3_seed",
     # "acl4_seed",

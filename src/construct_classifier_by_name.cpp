@@ -50,7 +50,7 @@ ClassifierSet ParseClassifierName(const string &line, const str_map &args,
 			constructor = []() {
 				return new BitVector();
 			};
-		} else if (c == "TupleSpaceSearch") {
+		} else if (c == "TSS") {
 			constructor = []() {
 				return new TupleSpaceSearch();
 			};

@@ -196,7 +196,7 @@ class GraphGen():
     def _add_alg_labels(self, ax1, algs):
         x = list(range(1, len(algs) + 1))
         ax1.xaxis.set_ticks(x)
-        ax1.xaxis.set_ticklabels([a.replace("TupleSpaceSearch", 'TSS') for a in algs])
+        ax1.xaxis.set_ticklabels(algs)
 
     def __init__(self, RESULT_DIR, RULESET_FILES, ALGS):
         self.RESULT_DIR = RESULT_DIR
@@ -222,11 +222,10 @@ class GraphGen():
                                        y_log_scale=False, figsize=(8, 6)):
         result_dir = self.RESULT_DIR
         algs = self.ALGS
-        ruleset_files = self.RULESET_FILES
         # {alg_name: {number_of_rule: sizes}}
         data = {}
         for alg, ruleset, nominal_rule_cnt, rule_cnt, thread_cnt, results in load_data(
-                result_dir, algs, ruleset_files, thread_cnts):
+                result_dir, algs, self.RULESET_FILES, thread_cnts):
             try:
                 alg_d = data[alg]
             except KeyError:
@@ -234,7 +233,9 @@ class GraphGen():
                 data[alg] = alg_d
 
             val = results[key]
+            print(val)
             val = float(val)
+            print(val)
             k = (ruleset, nominal_rule_cnt, rule_cnt, thread_cnt)
             try:
                 vals = alg_d[k]
