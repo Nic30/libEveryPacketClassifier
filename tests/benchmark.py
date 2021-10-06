@@ -13,6 +13,7 @@ from tests.generate_rulesets import format_num, SEEDS, SIZES, OUT
 
 RESULT_DIR = os.path.join(ROOT, "results")
 TRIALS = 1
+WALL_TIME = 5*60
 
 
 def run_benchmark(args):
@@ -26,7 +27,7 @@ def run_benchmark(args):
     cmd = [BIN, f"c={alg}", f"f={ruleset}", f"o={result_file}", f'r={TRIALS:d}', f't={len(cores)}']
     print("+>" + " ".join(cmd))
     try:
-        check_call(cmd)
+        check_call(cmd, timeout=WALL_TIME)
         print("->" + " ".join(cmd))
     except Exception as e:
         print("->" + Fore.RED + "[ERROR]" + Style.RESET_ALL + " ".join(cmd), e, file=sys.stderr)
@@ -64,7 +65,7 @@ def run_likwid_benchmark(args):
                 ]
         print("+>" + " ".join(cmd))
         try:
-            check_call(cmd)
+            check_call(cmd, timeout=WALL_TIME)
             print("->" + " ".join(cmd))
         except Exception as e:
             print("->" + Fore.RED + "[ERROR]" + Style.RESET_ALL + " ".join(cmd), e, file=sys.stderr)
