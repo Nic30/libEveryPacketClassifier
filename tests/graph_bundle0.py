@@ -84,16 +84,18 @@ def main():
                                             thread_cnts,
                                             figsize=figsize)
 
-    #
-    # gg_all.generate_summary_graph(
-    #    "ConstructionTime(ms)",
-    #    None,
-    #    # 'Construction time',
-    #    'fig/summary_constr_time.png',
-    #    "Construction time [ms]",
-    #    "Ruleset",
-    #    y_log_scale=True,
-    #    figsize=(8, 4))
+
+    gg_all.generate_summary_grap_box_plot(
+       "ConstructionTime(ms)",
+       None,
+       # 'Construction time',
+       'fig/summary_constr_time',
+       "Construction time [ms]",
+       "Algorithm",
+       quantization,
+       thread_cnts=thread_cnts,
+       y_log_scale=True,
+       figsize=figsize)
 
     # gg_no_long_constr.generate_summary_graph(
     #     "ConstructionTime(ms)",
