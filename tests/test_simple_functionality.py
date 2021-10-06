@@ -54,13 +54,19 @@ class SimpleFunctionalityTC(unittest.TestCase):
     def test_pcv(self):
         self.run_bin("pcv")
 
+    def test_CutSplit(self):
+        self.run_bin("CutSplit")
+
+    def test_EffiCuts(self):
+        self.run_bin("EffiCuts")
+
 
 class ValidationTC(SimpleFunctionalityTC):
 
     def run_bin(self, alg, ruleset=None):
         if ruleset is None:
             ruleset = self.DEFAULT_RULESET
-        cmd = [BIN, f"c={alg}", f"f={ruleset}", "m=Validation"]
+        cmd = [BIN, f"c={alg},List", f"f={ruleset}", "m=Validation"]
         try:
             check_call(cmd)
         except CalledProcessError:
