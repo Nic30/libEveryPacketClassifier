@@ -151,7 +151,7 @@ bool validation_run(const ClassifierSet classifiers, const vector<Rule> &rules,
 	return numWrong == 0;
 }
 
-void validation_prepare_and_run(const unordered_map<string, string> &args,
+bool validation_prepare_and_run(const unordered_map<string, string> &args,
 		const vector<Packet> &packets, const vector<Rule> &rules,
 		ClassifierSet classifiers) {
 	std::cerr << "[INFO] Validation Simulation, Building..." << std::endl;
@@ -167,9 +167,11 @@ void validation_prepare_and_run(const unordered_map<string, string> &args,
 	}
 	if (validation_run(classifiers, rules, packets, error_threshold)) {
 		std::cerr << "[INFO] All classifiers are in accord" << std::endl;
+		return true;
 	} else {
 		std::cerr << "[ERROR] There were difference in classifier outputs"
 				<< std::endl;
+		return false;
 	}
 }
 
@@ -227,7 +229,9 @@ int main(int argc, char *argv[]) {
 	} else if (mode == "Update") {
 		RunSimulatorUpdates(args, packets, rules, classifiers, outputFile, 1);
 	} else if (mode == "Validation") {
-		validation_prepare_and_run(args, packets, rules, classifiers);
+		if (!validation_prepare_and_run(args, packets, rules, classifiers)) {
+			exit(EXIT_FAILURE);
+		}
 	} else {
 		printf("Unknown mode: %s\n", mode.c_str());
 		exit(EINVAL);
@@ -240,6 +244,6 @@ int main(int argc, char *argv[]) {
 			delete cls;
 		}
 	}
-	return 0;
+	return EXIT_SUCCESS;
 }
 
