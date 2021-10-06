@@ -7,11 +7,12 @@ PacketClassifierFromGenericClassifier::PacketClassifierFromGenericClassifier(
 
 std::chrono::duration<double> PacketClassifierFromGenericClassifier::ConstructClassifier(
 		const std::vector<Rule> &rules) {
+	rule_id_to_priority_offset = (int)rules.size() - 1;
 	std::list<openflow_rule> rule_db;
 	int i = 0;
 	for (auto &r : rules) {
 		openflow_rule ofr;
-		ofr.priority = r.priority;
+		ofr.priority = rules.size() - r.priority - 1;
 		assert(ofr.priority == i);
 		i++;
 		assert(r.range.size() == cls->get_supported_number_of_fields());
@@ -34,7 +35,10 @@ int PacketClassifierFromGenericClassifier::ClassifyAPacket(
 	// returns The matching rule action/priority (or 0xffffffff (-1) if not found)
 	int m = cls->classify_sync(
 			reinterpret_cast<const unsigned int*>(&packet[0]), -1);
-	return m;
+	if (m == -1)
+		return m;
+	else
+		return rule_id_to_priority_offset - m;
 }
 
 Memory PacketClassifierFromGenericClassifier::MemSizeBytes() const {

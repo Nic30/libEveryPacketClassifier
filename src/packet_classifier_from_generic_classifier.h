@@ -12,6 +12,7 @@ struct NotImplemented: std::exception {
 
 /*
  * \brief API translation from GenericClassifier to PacketClassifier
+ * \attention This classifier internaly uses priority encode as lower integer mans higher priority
  * */
 class PacketClassifierFromGenericClassifier: public PacketClassifier {
 
