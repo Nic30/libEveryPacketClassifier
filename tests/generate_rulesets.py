@@ -99,13 +99,13 @@ def run_exact_gen(args):
 
 if __name__ == "__main__":
     counter = Value('i', 0)
-    with Pool(14, initializer=init, initargs=(counter,)) as pool:
+    with Pool(initializer=init, initargs=(counter,)) as pool:
         i = pool.map_async(run_classbench, tasks)
         i.wait()
         print(i.get())
 
     # _tasks = [(0, size) for size in SIZES]
-    # with Pool( initializer=init, initargs=(counter,)) as pool:
-    #    i = pool.map_async(run_exact_gen, _tasks, chunksize=1)
-    #    i.wait()
-    #    print(i.get())
+    # with Pool(initializer=init, initargs=(counter,)) as pool:
+    #     i = pool.map_async(run_exact_gen, _tasks, chunksize=1)
+    #     i.wait()
+    #     print(i.get())
