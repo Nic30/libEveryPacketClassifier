@@ -5,7 +5,7 @@ project('packetClassificators', ['c', 'cpp'], default_options : ['cpp_std=c++17'
 cpp = meson.get_compiler('cpp')
 likwid = cpp.find_library('likwid', required: true)
 
-pcv_proj = subproject('packet_classifiers_vectorized')
+pcv_proj = subproject('packet_classifiers_vectorized', default_options : ['debug=true'])
 pcv_dep = pcv_proj.get_variable('pcv_dep')
 
 nuevomatch_proj = subproject('nuevomatch')
