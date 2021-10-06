@@ -233,9 +233,7 @@ class GraphGen():
                 data[alg] = alg_d
 
             val = results[key]
-            print(val)
             val = float(val)
-            print(val)
             k = (ruleset, nominal_rule_cnt, rule_cnt, thread_cnt)
             try:
                 vals = alg_d[k]
