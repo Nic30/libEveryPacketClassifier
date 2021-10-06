@@ -9,7 +9,7 @@
 #include <random>
 #include <numeric>
 #include <memory>
-#include <chrono> 
+#include <chrono>
 #include <array>
 #include <sstream>
 #include <boost/functional/hash.hpp>
@@ -26,6 +26,15 @@ class PointNd: public std::array<Point1d, dimension_cnt> {
 
 using Packet = std::vector<Point1d>;
 
+template<typename Point1d>
+std::string Packet_to_string(const std::vector<Point1d> & packet) {
+	std::stringstream str;
+	for (const auto &_r : packet) {
+		str << _r << '\t';
+	}
+	return str.str();
+}
+
 template<typename Point = Point1d>
 class _Range1d {
 public:
@@ -40,37 +49,37 @@ public:
 	inline bool contains(Point x) const {
 		return low <= x && x <= high;
 	}
-	bool operator <(const _Range1d& other) const {
+	bool operator <(const _Range1d &other) const {
 		if (low != other.low) {
 			return low < other.low;
 		} else
 			return high < other.high;
 	}
 
-	bool operator >(const _Range1d& other) const {
+	bool operator >(const _Range1d &other) const {
 		if (high != other.high) {
 			return high > other.high;
 		} else
 			return low > other.low;
 	}
 
-	bool isIntersect(const _Range1d & other) const {
+	bool isIntersect(const _Range1d &other) const {
 		return other.low < high and low < other.high;
 	}
 
-	bool operator ==(const _Range1d& other) const {
+	bool operator ==(const _Range1d &other) const {
 		return low == other.low && high == other.high;
 	}
 
-	bool operator !=(const _Range1d& other) const {
+	bool operator !=(const _Range1d &other) const {
 		return low != other.low || high != other.high;
 	}
 
-	int cmp(const _Range1d* other) const {
+	int cmp(const _Range1d *other) const {
 		return cmp(*other);
 	}
 
-	int cmp(const _Range1d& other) const {
+	int cmp(const _Range1d &other) const {
 		if (*this == other)
 			return 0;
 		else if (this->isIntersect(other))
@@ -84,11 +93,11 @@ public:
 	}
 
 	constexpr bool isWildcard() const {
-		return low == std::numeric_limits<Point>::min()
-				and high == std::numeric_limits<Point>::max();
+		return low == std::numeric_limits < Point > ::min()
+				and high == std::numeric_limits < Point > ::max();
 	}
 
-	friend std::ostream & operator<<(std::ostream & str, const _Range1d & r) {
+	friend std::ostream& operator<<(std::ostream &str, const _Range1d &r) {
 		str << "[" << r.low << "-" << r.high << "]";
 		return str;
 	}
@@ -108,7 +117,7 @@ using Range1d = _Range1d<>;
  * Filter rule
  *
  * @ivar dim number of dimensions in rule
- * @ivar priority priority of rule in ruleset
+ * @ivar priority priority of rule in ruleset, the higher value means increased priority
  *
  * @ivar id id number used by PartitoinSort
  * @ivar tag tag number used by PartitionSort
@@ -135,7 +144,7 @@ struct Rule {
 	std::vector<Range1d> range;
 	std::vector<unsigned> prefix_length;
 
-	bool inline MatchesPacket(const Packet& p) const {
+	bool inline MatchesPacket(const Packet &p) const {
 		for (int i = 0; i < dim; i++) {
 			if (p[i] < range[i].low || p[i] > range[i].high)
 				return false;
@@ -143,8 +152,8 @@ struct Rule {
 		return true;
 	}
 
-	friend std::ostream & operator<<(std::ostream & str, const Rule & r) {
-		for (const auto& _r : r.range) {
+	friend std::ostream& operator<<(std::ostream &str, const Rule &r) {
+		for (const auto &_r : r.range) {
 			str << _r << '\t';
 		}
 		return str;
@@ -165,37 +174,35 @@ template<>
 struct hash<Range1d> {
 	typedef Range1d argument_type;
 	typedef std::size_t result_type;
-	result_type operator()(argument_type const& v) const noexcept {
-			using boost::hash_combine;
-			using namespace std;
-			result_type h = hash<unsigned>{}(v.low);
-			hash_combine(h, hash<unsigned>{}(v.high));
-			return h;
+	result_type operator()(argument_type const &v) const noexcept {
+		using boost::hash_combine;
+		using namespace std;
+		result_type h = hash<unsigned> { }(v.low);
+		hash_combine(h, hash<unsigned> { }(v.high));
+		return h;
 	}
 
 };
-
 
 template<>
 struct hash<Rule> {
 	typedef Rule argument_type;
 	typedef std::size_t result_type;
-	result_type operator()(argument_type const& v) const noexcept {
+	result_type operator()(argument_type const &v) const noexcept {
 		using boost::hash_combine;
 		using namespace std;
-		result_type h = hash<int>{}(v.dim);
-		hash_combine(h, hash<int>{}(v.priority));
-		hash_combine(h, hash<int>{}(v.id));
-		for (const auto &r: v.range) {
-			hash_combine(h, hash<Range1d>{}(r));
+		result_type h = hash<int> { }(v.dim);
+		hash_combine(h, hash<int> { }(v.priority));
+		hash_combine(h, hash<int> { }(v.id));
+		for (const auto &r : v.range) {
+			hash_combine(h, hash<Range1d> { }(r));
 		}
 
 		return h;
 	}
 };
 
-
-inline bool operator==(const Rule & a, const Rule & b) {
+inline bool operator==(const Rule &a, const Rule &b) {
 	if (a.dim != b.dim or a.priority != b.priority or a.id != b.id)
 		return false;
 	for (int i = 0; i < a.dim; i++) {
@@ -206,7 +213,6 @@ inline bool operator==(const Rule & a, const Rule & b) {
 }
 
 }
-
 
 class Range1dWeighted: public Range1d {
 public:
@@ -232,7 +238,7 @@ public:
 			val(val), isRightEnd(isRightEnd), id(id) {
 	}
 
-	bool operator <(const EndPoint & rhs) const {
+	bool operator <(const EndPoint &rhs) const {
 		return val < rhs.val;
 	}
 
@@ -243,54 +249,54 @@ public:
 
 class Random {
 public:
-	// random number generator from Stroustrup: 
+	// random number generator from Stroustrup:
 	// http://www.stroustrup.com/C++11FAQ.html#std-random
 	// static: there is only one initialization (and therefore seed).
-	static int random_int(int low, int high) {
+	int random_int(int low, int high) {
 		//static std::mt19937  generator;
 		using Dist = std::uniform_int_distribution < int >;
-		static Dist uid { };
+		Dist uid { };
 		return uid(generator, Dist::param_type { low, high });
 	}
 
-	// random number generator from Stroustrup: 
+	// random number generator from Stroustrup:
 	// http://www.stroustrup.com/C++11FAQ.html#std-random
 	// static: there is only one initialization (and therefore seed).
-	static int random_unsigned_int() {
+	int random_unsigned_int() {
 		//static std::mt19937  generator;
 		using Dist = std::uniform_int_distribution < unsigned int >;
-		static Dist uid { };
+		Dist uid { };
 		return uid(generator, Dist::param_type { 0, 4294967295 });
 	}
-	static double random_real_btw_0_1() {
+	double random_real_btw_0_1() {
 		//static std::mt19937  generator;
 		using Dist = std::uniform_real_distribution < double >;
-		static Dist uid { };
+		Dist uid { };
 		return uid(generator, Dist::param_type { 0, 1 });
 	}
 
 	template<class T>
-	static std::vector<T> shuffle_vector(std::vector<T> vi) {
+	std::vector<T> shuffle_vector(std::vector<T> vi) {
 		//static std::mt19937  generator;
 		std::shuffle(std::begin(vi), std::end(vi), generator);
 		return vi;
 	}
 private:
-	static std::mt19937 generator;
+	std::mt19937 generator;
 };
 
 enum PSMode {
 	NoCompression, PathCompression, PriorityNode, NoIntermediateTree
 };
 
-inline void SortRules(std::vector<Rule>& rules) {
-	sort(rules.begin(), rules.end(), [](const Rule& rx, const Rule& ry) {
+inline void SortRules(std::vector<Rule> &rules) {
+	sort(rules.begin(), rules.end(), [](const Rule &rx, const Rule &ry) {
 		return rx.priority >= ry.priority;
 	});
 }
 
-inline void SortRules(std::vector<Rule*>& rules) {
-	sort(rules.begin(), rules.end(), [](const Rule* rx, const Rule* ry) {
+inline void SortRules(std::vector<Rule*> &rules) {
+	sort(rules.begin(), rules.end(), [](const Rule *rx, const Rule *ry) {
 		return rx->priority >= ry->priority;
 	});
 }
