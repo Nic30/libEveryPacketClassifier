@@ -132,6 +132,8 @@ def generate_graphs(result_dir, algs, ruleset_files, key,
         #           [x[0] for x in size_series])
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
+        plt.grid()
+
         fig1.savefig(os.path.join(result_dir, filename.format(alg=alg)))
         plt.close(fig1)
 
@@ -183,11 +185,18 @@ def generate_summary_graph(result_dir, algs, ruleset_files, key, title,
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     ax1.legend(loc='best', shadow=True, fancybox=True)
+    plt.grid()
+
     fig1.savefig(os.path.join(result_dir, filename))
     plt.close(fig1)
 
 
 class GraphGen():
+
+    def _add_alg_labels(self, ax1, algs):
+        x = list(range(1, len(algs) + 1))
+        ax1.xaxis.set_ticks(x)
+        ax1.xaxis.set_ticklabels([a.replace("TupleSpaceSearch", 'TSS') for a in algs])
 
     def __init__(self, RESULT_DIR, RULESET_FILES, ALGS):
         self.RESULT_DIR = RESULT_DIR
@@ -260,11 +269,7 @@ class GraphGen():
                     # plt.xticks(x, x, rotation='vertical')
 
             ax1.boxplot(_data)
-            x = list(range(1, len(algs) + 1))
-            plt.xticks(x, [a.replace("TupleSpaceSearch", 'TSS') for a in algs], rotation='horizontal')
-            # ax1.xticks(range(len(algs)), algs)
-
-            # ax1.set_ylim(ymin=0)
+            self._add_alg_labels(ax1, algs)
             # plt.margins(0.2)
             # Tweak spacing to prevent clipping of tick-labels
             # plt.subplots_adjust(bottom=0.25)
@@ -273,11 +278,13 @@ class GraphGen():
 
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
-            #ax1.locator_params(axis="y", nbins=10)
+            # ax1.locator_params(axis="y", nbins=10)
 
-            plt.locator_params(axis='x', nbins=10)
+            # plt.locator_params(axis='x', nbins=len(algs))
 
-            ax1.legend(loc='best', shadow=True, fancybox=True)
+            #ax1.legend(loc='best', shadow=True, fancybox=True)
+            plt.grid()
+
             fig1.savefig(os.path.join(result_dir, f"{filename:s}.{quantum[2]:s}.png"))
             plt.close(fig1)
 
@@ -355,8 +362,8 @@ class GraphGen():
                 # plt.xticks(x, x, rotation='vertical')
 
             ax1.boxplot(_data)
-            x = list(range(1, len(algs) + 1))
-            plt.xticks(x, [a.replace("TupleSpaceSearch", 'TSS') for a in algs], rotation='horizontal')
+
+            self._add_alg_labels(ax1, algs)
             # ax1.xticks(range(len(algs)), algs)
 
             # ax1.set_ylim(ymin=0)
@@ -368,7 +375,7 @@ class GraphGen():
 
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
-            plt.locator_params(axis='x', nbins=10)
-            ax1.legend(loc='best', shadow=True, fancybox=True)
+            #ax1.legend(loc='best', shadow=True, fancybox=True)
+            plt.grid()
             fig1.savefig(os.path.join(result_dir, f"{filename:s}.{quantum[2]:s}.png"))
             plt.close(fig1)
