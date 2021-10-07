@@ -11,6 +11,8 @@ necessary tests to verify the functionality of algorithms.
 
 Build
 ```
+sudo apt install python3 python3-pip ninja-build build-essentials
+sudo pip3 install meson
 mkdir build/default; cd build/default
 meson ../..
 # optionally meson configure -Ddebug=false
