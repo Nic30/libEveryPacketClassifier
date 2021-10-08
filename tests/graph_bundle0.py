@@ -1,5 +1,8 @@
-from tests.benchmark_graph_gen import GraphGen
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from tests.benchmark import RESULT_DIR, make_tasks
+from tests.benchmark_graph_gen import GraphGen
 from tests.constants import ALGS, CORE_SELECT
 
 

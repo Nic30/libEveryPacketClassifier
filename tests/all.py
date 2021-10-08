@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from unittest import TestLoader, TextTestRunner, TestSuite
-from test_simple_functionality import SimpleFunctionalityTC, ValidationTC
+
+from tests.test_simple_functionality import SimpleFunctionalityTC, ValidationTC
 
 
 def testSuiteFromTCs(*tcs):
@@ -20,7 +21,6 @@ suite = testSuiteFromTCs(
     SimpleFunctionalityTC,
     ValidationTC
 )
-
 
 if __name__ == '__main__':
     runner = TextTestRunner(verbosity=2)

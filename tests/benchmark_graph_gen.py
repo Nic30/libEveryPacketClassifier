@@ -1,10 +1,10 @@
-import matplotlib.pyplot as plt
-import os
-from tests.constants import RULESET_ROOT
-from os import listdir
 import json
+from os import listdir
+import os
 from typing import List, Tuple
-from tests.generate_rulesets import unformat_num
+
+import matplotlib.pyplot as plt
+from tests.constants import RULESET_ROOT
 
 
 # @lru_cache(maxsize=512)

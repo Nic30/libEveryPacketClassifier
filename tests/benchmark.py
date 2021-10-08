@@ -11,6 +11,7 @@ import sys
 from tests.constants import BIN, ROOT, ALGS, CORE_SELECT
 from tests.generate_rulesets import format_num, SEEDS, SIZES, OUT
 
+
 RESULT_DIR = os.path.join(ROOT, "results")
 TRIALS = 1
 WALL_TIME = 5 * 60
