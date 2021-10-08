@@ -350,8 +350,8 @@ class GraphGen():
                 for thread_cnt in thread_cnts:
                     size_series = list(sorted(((k, v) for k, v in sizes.items()
                                               if k[-1] == thread_cnt and
-                                                 unformat_num(k[1]) >= quantum[0] and
-                                                 unformat_num(k[1]) < quantum[1]), \
+                                                 k[2] >= quantum[0] and
+                                                 k[2] < quantum[1]), \
                                               key=lambda x: x[0][2]))
                     # x = [get_rulset_name(s) for s in size_series]
                     y = [y_map(s[1][0]) for s in size_series]
