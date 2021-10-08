@@ -8,12 +8,12 @@ from os.path import basename
 from subprocess import check_call, check_output
 import sys
 
-from tests.constants import BIN, ROOT, ALGS
+from tests.constants import BIN, ROOT, ALGS, CORE_SELECT
 from tests.generate_rulesets import format_num, SEEDS, SIZES, OUT
 
 RESULT_DIR = os.path.join(ROOT, "results")
 TRIALS = 1
-WALL_TIME = 5*60
+WALL_TIME = 5 * 60
 
 
 def run_benchmark(args):
@@ -95,14 +95,14 @@ def make_tasks():
         (alg, ruleset, RESULT_DIR, cores)
         for alg in ALGS
         for ruleset in RULESET_FILES
-        for cores in [[0], [0, 1], list(range(4))]
+        for cores in CORE_SELECT
     ]
     return benchmarks
 
 
 def main():
     benchmarks = make_tasks()
-    #run_classifications(benchmarks, RESULT_DIR, run_benchmark, 1)
+    # run_classifications(benchmarks, RESULT_DIR, run_benchmark, 1)
     run_classifications(benchmarks, RESULT_DIR, run_likwid_benchmark, 1)
 
 

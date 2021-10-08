@@ -28,47 +28,56 @@ RULESET_ROOT = os.path.join(CLASSBENCH_ROOT, "generated/")
 SEED_ROOT = os.path.join(CLASSBENCH_ROOT, "vendor", "parameter_files")
 
 ALGS = [
-    #"PartitionSort",
-    # "PriorityTupleSpaceSearch",
-    #"HyperSplit",
+    # "PartitionSort",
+    # "HyperSplit",
     # "HyperCuts",
     # "ByteCuts",
     # "BitVector",
-    "TSS",
-    # "TupleMergeOnline",
-    #"pcv",
-    #"TupleMergeOffline",
-    #"CutSplit",
-    #"EffiCuts",
+    # "TSS",
+    "PTSS",
+    "TupleMergeOnline",
+    "pcv",
+    # "TupleMergeOffline",
+    # "CutSplit",
+    # "EffiCuts",
 ]
 
 SIZES = [
     # 100,
     # 500,
-     #1e3,
-     #2e3,
-     #5e3,
-     10e3,
+     # 1e3,
+     # 2e3,
+     # 5e3,
+     # 10e3,
      65e3,
      100e3,
      200e3,
-     #300e3,
+     300e3,
+     # 400e3,
+     # 500e3,
+     # 1e6
     # 1e3, 10e3, 100e3, 1e6, 10e6
     # 100e3, 200e3, 300e3, 400e3, 500e3,
     # 1e6,
 ]
 SEEDS = [os.path.join(SEED_ROOT, s) for s in [
     "exact",
-    "acl1_seed",
-    #"acl2_seed",
+    # "acl1_seed",
+    # "acl2_seed",
     # "acl3_seed",
     # "acl4_seed",
     # "acl5_seed",
-    "fw1_seed",
-    #"fw2_seed",
+    # "fw1_seed",
+    # "fw2_seed",
     # "fw3_seed",
     # "fw4_seed",
     # "fw5_seed",
-    #"ipc1_seed",
-    #"ipc2_seed",
+    # "ipc1_seed",
+    # "ipc2_seed",
 ]]
+
+CORE_SELECT = [
+    [0],
+    [0, 1],
+    list(range(4))
+]

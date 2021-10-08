@@ -1,6 +1,6 @@
 from tests.benchmark_graph_gen import GraphGen
 from tests.benchmark import RESULT_DIR, make_tasks
-from tests.constants import ALGS
+from tests.constants import ALGS, CORE_SELECT
 
 
 def main():
@@ -29,11 +29,11 @@ def main():
     #    'fig/{alg}_cls_time.png',
     #    'Classification time [s]',
     #    "Ruleset")
-    thread_cnts = [1, 2, 4]
-    figsize = (16, 8)
+    thread_cnts = [sum(cores) for cores in CORE_SELECT]
+    figsize = (32, 8)
     quantization = [
-        #(0, 1e3 + 1, "<1e3"),
-        (1e3 + 1, 5e4 + 1, "1e3 to 5e4"),
+        # (0, 1e3 + 1, "<1e3"),
+        # (1e3 + 1, 5e4 + 1, "1e3 to 5e4"),
         (5e4 + 1, 1e6 + 1, "5e4 to 1e6")
     ]
 
@@ -83,7 +83,6 @@ def main():
                                             quantization,
                                             thread_cnts,
                                             figsize=figsize)
-
 
     gg_all.generate_summary_grap_box_plot(
        "ConstructionTime(ms)",
