@@ -32,7 +32,7 @@ def main():
     #    'fig/{alg}_cls_time.png',
     #    'Classification time [s]',
     #    "Ruleset")
-    thread_cnts = [sum(cores) for cores in CORE_SELECT]
+    thread_cnts = [len(cores) for cores in CORE_SELECT]
     figsize = (32, 8)
     quantization = [
         # (0, 1e3 + 1, "<1e3"),
